@@ -8,6 +8,7 @@ import PetAvatar from '../../components/pet/PetAvatar.vue'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
 import { playTaskAnim, spawnFloaty } from '../../lib/petFx.js'
 import { toast } from '../../lib/toast.js'
+import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
 const p = computed(() => pet())
 const a = computed(() => petAttrs())
@@ -15,6 +16,7 @@ const fx = ref(null)
 const dogRef = ref(null)
 const happy = ref(false)
 const evoStage = ref(null)
+const snd = ref(soundEnabled())
 
 const tasks = computed(() => db.tasks.filter(t => t.is_active))
 const pending = computed(() => checkinSvc.pendingInteractions())
@@ -52,6 +54,7 @@ function doTask(t) {
   if (taskState(t) !== 'none') return
   try {
     const res = checkinSvc.createCheckin(t.id)
+    sfx.checkin()
     toast(`已打卡:${t.name} ✅ 等家人确认就能陪小愿玩啦`)
     res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 本周英语满 ${r.required_days} 天:${r.reward_name}`), 700))
   } catch (e) { toast(e.message) }
@@ -61,15 +64,17 @@ function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
   playTaskAnim(fx.value, res.task.anim || 'study', dogRef.value?.$el)
+  sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
   toast(msg)
-  if (res.leveledUp && !res.evolved) setTimeout(() => toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`), 750)
-  if (res.evolved) setTimeout(() => (evoStage.value = res.evolved), 800)
+  if (res.leveledUp && !res.evolved) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`) }, 750)
+  if (res.evolved) setTimeout(() => { sfx.evolve(); evoStage.value = res.evolved }, 800)
 }
 
 function petDog() {
   happy.value = !isLow(p.value); setTimeout(() => (happy.value = false), 600)
+  sfx.pet()
   spawnFloaty(fx.value, isLow(p.value) ? '💧' : '💛')
   toast(isLow(p.value) ? '小愿有点没精神…摸摸头 🥺' : '汪!摸摸头最开心了 🐾')
 }
@@ -89,9 +94,10 @@ onMounted(() => {
   <div style="padding:14px 14px 90px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b">⭐ 信任 Lv.{{ trust.stars }}</span>
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes) }}分</span>
+        <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
       </div>
     </div>
 
