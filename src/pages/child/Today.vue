@@ -18,6 +18,8 @@ const dogRef = ref(null)
 const happy = ref(false)
 const evoStage = ref(null)
 const snd = ref(soundEnabled())
+const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
+let actionTimer = null
 
 const tasks = computed(() => db.tasks.filter(t => t.is_active))
 const pending = computed(() => checkinSvc.pendingInteractions())
@@ -64,7 +66,12 @@ function doTask(t) {
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
-  playTaskAnim(fx.value, res.task.anim || 'study', dogRef.value?.$el)
+  const kind = res.task.anim || 'study'
+  playTaskAnim(fx.value, kind, dogRef.value?.$el)
+  // 播放对应动作视频 ~3.8s 后回到待机
+  actionAnim.value = kind
+  clearTimeout(actionTimer)
+  actionTimer = setTimeout(() => { actionAnim.value = '' }, 3800)
   sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
@@ -139,7 +146,7 @@ onMounted(() => {
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
       <div style="display:flex;justify-content:center;align-items:flex-end;height:218px;position:relative">
-        <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" @pet="petDog" />
+        <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" :action-anim="actionAnim" @pet="petDog" />
         <div ref="fx" class="fx"></div>
       </div>
 
