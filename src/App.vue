@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { currentUser } from './lib/store.js'
+import { currentUser, syncState } from './lib/store.js'
 import { toastState } from './lib/toast.js'
 
 const route = useRoute()
@@ -49,6 +49,23 @@ const showNav = computed(() => route.path !== '/login' && !!user.value)
       </router-link>
     </nav>
 
+    <!-- 云同步状态小指示 -->
+    <transition name="view">
+      <div v-if="showNav && syncState.syncing" class="sync-chip">☁️ 同步中…</div>
+      <div v-else-if="showNav && !syncState.online" class="sync-chip offline">📴 离线(本地保存)</div>
+    </transition>
+
     <div class="toast" :class="{ show: toastState.show }">{{ toastState.msg }}</div>
   </div>
 </template>
+
+<style scoped>
+.sync-chip {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 60;
+  background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.85); font-size: 11px; padding: 4px 12px; border-radius: 999px;
+  backdrop-filter: blur(8px); pointer-events: none;
+}
+.sync-chip.offline { color: #ffd0a0; }
+</style>

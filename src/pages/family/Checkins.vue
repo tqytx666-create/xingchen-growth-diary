@@ -23,7 +23,11 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
 <template>
   <div style="padding:14px 14px 90px">
     <h2 style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">✅ 打卡核验</h2>
-    <div v-if="!list.length" class="dim" style="text-align:center;padding:30px 0">还没有打卡记录</div>
+    <div v-if="!list.length" style="text-align:center;padding:40px 0">
+      <div style="font-size:46px;margin-bottom:8px">🐾</div>
+      <div class="dim" style="font-size:14px">还没有打卡记录</div>
+      <div class="dim" style="font-size:12px;margin-top:4px">等星晨完成任务后,这里会出现待核验的打卡</div>
+    </div>
     <div v-for="c in list" :key="c.id" class="card" style="padding:13px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:22px">{{ task(c)?.icon }}</span>
