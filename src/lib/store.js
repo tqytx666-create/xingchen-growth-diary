@@ -1,55 +1,116 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch, ref } from 'vue'
 import { buildSeed, SEED_VERSION } from './seed.js'
 import { nowISO } from './util.js'
+import { supabase } from './supabase.js'
 
 /*
-  数据层抽象:第一版用浏览器 localStorage,结构完全对齐 DATA_MODEL.md 的表。
-  以后接 Supabase 时,只需把 services 里对 db.xxx 的读写替换为 supabase 调用,
-  其余业务逻辑(streak/pet/credit/timebank/reward)保持不变。
+  数据层:reactive db 为唯一数据源(所有 service/组件同步读写)。
+  - 本地:localStorage 缓存,离线/首屏可用。
+  - 云端:整个 db 存在 Supabase 的 xc_state 单行 jsonb,配合 Realtime 实现全家多端同步。
+  写流程: db 变化 → 防抖 → upsert 到 xc_state。
+  读流程: 启动拉 xc_state 覆盖本地;Realtime 收到别端更新 → 覆盖本地。
+  last-write-wins(家庭低并发场景足够)。
 */
 
 const LS_KEY = 'xingchen_growth_db'
 const SESSION_KEY = 'xingchen_session'
+const STATE_ID = 1
 
-function loadDB() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      // 结构升级:旧版本数据直接重建(早期阶段,尚无重要数据)
       if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION) return parsed
     }
   } catch (e) { /* ignore */ }
   return buildSeed()
 }
 
-export const db = reactive(loadDB())
+export const db = reactive(loadLocal())
+export const session = reactive({ userId: localStorage.getItem(SESSION_KEY) || null })
+export const syncState = reactive({ online: false, syncing: false })
 
-export const session = reactive({
-  userId: localStorage.getItem(SESSION_KEY) || null
-})
+// ---- 同步内部状态 ----
+let lastSerialized = JSON.stringify(db)   // 最近一次与云端一致的快照(抑制回声)
+let suppress = false                       // 应用远端数据时,暂停本地→云端回推
+let pushTimer = null
 
-let saveTimer = null
+function serialize() { return JSON.stringify(stripVolatile(db)) }
+// 不参与同步比较的易变字段可在此剔除(目前无)
+function stripVolatile(o) { return o }
+
+function applyRemote(obj) {
+  suppress = true
+  Object.keys(db).forEach(k => { if (!(k in obj)) delete db[k] })
+  Object.assign(db, obj)
+  lastSerialized = JSON.stringify(stripVolatile(db))
+  localStorage.setItem(LS_KEY, lastSerialized)
+  setTimeout(() => { suppress = false }, 0)
+}
+
+async function pushNow() {
+  if (suppress) return
+  const json = serialize()
+  if (json === lastSerialized) return
+  lastSerialized = json
+  syncState.syncing = true
+  try {
+    await supabase.from('xc_state').update({ data: JSON.parse(json), updated_at: nowISO() }).eq('id', STATE_ID)
+  } catch (e) {
+    console.warn('[sync] push failed', e)
+  } finally {
+    syncState.syncing = false
+  }
+}
+
+// 本地任何变化 → 写 localStorage + 防抖推云端
 watch(db, () => {
-  clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(db))
-  }, 120)
+  const json = serialize()
+  localStorage.setItem(LS_KEY, json)
+  if (suppress) return
+  clearTimeout(pushTimer)
+  pushTimer = setTimeout(pushNow, 500)
 }, { deep: true })
 
-export function saveNow() {
-  localStorage.setItem(LS_KEY, JSON.stringify(db))
+function onRemote(payload) {
+  const remote = payload.new && payload.new.data
+  if (!remote || !remote.meta) return
+  if (remote.meta.version !== SEED_VERSION) return
+  const json = JSON.stringify(stripVolatile(remote))
+  if (json === lastSerialized) return // 自己的回声
+  applyRemote(remote)
 }
+
+export async function initSync() {
+  try {
+    const { data, error } = await supabase.from('xc_state').select('data').eq('id', STATE_ID).maybeSingle()
+    if (error) throw error
+    const remote = data && data.data
+    if (remote && remote.meta && remote.meta.version === SEED_VERSION) {
+      applyRemote(remote)        // 云端已有数据 → 以云端为准
+    } else {
+      lastSerialized = null       // 云端空或版本不符 → 上传本地种子
+      await pushNow()
+    }
+    supabase.channel('xc_state_sync')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'xc_state', filter: `id=eq.${STATE_ID}` }, onRemote)
+      .subscribe()
+    syncState.online = true
+  } catch (e) {
+    console.warn('[sync] init failed, offline mode', e)
+    syncState.online = false
+  }
+}
+
+export function saveNow() { localStorage.setItem(LS_KEY, serialize()) }
 
 export function setUser(userId) {
   session.userId = userId
   if (userId) localStorage.setItem(SESSION_KEY, userId)
   else localStorage.removeItem(SESSION_KEY)
 }
-
-export function currentUser() {
-  return db.users.find(u => u.id === session.userId) || null
-}
+export function currentUser() { return db.users.find(u => u.id === session.userId) || null }
 
 export function resetDB() {
   const fresh = buildSeed()
