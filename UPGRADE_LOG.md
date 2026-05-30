@@ -35,3 +35,6 @@
 ### #4 · 21:31 · PWA 添加到主屏幕 ✅
 新增 `public/manifest.webmanifest` + 狗头图标(192/512/maskable,用 pet_base 生成)+ 极简 `public/sw.js`(网络优先回退缓存,离线可开)+ index.html 的 apple-touch-icon/standalone 元信息 + main.js 注册 SW。手机浏览器菜单可"添加到主屏幕",像原生 App 全屏启动、带图标。构建通过,线上已确认:chunk `index-C-HZ17h-.js`,manifest/sw.js/icon-192 均 HTTP 200。
 使用方法:手机用 Safari/Chrome 打开线上地址 → 分享/菜单 → "添加到主屏幕"。
+
+### #5 · 22:07 · 摸头互动丰富化 ✅
+摸头从单一文案+1粒子,升级为:7 句随机反应(低落时另有 4 句)、爱心/星星/爪印簇状飘散(`spawnBurst`)、3 秒内连摸 5 次触发"宠上天"彩蛋(12 粒子)。构建通过,线上 curl 实测确认 `index-Cou5vgyd.js`(本地/线上一致)。
