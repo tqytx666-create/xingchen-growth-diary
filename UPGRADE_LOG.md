@@ -59,3 +59,8 @@ App 加固定 z-index:-1 背景层:远层小密慢飘、近层大亮快飘形成
 
 ### #12 · 02:32 · 云同步状态指示 + 友好空状态 ✅
 App 底部加"☁️同步中…/📴离线(本地保存)"小胶囊(读 syncState,过渡显隐);核验列表空状态从一行灰字改为大 emoji🐾 + 引导文案。构建通过,build/deploy/verify 三处一致、线上 curl 实测确认 `index-L1OX9o5B.js`(本地/线上一致)。
+
+### 🐛 热修 · 用户反馈"签到页白屏"
+根因:奖励系统重构时 seed 删除了 `cumulative_reward_rules`,但 `streakService.nextCumulative()` 仍读它 → `undefined.find` 抛错 → 整个签到页渲染失败白屏(对存档里没有该字段的用户/全新存档触发)。
+修复:① seed 补回 `cumulative_reward_rules`(7/14/21/30 天里程碑);② `nextCumulative` 加 `|| []` 兜底,兼容已有缺字段存档,无需清数据、不改 SEED_VERSION。本地全新存档实测签到页完整渲染、0 报错。新构建 chunk = `index-BioV36Cy.js`,build/deploy/verify 三处一致。
+(注:此前 #1~#12 期间签到页对"无 cumulative_reward_rules 字段的存档"一直会白屏,只是测试存档恰好带该字段未暴露;本次由用户实际使用触发并修复。)
