@@ -1,0 +1,16 @@
+{
+  "name": "星晨成长日记",
+  "short_name": "星晨日记",
+  "description": "星晨的家庭习惯养成 · 英语打卡 + 星愿犬养成",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1535",
+  "theme_color": "#1a1535",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

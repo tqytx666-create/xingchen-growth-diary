@@ -11,3 +11,10 @@ createApp(App).use(router).mount('#app')
 initSync().finally(() => {
   try { settleInterest() } catch (e) { /* ignore */ }
 })
+
+// 注册 service worker(PWA 可添加到主屏幕、离线可开)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(new URL('./sw.js', import.meta.url), { scope: './' }).catch(() => {})
+  })
+}
