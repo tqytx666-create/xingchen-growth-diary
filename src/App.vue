@@ -31,6 +31,14 @@ const showNav = computed(() => route.path !== '/login' && !!user.value)
 
 <template>
   <div>
+    <!-- 全局星空背景:视差星点 + 流星 -->
+    <div class="sky-bg" aria-hidden="true">
+      <div class="stars-layer stars-far"></div>
+      <div class="stars-layer stars-near"></div>
+      <span class="shoot shoot-1"></span>
+      <span class="shoot shoot-2"></span>
+      <span class="shoot shoot-3"></span>
+    </div>
     <router-view v-slot="{ Component }">
       <transition name="view" mode="out-in"><component :is="Component" /></transition>
     </router-view>
