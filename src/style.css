@@ -37,6 +37,16 @@ button { font: inherit; cursor: pointer; }
 .dog.anim-god img { filter: drop-shadow(0 0 18px rgba(255,216,107,.7)) drop-shadow(0 10px 14px rgba(0,0,0,.3)); }
 .dog.anim-elite img { filter: drop-shadow(0 0 10px rgba(255,216,107,.4)) drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
 
+/* 任务互动:狗本体动作(覆盖待机动画) */
+.dog.act-study { animation: actStudy 1.5s ease-in-out !important; }
+.dog.act-brush { animation: actBrush .25s ease-in-out 6 !important; }
+.dog.act-bath { animation: actBath .12s linear 12 !important; }
+.dog.act-badminton { animation: actBadminton .5s ease-in-out 3 !important; }
+@keyframes actStudy { 0%,100%{transform:rotate(0) translateY(0);} 25%,75%{transform:rotate(8deg) translateY(6px);} 50%{transform:rotate(8deg) translateY(8px);} }
+@keyframes actBrush { 0%,100%{transform:rotate(0);} 50%{transform:rotate(-7deg);} }
+@keyframes actBath { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+@keyframes actBadminton { 0%,100%{transform:translateY(0) scale(1);} 40%{transform:translateY(-30px) scale(1.05);} 70%{transform:translateY(0) scale(.97);} }
+
 @keyframes pupJitter { 0%,100%{transform:translateY(0) rotate(0);} 25%{transform:translateY(-2px) rotate(-1.5deg);} 75%{transform:translateY(-2px) rotate(1.5deg);} }
 @keyframes growHop { 0%,100%{transform:translateY(0) scale(1);} 35%{transform:translateY(-14px) scale(1.04);} 60%{transform:translateY(0) scale(.98);} }
 @keyframes eliteSway { 0%,100%{transform:translateY(0) rotate(-1.5deg);} 50%{transform:translateY(-6px) rotate(1.5deg);} }
