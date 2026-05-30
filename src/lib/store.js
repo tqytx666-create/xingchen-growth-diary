@@ -1,5 +1,5 @@
 import { reactive, watch } from 'vue'
-import { buildSeed } from './seed.js'
+import { buildSeed, SEED_VERSION } from './seed.js'
 import { nowISO } from './util.js'
 
 /*
@@ -14,7 +14,11 @@ const SESSION_KEY = 'xingchen_session'
 function loadDB() {
   try {
     const raw = localStorage.getItem(LS_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      // 结构升级:旧版本数据直接重建(早期阶段,尚无重要数据)
+      if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION) return parsed
+    }
   } catch (e) { /* ignore */ }
   return buildSeed()
 }

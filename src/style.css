@@ -79,3 +79,10 @@ input, textarea, select {
 input::placeholder, textarea::placeholder { color: rgba(255,255,255,.4); }
 .spark { position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%; opacity: .4; animation: tw 3s infinite; }
 @keyframes tw { 0%,100%{opacity:.15;} 50%{opacity:.85;} }
+
+/* 可互动道具按钮 */
+.prop-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 12px;
+  background:rgba(255,216,107,.16); border:1px solid #ffd86b; border-radius:16px; color:#ffd86b;
+  cursor:pointer; animation:propPulse 1.2s ease-in-out infinite; }
+.prop-btn:active { transform:scale(.92); }
+@keyframes propPulse { 0%,100%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,216,107,.4);} 50%{transform:scale(1.08); box-shadow:0 0 14px 2px rgba(255,216,107,.35);} }

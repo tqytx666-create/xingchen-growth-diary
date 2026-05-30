@@ -33,21 +33,23 @@ export function applyTaskExp(task, sourceId) {
   return delta
 }
 
-// 虚报惩罚:回退属性 + 降心情/信任 + 风险上升
-export function applyFalseReportPenalty(task, sourceId) {
+// 虚报惩罚:已互动过才回退属性 + 降心情/信任 + 风险上升
+export function applyFalseReportPenalty(task, interacted) {
   const a = petAttrs(); const p = pet()
-  const back = (task.base_exp || 0) + 3
   const delta = {}
-  a[task.attribute_key] = clamp(a[task.attribute_key] - back)
-  delta[task.attribute_key] = -back
-  if (task.attribute_key2) { a[task.attribute_key2] = clamp(a[task.attribute_key2] - (task.base_exp2 || 0)); delta[task.attribute_key2] = -(task.base_exp2 || 0) }
+  if (interacted) {
+    const back = (task.base_exp || 0) + 3
+    a[task.attribute_key] = clamp(a[task.attribute_key] - back)
+    delta[task.attribute_key] = -back
+    if (task.attribute_key2) { a[task.attribute_key2] = clamp(a[task.attribute_key2] - (task.base_exp2 || 0)); delta[task.attribute_key2] = -(task.base_exp2 || 0) }
+  }
   a.mood_score = clamp(a.mood_score - 14)
   a.trust_bond = clamp(a.trust_bond - 10)
   a.updated_at = nowISO()
   p.mood = 'disappointed'
   p.risk = Math.min(3, p.risk + (task.task_type === 'main' ? 2 : 1))
   maybeRegress()
-  event('penalty', sourceId, 'penalty', delta, `被标记虚报:${task.name},信任能量下降`)
+  event('penalty', null, 'penalty', delta, `被标记虚报:${task.name},信任能量下降`)
 }
 
 // 英语未完成(断签):低落 + 智慧受损 + 风险+1

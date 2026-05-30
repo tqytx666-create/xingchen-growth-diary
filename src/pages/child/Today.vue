@@ -1,10 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { db, pet, petAttrs, credit as creditRow, bank as bankRow, child } from '../../lib/store.js'
+import { db, pet, petAttrs, credit as creditRow, bank as bankRow } from '../../lib/store.js'
 import { dominant, FORM_LABEL, STAGES, isLow } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
-import { nextCumulative } from '../../services/streakService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
 import { playTaskAnim, spawnFloaty } from '../../lib/petFx.js'
@@ -18,12 +17,25 @@ const happy = ref(false)
 const evoStage = ref(null)
 
 const tasks = computed(() => db.tasks.filter(t => t.is_active))
-const doneCount = computed(() => tasks.value.filter(t => checkinSvc.statusOf(t.id)).length)
+const pending = computed(() => checkinSvc.pendingInteractions())
+const doneCount = computed(() => tasks.value.filter(t => { const c = checkinSvc.statusOf(t.id); return c && c.interacted }).length)
 const trust = computed(() => levelInfo(creditRow().credit_score))
+
+function taskState(t) {
+  const c = checkinSvc.statusOf(t.id)
+  if (!c) return 'none'
+  if (c.status === 'self_reported') return 'wait'
+  if (c.status === 'confirmed' && !c.interacted) return 'ready'
+  if (c.status === 'confirmed' && c.interacted) return 'done'
+  if (c.status === 'false_reported') return 'false'
+  if (c.status === 'disputed') return 'dispute'
+  return 'other'
+}
 
 const evoHint = computed(() => {
   if (p.value.risk >= 2) return { warn: true, html: `⚠️ 连续没完成英语,<b>${p.value.name}</b> 进入<b style="color:#ff7a7a">退阶风险</b>。连续学 3 天可解除。` }
   if (isLow(p.value)) return { warn: false, html: `今天 <b>${p.value.name}</b> 的能量弱了一些。明天补上英语,它还能重新变聪明 ✨` }
+  if (pending.value.length) return { warn: false, html: `🎉 家人确认啦!点下面的道具,陪 <b>${p.value.name}</b> 互动吧` }
   const next = STAGES[p.value.stage_idx + 1]
   if (!next) return { warn: false, html: `<b>${p.value.name}</b> 已是最强形态 星愿神犬 🌟` }
   const total = a.value.wisdom + a.value.cleanliness + a.value.vitality + a.value.charm
@@ -31,30 +43,27 @@ const evoHint = computed(() => {
   return { warn: false, html: `再积累 <b>${need}</b> 点成长值可进化 · 正在靠近 <b>${FORM_LABEL[dominant(a.value)]}</b>` }
 })
 
-function statusOf(id) { return checkinSvc.statusOf(id) }
-
-function doTask(task) {
-  if (statusOf(task.id)) return
-  let minutes = 0
-  if (task.id === 't_badminton') {
-    const v = window.prompt('打了多少分钟羽毛球?(1 分钟 = 2 分钟游戏时间)', '30')
-    if (v === null) return
-    minutes = Math.max(0, parseInt(v) || 0)
-  }
+// 星晨打卡:只自报,宠物不动,提示等确认
+function doTask(t) {
+  if (taskState(t) !== 'none') return
   try {
-    const res = checkinSvc.createCheckin(task.id, { exerciseMinutes: minutes })
-    playTaskAnim(fx.value, task.anim || animOf(task), dogRef.value?.$el)
-    happy.value = true; setTimeout(() => (happy.value = false), 600)
-    let msg = task.task_type === 'main' ? `英语打卡成功!智慧 +${task.base_exp} 🧠` : `${task.name}完成!`
-    if (res.deposited) msg += ` · 时间银行 +${res.deposited}分`
-    toast(msg)
-    res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 周签到达成 ${r.required_days} 天:${r.reward_name}`), 800))
-    if (res.evolved) setTimeout(() => (evoStage.value = res.evolved), 700)
+    const res = checkinSvc.createCheckin(t.id)
+    toast(`已打卡:${t.name} ✅ 等家人确认就能陪小愿玩啦`)
+    res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 本周英语满 ${r.required_days} 天:${r.reward_name}`), 700))
   } catch (e) { toast(e.message) }
 }
-function animOf(task) {
-  return { english: 'study', teeth: 'brush', bath: 'bath', badminton: 'badminton' }[task.category === 'english' ? 'english' : task.id.replace('t_', '')] || 'study'
+
+// 点宠物画面里的道具:才长属性 + 放动画
+function interactProp(c) {
+  const res = checkinSvc.interact(c.id)
+  if (!res) return
+  playTaskAnim(fx.value, res.task.anim || 'study', dogRef.value?.$el)
+  happy.value = true; setTimeout(() => (happy.value = false), 600)
+  let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
+  toast(msg)
+  if (res.evolved) setTimeout(() => (evoStage.value = res.evolved), 700)
 }
+
 function petDog() {
   happy.value = !isLow(p.value); setTimeout(() => (happy.value = false), 600)
   spawnFloaty(fx.value, isLow(p.value) ? '💧' : '💛')
@@ -83,15 +92,27 @@ onMounted(() => {
     </div>
 
     <!-- 宠物舞台 -->
-    <div id="homeStage" class="card" :class="{}" style="position:relative;border-radius:28px;padding:16px;margin-bottom:14px;overflow:hidden"
+    <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:14px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
       <div style="display:flex;justify-content:space-between">
         <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }} · Lv.{{ STAGES[p.stage_idx].lv }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
-      <div style="display:flex;justify-content:center;align-items:flex-end;height:212px;position:relative">
+      <div style="display:flex;justify-content:center;align-items:flex-end;height:200px;position:relative">
         <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" @pet="petDog" />
         <div ref="fx" class="fx"></div>
+      </div>
+
+      <!-- 可互动道具:确认后出现在宠物画面里 -->
+      <div v-if="pending.length" style="position:relative;z-index:5;margin-top:6px">
+        <div style="font-size:12px;color:#ffd86b;text-align:center;margin-bottom:8px">✨ 点道具陪小愿互动</div>
+        <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+          <button v-for="c in pending" :key="c.id" class="prop-btn"
+                  @click="interactProp(c)">
+            <span style="font-size:26px">{{ db.tasks.find(t=>t.id===c.task_id)?.icon }}</span>
+            <span style="font-size:10px">点我</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -111,8 +132,7 @@ onMounted(() => {
     </div>
     <div v-for="t in tasks" :key="t.id" class="card"
          :style="t.task_type==='main' ? 'border-color:rgba(255,216,107,.4);background:linear-gradient(135deg,rgba(255,216,107,.12),rgba(255,255,255,.08))' : ''"
-         style="display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:10px"
-         :class="{ }">
+         style="display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:10px">
       <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
@@ -122,11 +142,13 @@ onMounted(() => {
           {{ t.task_type==='main' ? '主线' : '支线' }}
         </span>
       </div>
-      <button :disabled="!!statusOf(t.id)" @click="doTask(t)"
-              class="btn-accent" style="padding:10px 15px"
-              :style="statusOf(t.id) ? 'background:#6bffb0;color:#0a3d28' : ''">
-        {{ statusOf(t.id) ? '✓ 已完成' : '打卡' }}
-      </button>
+      <!-- 状态/按钮 -->
+      <button v-if="taskState(t)==='none'" class="btn-accent" style="padding:10px 15px" @click="doTask(t)">打卡</button>
+      <span v-else-if="taskState(t)==='wait'" style="font-size:12px;color:#ffd86b;text-align:center;line-height:1.4">⏳ 等家人<br>确认</span>
+      <span v-else-if="taskState(t)==='ready'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✨ 上去<br>陪小愿</span>
+      <span v-else-if="taskState(t)==='done'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✓ 已完成</span>
+      <span v-else-if="taskState(t)==='false'" style="font-size:12px;color:#ff7a7a;text-align:center;line-height:1.4">⚠️ 虚报</span>
+      <span v-else style="font-size:12px;color:#ff9ec7;text-align:center">争议中</span>
     </div>
 
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" @close="evoStage=null" />

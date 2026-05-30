@@ -3,16 +3,15 @@ import { nowISO, uid } from '../lib/util.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
 import * as creditSvc from './creditService.js'
-import * as bankSvc from './timeBankService.js'
 
 function log(checkinId, actorId, action, reason) {
   db.verification_logs.unshift({
     id: uid('vl_'), checkin_id: checkinId, actor_id: actorId, action, reason: reason || null, created_at: nowISO()
   })
 }
-
 function getTask(checkin) { return db.tasks.find(t => t.id === checkin.task_id) }
 
+// 确认属实:解锁宠物互动(道具出现在宠物页),加诚信分
 export function confirm(checkinId, actorId) {
   const c = db.checkins.find(x => x.id === checkinId); if (!c) return
   c.status = 'confirmed'; c.verified_by = actorId; c.verified_at = nowISO()
@@ -24,17 +23,12 @@ export function confirm(checkinId, actorId) {
 export function markFalse(checkinId, actorId, reason) {
   const c = db.checkins.find(x => x.id === checkinId); if (!c) return
   const task = getTask(c)
+  const wasInteracted = !!c.interacted
   c.status = 'false_reported'; c.verified_by = actorId; c.verified_at = nowISO()
   log(checkinId, actorId, 'mark_false', reason)
-  // 宠物惩罚
-  petSvc.applyFalseReportPenalty(task, checkinId)
-  // 诚信扣分
+  // 只有已经互动过(长过属性)才回退属性;否则只扣心情/信任/风险
+  petSvc.applyFalseReportPenalty(task, wasInteracted)
   creditSvc.applyFalsePenalty(task, checkinId, actorId)
-  // 羽毛球虚报 → 回滚时间银行
-  if (task.id === 't_badminton' && c.exercise_minutes > 0) {
-    bankSvc.penalty({ minutes: c.exercise_minutes * 2, description: `虚报回滚:羽毛球`, createdBy: actorId })
-  }
-  // 主线 → 重算连签
   if (task.task_type === 'main') streakSvc.recompute()
   audit(actorId, 'checkin', checkinId, 'mark_false', { task: task?.name, reason })
 }
