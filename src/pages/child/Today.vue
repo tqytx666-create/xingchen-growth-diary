@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { db, pet, petAttrs, credit as creditRow, bank as bankRow } from '../../lib/store.js'
+import { useRouter } from 'vue-router'
+import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
 import { dominant, FORM_LABEL, STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -100,6 +101,13 @@ function petDog() {
   }
 }
 
+const router = useRouter()
+function switchAccount() {
+  if (window.confirm('切换账号?会回到角色选择页(数据已云端保存,不会丢)。')) {
+    setUser(null); router.push('/login')
+  }
+}
+
 function bar(v) { return Math.min(100, v) + '%' }
 onMounted(() => {
   const stage = document.getElementById('homeStage')
@@ -119,6 +127,7 @@ onMounted(() => {
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b">⭐ 信任 Lv.{{ trust.stars }}</span>
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes) }}分</span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
+        <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
       </div>
     </div>
 
