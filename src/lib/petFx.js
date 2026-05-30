@@ -37,3 +37,15 @@ export function playTaskAnim(fx, kind, dogEl) {
 export function spawnFloaty(fx, emoji) {
   spawn(fx, emoji, 60 + Math.random() * 80, 120, 'floaty float-go', 1500)
 }
+
+// 摸头:一簇 emoji 向上飘散
+export function spawnBurst(fx, emojis, n = 6) {
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const e = emojis[Math.floor(Math.random() * emojis.length)]
+      const left = 50 + Math.random() * 100
+      const f = spawn(fx, e, left, 110 + Math.random() * 30, 'floaty float-go', 1500)
+      if (f) f.style.fontSize = (16 + Math.random() * 12) + 'px'
+    }, i * 70)
+  }
+}

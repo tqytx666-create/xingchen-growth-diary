@@ -6,7 +6,7 @@ import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
-import { playTaskAnim, spawnFloaty } from '../../lib/petFx.js'
+import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -72,11 +72,32 @@ function interactProp(c) {
   if (res.evolved) setTimeout(() => { sfx.evolve(); evoStage.value = res.evolved }, 800)
 }
 
+const NORMAL_REACTIONS = [
+  '汪!摸摸头最开心了 🐾', '小愿蹭了蹭你的手 🥰', '尾巴摇得像螺旋桨~ 💫',
+  '小愿好喜欢你呀!💛', '它开心地转了个圈 ✨', '再摸一下嘛~ 🐶', '小愿把头靠过来了 😊'
+]
+const LOW_REACTIONS = [
+  '小愿有点没精神…摸摸头 🥺', '它轻轻舔了下你的手指 💧', '陪陪它,明天会更好的 🌙', '小愿需要你 🥺'
+]
+let petCount = 0
+let petResetTimer = null
 function petDog() {
   happy.value = !isLow(p.value); setTimeout(() => (happy.value = false), 600)
   sfx.pet()
-  spawnFloaty(fx.value, isLow(p.value) ? '💧' : '💛')
-  toast(isLow(p.value) ? '小愿有点没精神…摸摸头 🥺' : '汪!摸摸头最开心了 🐾')
+  const low = isLow(p.value)
+  spawnBurst(fx.value, low ? ['💧', '🩵'] : ['💛', '💕', '⭐', '✨', '🐾'], low ? 4 : 6)
+  // 连续摸头彩蛋
+  petCount++
+  clearTimeout(petResetTimer)
+  petResetTimer = setTimeout(() => { petCount = 0 }, 3000)
+  if (!low && petCount >= 5) {
+    petCount = 0
+    toast('哇!小愿被你宠上天啦 🎉💛')
+    spawnBurst(fx.value, ['💛', '💕', '⭐', '🌟', '✨'], 12)
+  } else {
+    const arr = low ? LOW_REACTIONS : NORMAL_REACTIONS
+    toast(arr[Math.floor(Math.random() * arr.length)])
+  }
 }
 
 function bar(v) { return Math.min(100, v) + '%' }

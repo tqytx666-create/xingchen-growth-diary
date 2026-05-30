@@ -31,3 +31,7 @@
 
 ### #3 · 20:51 · 音效反馈(Web Audio)✅
 新增 `src/lib/sound.js`,用 Web Audio 合成音效:打卡两声、互动叮、升级上行三音、进化琶音、摸头萌音;顶部加 🔊/🔇 静音开关(记忆 localStorage)。构建通过,线上已确认生效 `index-CGfu0ZM9.js`(本地/gh-pages/线上三者一致)。
+
+### #4 · 21:31 · PWA 添加到主屏幕 ✅
+新增 `public/manifest.webmanifest` + 狗头图标(192/512/maskable,用 pet_base 生成)+ 极简 `public/sw.js`(网络优先回退缓存,离线可开)+ index.html 的 apple-touch-icon/standalone 元信息 + main.js 注册 SW。手机浏览器菜单可"添加到主屏幕",像原生 App 全屏启动、带图标。构建通过,线上已确认:chunk `index-C-HZ17h-.js`,manifest/sw.js/icon-192 均 HTTP 200。
+使用方法:手机用 Safari/Chrome 打开线上地址 → 分享/菜单 → "添加到主屏幕"。
