@@ -5,3 +5,6 @@ dist
 .vite
 .playwright-mcp
 shot-*.png
+
+real-*.png
+base_check.png

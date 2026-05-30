@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { db, pet, petAttrs } from '../../lib/store.js'
 import { DEX, SKINS, RARE_TXT, dominant, STAGES } from '../../lib/petConfig.js'
-import { dogSVG } from '../../components/pet/dogSVG.js'
+import { formImage, skinImage } from '../../lib/petImages.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import { fmtDateTime } from '../../lib/util.js'
 import { toast } from '../../lib/toast.js'
@@ -17,7 +17,6 @@ const curForm = computed(() => {
   if (p.value.stage_idx >= 2) return 'grow'
   return p.value.stage_idx >= 1 ? 'puppy' : 'egg'
 })
-function draw(o) { return dogSVG({ ...o, dim: false }) }
 function pickSkin(sk) {
   if (!sk.unlock(a.value, p.value)) { toast('未解锁:需' + sk.why); return }
   p.value.skin = sk.key; toast(`已换上「${sk.t}」皮肤 🎨`)
@@ -43,8 +42,10 @@ const events = computed(() => db.pet_events.slice(0, 30))
     <div v-if="tab==='dex'" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div v-for="d in DEX" :key="d.key" class="card" style="padding:12px;text-align:center;position:relative"
            :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')">
-        <div v-if="d.cond(p,a)" v-html="draw(d.o)" style="width:96px;height:96px;margin:0 auto"></div>
-        <div v-else style="height:96px;display:grid;place-items:center;font-size:40px">❔</div>
+        <div style="height:96px;display:grid;place-items:center">
+          <img v-if="d.cond(p,a)" :src="formImage(d.key)" style="height:96px;object-fit:contain" />
+          <span v-else style="font-size:40px">❔</span>
+        </div>
         <h3 style="font-size:13px;margin:6px 0 2px">{{ d.cond(p,a) ? d.t : '???' }}</h3>
         <p class="dim" style="font-size:11px">{{ d.d }}</p>
         <span style="display:inline-block;font-size:9px;padding:2px 7px;border-radius:999px;margin-top:6px;font-weight:700;background:rgba(255,255,255,.12)">{{ RARE_TXT[d.rare] }}</span>
@@ -57,7 +58,7 @@ const events = computed(() => db.pet_events.slice(0, 30))
       <div v-for="sk in SKINS" :key="sk.key" class="card" style="padding:12px;text-align:center;position:relative;cursor:pointer"
            :style="p.skin===sk.key ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (sk.unlock(a,p) ? '' : 'filter:grayscale(.6) brightness(.7)')"
            @click="pickSkin(sk)">
-        <div v-html="draw(sk.o)" style="width:96px;height:96px;margin:0 auto"></div>
+        <div style="height:96px;display:grid;place-items:center"><img :src="skinImage(sk.key)" style="height:96px;object-fit:contain" /></div>
         <h3 style="font-size:13px;margin:6px 0 2px">{{ sk.t }}</h3>
         <p class="dim" style="font-size:11px">{{ sk.d }}</p>
         <span style="display:inline-block;font-size:9px;padding:2px 7px;border-radius:999px;margin-top:6px;font-weight:700;background:rgba(255,216,107,.18);color:#ffd86b">{{ RARE_TXT[sk.rare] }}</span>
