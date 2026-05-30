@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow } from '../../lib/store.js'
-import { dominant, FORM_LABEL, STAGES, isLow } from '../../lib/petConfig.js'
+import { dominant, FORM_LABEL, STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -21,6 +21,10 @@ const pending = computed(() => checkinSvc.pendingInteractions())
 const doneCount = computed(() => tasks.value.filter(t => { const c = checkinSvc.statusOf(t.id); return c && c.interacted }).length)
 const trust = computed(() => levelInfo(creditRow().credit_score))
 
+// 经验进度
+const expNeed = computed(() => expForLevel(p.value.level || 1))
+const expPct = computed(() => p.value.level >= MAX_LEVEL ? 100 : Math.min(100, Math.round((p.value.exp || 0) / expNeed.value * 100)))
+
 function taskState(t) {
   const c = checkinSvc.statusOf(t.id)
   if (!c) return 'none'
@@ -33,17 +37,17 @@ function taskState(t) {
 }
 
 const evoHint = computed(() => {
-  if (p.value.risk >= 2) return { warn: true, html: `⚠️ 连续没完成英语,<b>${p.value.name}</b> 进入<b style="color:#ff7a7a">退阶风险</b>。连续学 3 天可解除。` }
+  if (p.value.risk >= 2) return { warn: true, html: `⚠️ 连续没完成英语,<b>${p.value.name}</b> 进入<b style="color:#ff7a7a">退阶风险</b>。连续学几天可恢复。` }
   if (isLow(p.value)) return { warn: false, html: `今天 <b>${p.value.name}</b> 的能量弱了一些。明天补上英语,它还能重新变聪明 ✨` }
-  if (pending.value.length) return { warn: false, html: `🎉 家人确认啦!点下面的道具,陪 <b>${p.value.name}</b> 互动吧` }
-  const next = STAGES[p.value.stage_idx + 1]
-  if (!next) return { warn: false, html: `<b>${p.value.name}</b> 已是最强形态 星愿神犬 🌟` }
-  const total = a.value.wisdom + a.value.cleanliness + a.value.vitality + a.value.charm
-  const need = Math.max(0, next.min - total)
-  return { warn: false, html: `再积累 <b>${need}</b> 点成长值可进化 · 正在靠近 <b>${FORM_LABEL[dominant(a.value)]}</b>` }
+  if (pending.value.length) return { warn: false, html: `🎉 家人确认啦!点下面的道具,陪 <b>${p.value.name}</b> 互动长经验吧` }
+  if (p.value.level >= MAX_LEVEL) return { warn: false, html: `<b>${p.value.name}</b> 已满级 Lv.30 星愿神犬 🌟` }
+  const need = expNeed.value - (p.value.exp || 0)
+  const nextTierStart = TIER_START[tierFromLevel(p.value.level) + 1]
+  const lvToTier = nextTierStart ? nextTierStart - p.value.level : 0
+  const tierTxt = lvToTier > 0 ? ` · 再升 <b>${lvToTier}</b> 级进化形态` : ''
+  return { warn: false, html: `Lv.${p.value.level} · 再得 <b>${need}</b> 点经验升级${tierTxt}` }
 })
 
-// 星晨打卡:只自报,宠物不动,提示等确认
 function doTask(t) {
   if (taskState(t) !== 'none') return
   try {
@@ -53,7 +57,6 @@ function doTask(t) {
   } catch (e) { toast(e.message) }
 }
 
-// 点宠物画面里的道具:才长属性 + 放动画
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
@@ -61,7 +64,8 @@ function interactProp(c) {
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
   toast(msg)
-  if (res.evolved) setTimeout(() => (evoStage.value = res.evolved), 700)
+  if (res.leveledUp && !res.evolved) setTimeout(() => toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`), 750)
+  if (res.evolved) setTimeout(() => (evoStage.value = res.evolved), 800)
 }
 
 function petDog() {
@@ -92,23 +96,31 @@ onMounted(() => {
     </div>
 
     <!-- 宠物舞台 -->
-    <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:14px;overflow:hidden"
+    <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:12px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
-      <div style="display:flex;justify-content:space-between">
-        <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }} · Lv.{{ STAGES[p.stage_idx].lv }}</span>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }} · Lv.{{ p.level }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
-      <div style="display:flex;justify-content:center;align-items:flex-end;height:200px;position:relative">
+      <div style="display:flex;justify-content:center;align-items:flex-end;height:218px;position:relative">
         <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" @pet="petDog" />
         <div ref="fx" class="fx"></div>
       </div>
 
-      <!-- 可互动道具:确认后出现在宠物画面里 -->
-      <div v-if="pending.length" style="position:relative;z-index:5;margin-top:6px">
+      <!-- 经验条 -->
+      <div style="position:relative;z-index:5;margin-top:2px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span class="dim">经验 Lv.{{ p.level }}</span>
+          <span class="dim">{{ p.level>=30 ? '满级' : (p.exp||0)+' / '+expNeed }}</span>
+        </div>
+        <div class="bar"><i style="background:linear-gradient(90deg,#ffd86b,#ffb347)" :style="{width:expPct+'%'}"></i></div>
+      </div>
+
+      <!-- 可互动道具 -->
+      <div v-if="pending.length" style="position:relative;z-index:5;margin-top:12px">
         <div style="font-size:12px;color:#ffd86b;text-align:center;margin-bottom:8px">✨ 点道具陪小愿互动</div>
         <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
-          <button v-for="c in pending" :key="c.id" class="prop-btn"
-                  @click="interactProp(c)">
+          <button v-for="c in pending" :key="c.id" class="prop-btn" @click="interactProp(c)">
             <span style="font-size:26px">{{ db.tasks.find(t=>t.id===c.task_id)?.icon }}</span>
             <span style="font-size:10px">点我</span>
           </button>
@@ -142,7 +154,6 @@ onMounted(() => {
           {{ t.task_type==='main' ? '主线' : '支线' }}
         </span>
       </div>
-      <!-- 状态/按钮 -->
       <button v-if="taskState(t)==='none'" class="btn-accent" style="padding:10px 15px" @click="doTask(t)">打卡</button>
       <span v-else-if="taskState(t)==='wait'" style="font-size:12px;color:#ffd86b;text-align:center;line-height:1.4">⏳ 等家人<br>确认</span>
       <span v-else-if="taskState(t)==='ready'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✨ 上去<br>陪小愿</span>

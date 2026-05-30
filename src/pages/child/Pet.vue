@@ -30,7 +30,7 @@ const events = computed(() => db.pet_events.slice(0, 30))
                 background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.3), transparent 60%), rgba(0,0,0,.18)">
       <PetAvatar :pet="p" :attrs="a" :size="170" :interactive="false" />
       <div style="font-weight:700;margin-top:6px">{{ p.name }} · {{ p.species }}</div>
-      <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx].name }} · Lv.{{ STAGES[p.stage_idx].lv }}</div>
+      <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx].name }} · Lv.{{ p.level }}</div>
     </div>
 
     <div style="display:flex;gap:8px;margin-bottom:14px">

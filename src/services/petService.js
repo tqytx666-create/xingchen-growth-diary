@@ -1,6 +1,6 @@
 import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid } from '../lib/util.js'
-import { STAGES } from '../lib/petConfig.js'
+import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel } from '../lib/petConfig.js'
 
 function event(sourceType, sourceId, eventType, delta, message) {
   db.pet_events.unshift({
@@ -10,7 +10,31 @@ function event(sourceType, sourceId, eventType, delta, message) {
   if (db.pet_events.length > 300) db.pet_events.pop()
 }
 
-// 任务完成加属性
+// 加经验并处理升级 / 跨阶段进化。返回 { leveledUp, newLevel, tierUp }
+function addExp(amount, sourceId) {
+  const p = pet()
+  if (p.level == null) { p.level = 1; p.exp = 0 }
+  const beforeTier = tierFromLevel(p.level)
+  p.exp = (p.exp || 0) + amount
+  let leveledUp = false
+  while (p.level < MAX_LEVEL && p.exp >= expForLevel(p.level)) {
+    p.exp -= expForLevel(p.level)
+    p.level += 1
+    leveledUp = true
+    event('evolution', sourceId, 'levelup', {}, `升到 Lv.${p.level} 啦!`)
+  }
+  if (p.level >= MAX_LEVEL) p.exp = 0
+  const newTier = tierFromLevel(p.level)
+  p.stage_idx = newTier
+  let tierUp = null
+  if (newTier > beforeTier) {
+    tierUp = STAGES[newTier]
+    event('evolution', sourceId, 'evolution', {}, `进化成了 ${STAGES[newTier].name}!`)
+  }
+  return { leveledUp, newLevel: p.level, tierUp }
+}
+
+// 任务完成加属性 + 经验
 export function applyTaskExp(task, sourceId) {
   const a = petAttrs(); const p = pet()
   const delta = {}
@@ -22,18 +46,18 @@ export function applyTaskExp(task, sourceId) {
   }
   a.mood_score = clamp(a.mood_score + 4)
   a.updated_at = nowISO()
-  // 英语完成:解除低落、降低退阶风险
   if (task.task_type === 'main') {
     if (p.mood === 'low') p.mood = 'normal'
     if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
   }
   p.mood = 'happy'
   event('checkin', sourceId, 'exp_gain', delta, `${task.name}完成,${labelDelta(delta)}`)
-  checkEvolution()
-  return delta
+  const expGain = (task.base_exp || 0) + (task.base_exp2 || 0)
+  const lv = addExp(expGain, sourceId)
+  return { delta, ...lv }
 }
 
-// 虚报惩罚:已互动过才回退属性 + 降心情/信任 + 风险上升
+// 虚报惩罚
 export function applyFalseReportPenalty(task, interacted) {
   const a = petAttrs(); const p = pet()
   const delta = {}
@@ -52,7 +76,7 @@ export function applyFalseReportPenalty(task, interacted) {
   event('penalty', null, 'penalty', delta, `被标记虚报:${task.name},信任能量下降`)
 }
 
-// 英语未完成(断签):低落 + 智慧受损 + 风险+1
+// 英语未完成(断签)
 export function applyMissPenalty() {
   const a = petAttrs(); const p = pet()
   a.wisdom = clamp(a.wisdom - 4)
@@ -64,29 +88,20 @@ export function applyMissPenalty() {
   event('penalty', null, 'mood_change', { wisdom: -4 }, '今天没完成英语,智慧能量变弱了')
 }
 
+// 退阶:风险满 → 温和退 2 级
 function maybeRegress() {
   const p = pet()
-  if (p.risk >= 3 && p.stage_idx > 1) {
-    p.stage_idx -= 1
+  if (p.risk >= 3 && p.level > 1) {
+    p.level = Math.max(1, p.level - 2)
+    p.exp = 0
     p.risk = 1
-    event('evolution', null, 'evolution', {}, `${p.name} 退回了 ${STAGES[p.stage_idx].name}`)
+    p.stage_idx = tierFromLevel(p.level)
+    event('evolution', null, 'evolution', {}, `${p.name} 退回了 Lv.${p.level}`)
   }
 }
 
-export function checkEvolution() {
-  const a = petAttrs(); const p = pet()
-  const total = a.wisdom + a.cleanliness + a.vitality + a.charm
-  const next = STAGES[p.stage_idx + 1]
-  if (!next) return null
-  if (next.lv === 5) {
-    const balanced = Math.min(a.wisdom, a.cleanliness, a.vitality, a.charm) >= 50
-    const cr = db.credit_profile[0].credit_score
-    if (!(total >= next.min && balanced && cr >= 90)) return null
-  } else if (total < next.min) return null
-  p.stage_idx += 1
-  event('evolution', null, 'evolution', {}, `进化成了 ${STAGES[p.stage_idx].name}!`)
-  return STAGES[p.stage_idx]
-}
+// 兼容旧调用(现在升级在 applyTaskExp 内完成)
+export function checkEvolution() { return null }
 
 function labelDelta(delta) {
   const names = { wisdom: '智慧', cleanliness: '清洁', vitality: '活力', charm: '魅力' }

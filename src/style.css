@@ -24,9 +24,23 @@ button { font: inherit; cursor: pointer; }
 .view-enter-from { opacity: 0; transform: translateY(6px); }
 
 /* dog */
-.dog { position: relative; cursor: pointer; animation: breathe 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+.dog { position: relative; cursor: pointer; transform-origin: 50% 90%; transition: width .5s ease, height .5s ease; }
 .dog svg { width: 100%; height: 100%; overflow: visible; }
 .dog img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 10px 14px rgba(0,0,0,.35)); pointer-events: none; }
+
+/* 各阶段不同的待机动作 */
+.dog.anim-pup { animation: pupJitter 2.4s ease-in-out infinite; }       /* 幼犬:奶萌小抖 */
+.dog.anim-grow { animation: growHop 1.8s ease-in-out infinite; }        /* 成长:活泼蹦跳 */
+.dog.anim-form { animation: breathe 3.4s ease-in-out infinite; }        /* 进阶:沉稳呼吸 */
+.dog.anim-elite { animation: eliteSway 4s ease-in-out infinite; }       /* 精英:呼吸+摆动 */
+.dog.anim-god { animation: godFloat 3.6s ease-in-out infinite; }        /* 神犬:漂浮发光 */
+.dog.anim-god img { filter: drop-shadow(0 0 18px rgba(255,216,107,.7)) drop-shadow(0 10px 14px rgba(0,0,0,.3)); }
+.dog.anim-elite img { filter: drop-shadow(0 0 10px rgba(255,216,107,.4)) drop-shadow(0 10px 14px rgba(0,0,0,.35)); }
+
+@keyframes pupJitter { 0%,100%{transform:translateY(0) rotate(0);} 25%{transform:translateY(-2px) rotate(-1.5deg);} 75%{transform:translateY(-2px) rotate(1.5deg);} }
+@keyframes growHop { 0%,100%{transform:translateY(0) scale(1);} 35%{transform:translateY(-14px) scale(1.04);} 60%{transform:translateY(0) scale(.98);} }
+@keyframes eliteSway { 0%,100%{transform:translateY(0) rotate(-1.5deg);} 50%{transform:translateY(-6px) rotate(1.5deg);} }
+@keyframes godFloat { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-12px) scale(1.02);} }
 @keyframes breathe { 0%,100%{transform:translateY(0) scale(1);} 50%{transform:translateY(-5px) scale(1.02);} }
 .dog.happy { animation: hop .55s ease; }
 @keyframes hop { 0%,100%{transform:translateY(0);} 30%{transform:translateY(-26px) scale(1.05);} 60%{transform:translateY(0) scale(.97);} }
