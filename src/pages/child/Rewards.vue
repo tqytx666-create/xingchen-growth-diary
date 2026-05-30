@@ -32,13 +32,17 @@ function req(r) {
       坚持英语签到来解锁奖励。当前信任 <b style="color:#ffd86b">Lv.{{ trust.stars }} {{ trust.name }}</b>。游戏时间不在这里申请,由家长直接帮你存取。
     </div>
 
-    <div v-for="r in list" :key="r.id" class="card" style="padding:14px;margin-bottom:12px"
+    <div v-for="r in list" :key="r.id" class="card reward-card" style="padding:14px;margin-bottom:12px;position:relative;overflow:hidden"
+         :class="{ claimable: r.unlocked && !r.fulfilled && !r.pending, legendary: r.id==='r_big' }"
          :style="r.unlocked ? 'border-color:rgba(255,216,107,.4)' : ''">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:30px;filter:" :style="r.unlocked ? '' : 'opacity:.5;filter:grayscale(1)'">{{ r.icon }}</div>
+      <div style="display:flex;align-items:center;gap:12px;position:relative;z-index:1">
+        <div style="font-size:30px" :class="{ 'icon-bounce': r.unlocked && !r.fulfilled && !r.pending }" :style="r.unlocked ? '' : 'opacity:.5;filter:grayscale(1)'">{{ r.icon }}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:600">{{ r.name }}</div>
+          <div style="font-size:15px;font-weight:600">{{ r.name }}
+            <span v-if="r.id==='r_big'" style="font-size:9px;padding:1px 6px;border-radius:999px;background:rgba(255,216,107,.2);color:#ffd86b;margin-left:4px">传说</span>
+          </div>
           <div class="dim" style="font-size:12px;margin-top:2px">{{ r.desc }}</div>
+          <div v-if="r.unlocked && !r.fulfilled && !r.pending" style="font-size:11px;color:#6bffb0;margin-top:3px;font-weight:600">✨ 可以领取啦!</div>
         </div>
         <!-- 右侧状态 -->
         <button v-if="r.unlocked && !r.fulfilled && !r.pending" class="btn-accent" style="padding:9px 14px;font-size:13px" @click="req(r)">申请</button>
@@ -48,7 +52,7 @@ function req(r) {
         <span v-else style="font-size:20px">🔒</span>
       </div>
       <!-- 进度条(未达成时) -->
-      <div v-if="!r.unlocked" style="margin-top:10px">
+      <div v-if="!r.unlocked" style="margin-top:10px;position:relative;z-index:1">
         <div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#ffd86b)" :style="{width: r.pct + '%'}"></i></div>
         <div class="dim" style="font-size:11px;margin-top:5px;text-align:right">{{ r.cur }} / {{ r.target }} 天</div>
       </div>
@@ -62,3 +66,27 @@ function req(r) {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 可领取:金色光晕呼吸 */
+.reward-card.claimable { animation: claimGlow 2s ease-in-out infinite; }
+@keyframes claimGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,216,107,0); }
+  50% { box-shadow: 0 0 14px 1px rgba(255,216,107,.35); }
+}
+.icon-bounce { display: inline-block; animation: iconBounce 1.4s ease-in-out infinite; }
+@keyframes iconBounce { 0%,100%{transform:translateY(0) rotate(0);} 30%{transform:translateY(-4px) rotate(-6deg);} 60%{transform:translateY(0) rotate(5deg);} }
+/* 传说级:流光扫过边框 */
+.reward-card.legendary::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,216,107,.7) 50%, transparent 70%);
+  background-size: 250% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: legendSweep 3.5s linear infinite;
+}
+@keyframes legendSweep { 0%{background-position:120% 0;} 100%{background-position:-120% 0;} }
+@media (prefers-reduced-motion: reduce) {
+  .reward-card.claimable, .icon-bounce, .reward-card.legendary::before { animation: none !important; }
+}
+</style>
