@@ -11,6 +11,16 @@ const p = computed(() => pet())
 const a = computed(() => petAttrs())
 const tab = ref('dex')
 
+// 改昵称
+const editing = ref(false)
+const nameInput = ref('')
+function startEdit() { nameInput.value = p.value.name; editing.value = true }
+function saveName() {
+  const v = (nameInput.value || '').trim().slice(0, 6)
+  if (v && v !== p.value.name) { p.value.name = v; toast(`好耶!从今天起它叫「${v}」🐾`) }
+  editing.value = false
+}
+
 const curForm = computed(() => {
   if (p.value.stage_idx >= 5) return 'god'
   if (p.value.stage_idx >= 3) return ({ wisdom: 'wisdom', cleanliness: 'clean', vitality: 'sport', charm: 'charm' })[dominant(a.value)]
@@ -29,7 +39,15 @@ const events = computed(() => db.pet_events.slice(0, 30))
     <div class="card" style="border-radius:28px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;
                 background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.3), transparent 60%), rgba(0,0,0,.18)">
       <PetAvatar :pet="p" :attrs="a" :size="170" :interactive="false" />
-      <div style="font-weight:700;margin-top:6px">{{ p.name }} · {{ p.species }}</div>
+      <div v-if="!editing" style="font-weight:700;margin-top:6px;display:flex;align-items:center;gap:6px;cursor:pointer" @click="startEdit">
+        <span>{{ p.name }}</span><span class="dim" style="font-weight:400">· {{ p.species }}</span>
+        <span style="font-size:12px;opacity:.7">✏️</span>
+      </div>
+      <div v-else style="margin-top:6px;display:flex;align-items:center;gap:6px">
+        <input v-model="nameInput" maxlength="6" placeholder="起个昵称" style="width:120px;text-align:center;padding:6px 8px;font-size:14px"
+               @keyup.enter="saveName" @blur="saveName" />
+        <button class="btn-accent" style="padding:6px 12px;font-size:13px" @click="saveName">保存</button>
+      </div>
       <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx].name }} · Lv.{{ p.level }}</div>
     </div>
 
