@@ -47,6 +47,12 @@ export function buildSeed() {
       { required_days: 5, reward_name: '特权卡碎片', reward_type: 'card_piece' },
       { required_days: 7, reward_name: '周满勤宝箱', reward_type: 'chest' }
     ],
+    cumulative_reward_rules: [
+      { streak: 7, reward_name: '名创优品小奖励' },
+      { streak: 14, reward_name: '家庭活动选择权' },
+      { streak: 21, reward_name: '国王日特权卡' },
+      { streak: 30, reward_name: '150 元以内大奖' }
+    ],
     weekly_claims: [],
     credit_profile: [credit],
     credit_transactions: [],

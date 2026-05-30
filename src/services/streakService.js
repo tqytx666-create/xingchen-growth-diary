@@ -52,7 +52,8 @@ export function weeklyProgress() {
 
 export function nextCumulative() {
   const s = streak()
-  const rule = db.cumulative_reward_rules.find(r => r.streak > s.current_streak)
+  const rules = db.cumulative_reward_rules || []
+  const rule = rules.find(r => r.streak > s.current_streak)
   return { current: s.current_streak, longest: s.longest_streak, total: s.total_main_checkin_days, next: rule || null }
 }
 
