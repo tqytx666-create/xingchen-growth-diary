@@ -1,6 +1,6 @@
 import { uid, todayStr, nowISO, weekStart } from './util.js'
 
-export const SEED_VERSION = 3
+export const SEED_VERSION = 4
 
 // 第一版种子数据。对应 DATA_MODEL.md 的默认任务与初始宠物/账户。
 export function buildSeed() {
@@ -13,11 +13,15 @@ export function buildSeed() {
   ]
 
   const tEnglish = { id: 't_english', name: '英语学习一课', task_type: 'main', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '📚', anim: 'study', is_active: true, created_at: nowISO() }
+  // 支线小打卡:完成后开盲盒随机 +1~5 分钟游戏时间(blindbox:true)
   const tasks = [
     tEnglish,
-    { id: 't_teeth', name: '刷牙', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', base_exp: 6, icon: '🪥', anim: 'brush', is_active: true, created_at: nowISO() },
-    { id: 't_bath', name: '洗头洗澡', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', attribute_key2: 'charm', base_exp: 5, base_exp2: 5, icon: '🛁', anim: 'bath', is_active: true, created_at: nowISO() },
-    { id: 't_badminton', name: '打羽毛球', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 7, icon: '🏸', anim: 'badminton', is_active: true, created_at: nowISO() }
+    { id: 't_teeth_am', name: '早上刷牙', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', base_exp: 4, icon: '🌞', anim: 'brush', blindbox: true, desc: '每天早上 · 清洁 +', is_active: true, created_at: nowISO() },
+    { id: 't_teeth_pm', name: '晚上刷牙', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', base_exp: 4, icon: '🌙', anim: 'brush', blindbox: true, desc: '每天晚上 · 清洁 +', is_active: true, created_at: nowISO() },
+    { id: 't_bath', name: '洗澡', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', base_exp: 5, icon: '🛁', anim: 'bath', blindbox: true, desc: '每天一次 · 清洁 +', is_active: true, created_at: nowISO() },
+    { id: 't_hair', name: '洗头', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', attribute_key2: 'charm', base_exp: 5, base_exp2: 5, icon: '🚿', anim: 'bath', blindbox: true, desc: '3 天内至少一次 · 清洁 + 魅力 +', is_active: true, created_at: nowISO() },
+    { id: 't_room', name: '保持房间整洁', task_type: 'side', category: 'chore', attribute_key: 'cleanliness', base_exp: 4, icon: '🧹', anim: '', blindbox: true, desc: '每天 · 清洁 +', is_active: true, created_at: nowISO() },
+    { id: 't_badminton', name: '打羽毛球', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 7, icon: '🏸', anim: 'badminton', desc: '支线 · 活力 + 运动时间', is_active: true, created_at: nowISO() }
   ]
 
   const pet = { id: 'pet_1', child_id: child.id, name: '小愿', species: '星愿犬', level: 1, exp: 0, stage_idx: 1, mood: 'normal', risk: 0, evolution_seed: uid('seed_'), skin: 'default', created_at: nowISO() }
@@ -41,11 +45,11 @@ export function buildSeed() {
     pet_attributes: [petAttrs],
     pet_events: [],
     streaks: [streak],
+    // 本周英语坚持的"短期自动奖励"——达成即自动到账(游戏时间),无需家长审批
     weekly_reward_rules: [
-      { required_days: 1, reward_name: '智慧星', reward_type: 'pet_exp' },
-      { required_days: 3, reward_name: '小红花', reward_type: 'badge' },
-      { required_days: 5, reward_name: '特权卡碎片', reward_type: 'card_piece' },
-      { required_days: 7, reward_name: '周满勤宝箱', reward_type: 'chest' }
+      { required_days: 3, reward_name: '小奖励:游戏时间 +10 分', reward_type: 'time_bank', amount: 10 },
+      { required_days: 5, reward_name: '加油奖励:游戏时间 +15 分', reward_type: 'time_bank', amount: 15 },
+      { required_days: 7, reward_name: '周满勤宝箱:游戏时间 +30 分', reward_type: 'time_bank', amount: 30 }
     ],
     cumulative_reward_rules: [
       { streak: 7, reward_name: '名创优品小奖励' },

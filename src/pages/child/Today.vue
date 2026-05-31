@@ -76,7 +76,8 @@ function interactProp(c) {
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
   toast(msg)
-  if (res.leveledUp && !res.evolved) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`) }, 750)
+  if (res.blindbox > 0) setTimeout(() => { sfx.levelup(); toast(`🎁 开盲盒!随机得到 ${res.blindbox} 分钟游戏时间`) }, 700)
+  if (res.leveledUp && !res.evolved) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`) }, res.blindbox > 0 ? 1400 : 750)
   if (res.evolved) setTimeout(() => { sfx.evolve(); evoStage.value = res.evolved }, 800)
 }
 
@@ -191,7 +192,7 @@ onMounted(() => {
       <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
-        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : '支线' }}</div>
+        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁盲盒</span></div>
         <span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:600"
               :style="t.task_type==='main' ? 'background:rgba(255,216,107,.2);color:#ffd86b' : 'background:rgba(124,107,255,.25);color:#c3b8ff'">
           {{ t.task_type==='main' ? '主线' : '支线' }}

@@ -1,8 +1,9 @@
-import { db, audit } from '../lib/store.js'
-import { nowISO, uid } from '../lib/util.js'
+import { db, audit, bank } from '../lib/store.js'
+import { nowISO, uid, round2 } from '../lib/util.js'
 import { REWARDS } from '../lib/rewardConfig.js'
+import * as bankSvc from './timeBankService.js'
 
-// 周签到里程碑(仅记录达成,用于展示与一次性提示,不自动发时间)
+// 本周英语坚持的短期奖励:达成门槛即"自动发放"游戏时间(进时间银行),无需审批
 export function checkWeeklyRewards(childId) {
   const s = db.streaks[0]
   const wk = s.current_week_start
@@ -12,6 +13,9 @@ export function checkWeeklyRewards(childId) {
       const already = db.weekly_claims.find(w => w.week_start === wk && w.required_days === rule.required_days)
       if (!already) {
         db.weekly_claims.push({ id: uid('wc_'), child_id: childId, week_start: wk, required_days: rule.required_days, reward_name: rule.reward_name, reward_type: rule.reward_type, claimed_at: nowISO() })
+        if (rule.reward_type === 'time_bank' && rule.amount > 0) {
+          bankSvc.addBonus({ minutes: rule.amount, description: `本周英语满${rule.required_days}天奖励`, createdBy: 'system' })
+        }
         granted.push(rule)
         audit('system', 'weekly_reward', wk, 'grant', { reward: rule.reward_name })
       }

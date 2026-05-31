@@ -53,7 +53,11 @@ onMounted(() => {
 .modal-card.reveal { animation: evoPop .5s cubic-bezier(.2,1.5,.4,1); }
 @keyframes evoPop { 0%{transform:scale(.9);opacity:.4;} 60%{transform:scale(1.04);} 100%{transform:scale(1);opacity:1;} }
 .evo-dog-wrap { position: relative; width: 180px; height: 180px; margin: 0 auto 14px; display: grid; place-items: center; }
-.evo-video { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen; }
+.evo-video {
+  width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(circle at 50% 48%, #000 60%, rgba(0,0,0,.6) 74%, transparent 86%);
+  mask-image: radial-gradient(circle at 50% 48%, #000 60%, rgba(0,0,0,.6) 74%, transparent 86%);
+}
 .evo-dog { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 22px rgba(255,216,107,.75)); animation: evoReveal .6s ease; }
 @keyframes evoReveal { 0%{transform:scale(.4) rotate(-10deg);opacity:0;} 100%{transform:scale(1) rotate(0);opacity:1;} }
 .evo-ring {

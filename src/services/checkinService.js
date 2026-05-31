@@ -3,6 +3,7 @@ import { todayStr, nowISO, uid } from '../lib/util.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
 import * as rewardSvc from './rewardService.js'
+import * as bankSvc from './timeBankService.js'
 
 export function todayCheckins(date = todayStr()) {
   const cid = child().id
@@ -46,7 +47,7 @@ export function pendingInteractions() {
   return db.checkins.filter(c => c.child_id === cid && c.status === 'confirmed' && !c.interacted)
 }
 
-// 星晨点道具和宠物互动:此时才长属性、放动画
+// 星晨点道具和宠物互动:此时才长属性、放动画;支线小打卡开盲盒随机 +1~5 分钟
 export function interact(checkinId) {
   const c = db.checkins.find(x => x.id === checkinId)
   if (!c || c.status !== 'confirmed' || c.interacted) return null
@@ -54,6 +55,13 @@ export function interact(checkinId) {
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
   const evolved = petSvc.checkEvolution()
-  audit(child().id, 'checkin', c.id, 'interact', { task: task.name })
-  return { delta, evolved, task }
+  // 盲盒:确认互动后随机奖励 1~5 分钟游戏时间(用 checkinId 派生稳定随机,避免每次渲染变)
+  let blindbox = 0
+  if (task.blindbox) {
+    let h = 0; for (let i = 0; i < c.id.length; i++) h = (h * 31 + c.id.charCodeAt(i)) >>> 0
+    blindbox = (h % 5) + 1
+    bankSvc.addBonus({ minutes: blindbox, description: `盲盒奖励:${task.name}`, createdBy: 'system' })
+  }
+  audit(child().id, 'checkin', c.id, 'interact', { task: task.name, blindbox })
+  return { delta, evolved, task, blindbox }
 }

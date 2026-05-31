@@ -4,9 +4,10 @@ import low from '../assets/pet/pet_low.png'
 import wisdom from '../assets/pet/pet_wisdom.png'
 import clean from '../assets/pet/pet_clean.png'
 import sport from '../assets/pet/pet_sport.png'
+import charm from '../assets/pet/pet_charm.png'
 import god from '../assets/pet/pet_god.png'
 
-export const IMG = { base, low, wisdom, clean, sport, god }
+export const IMG = { base, low, wisdom, clean, sport, charm, god }
 
 import { dominant } from './petConfig.js'
 
@@ -20,7 +21,7 @@ export function mainImage(pet, attrs) {
     if (dom === 'wisdom') return IMG.wisdom
     if (dom === 'cleanliness') return IMG.clean
     if (dom === 'vitality') return IMG.sport
-    if (dom === 'charm') return IMG.clean
+    if (dom === 'charm') return IMG.charm
   }
   return IMG.base
 }
@@ -29,7 +30,7 @@ export function mainImage(pet, attrs) {
 export const FORM_IMAGE = {
   egg: base, puppy: base, grow: base,
   wisdom, clean, sport,
-  charm: clean, elite: god, god
+  charm, elite: god, god
 }
 
 // 皮肤对应的图

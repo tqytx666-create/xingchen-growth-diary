@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { db, streak, mainTask } from '../../lib/store.js'
 import { weeklyProgress, nextCumulative } from '../../services/streakService.js'
 import { todayStr, addDays } from '../../lib/util.js'
+import { REWARDS } from '../../lib/rewardConfig.js'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
@@ -15,14 +16,12 @@ const weekDays = computed(() => {
   return labels.map((l, i) => { const d = addDays(ws.value, i); return { l, date: d, done: done.has(d), today: d === todayStr(), future: d > todayStr() } })
 })
 
-// 累积成就徽章(里程碑)
-const MILESTONES = [
-  { d: 7, icon: '🥉', name: '坚持一周' },
-  { d: 14, icon: '🥈', name: '半月不辍' },
-  { d: 21, icon: '🥇', name: '三周达人' },
-  { d: 30, icon: '🏆', name: '满月冠军' }
-]
-const badges = computed(() => MILESTONES.map(m => ({ ...m, got: nc.value.longest >= m.d })))
+// 累积成就徽章:直接复用奖励页同一份配置(按连续签到 streak 的里程碑),保证名称/天数一致
+const badges = computed(() =>
+  REWARDS.filter(r => r.metric === 'streak')
+    .sort((a, b) => a.target - b.target)
+    .map(r => ({ d: r.target, icon: r.icon, name: r.name, got: nc.value.longest >= r.target }))
+)
 </script>
 
 <template>
@@ -46,7 +45,8 @@ const badges = computed(() => MILESTONES.map(m => ({ ...m, got: nc.value.longest
 
     <!-- 累积成就徽章 -->
     <div class="card" style="padding:16px;margin-bottom:16px">
-      <div style="font-weight:600;margin-bottom:12px">🏅 累积成就</div>
+      <div style="font-weight:600;margin-bottom:4px">🏅 累积成就(长期大奖)</div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">连续签到达成里程碑 → 到「🎁奖励」页申请,家长确认后兑现</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
         <div v-for="m in badges" :key="m.d" style="text-align:center;padding:10px 4px;border-radius:14px;transition:all .3s"
              :style="m.got ? 'background:linear-gradient(160deg,rgba(255,216,107,.2),rgba(255,255,255,.06));border:1px solid rgba(255,216,107,.5)' : 'background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)'">
@@ -58,7 +58,8 @@ const badges = computed(() => MILESTONES.map(m => ({ ...m, got: nc.value.longest
     </div>
 
     <div class="card" style="padding:16px;margin-bottom:16px">
-      <div style="font-weight:600;margin-bottom:12px">本周奖励</div>
+      <div style="font-weight:600;margin-bottom:4px">⚡ 本周小奖励(自动到账)</div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">本周英语坚持到这些天数,游戏时间自动发到时间银行,无需申请</div>
       <div v-for="r in wp.rules" :key="r.required_days" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
         <span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700"
               :style="wp.count>=r.required_days ? 'background:#6bffb0;color:#0a3d28' : 'background:rgba(255,255,255,.1)'">{{ wp.count>=r.required_days ? '✓' : r.required_days }}</span>
