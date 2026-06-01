@@ -5,6 +5,7 @@ import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank, m
 import { todayStr } from '../../lib/util.js'
 import { levelInfo } from '../../services/creditService.js'
 import { STAGES } from '../../lib/petConfig.js'
+import PetAvatar from '../../components/pet/PetAvatar.vue'
 
 const router = useRouter()
 const me = computed(() => currentUser())
@@ -73,11 +74,15 @@ function logout() { setUser(null); router.push('/login') }
       </div>
     </div>
 
-    <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
-      <div style="font-size:30px">🐾</div>
-      <div style="flex:1">
-        <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx].name }} · Lv.{{ pet().level }}</div>
-        <div class="dim" style="font-size:12px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ petAttrs().charm }}</div>
+    <div class="card" style="padding:14px;display:flex;align-items:center;gap:14px;
+         background:radial-gradient(120% 90% at 20% 0%, rgba(124,107,255,.22), transparent 60%), rgba(255,255,255,.04)">
+      <div style="width:64px;height:64px;flex-shrink:0;display:grid;place-items:center">
+        <PetAvatar :pet="pet()" :attrs="petAttrs()" :size="64" :interactive="false" :use-video="false" />
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx].name }}{{ (pet().stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + pet().level }}</div>
+        <div class="dim" style="font-size:12px;margin-top:2px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ petAttrs().charm }}</div>
+        <div v-if="(pet().stage_idx||0)<=0" class="dim" style="font-size:11px;margin-top:2px;color:#ffd86b">🥚 孵化进度 {{ pet().exp||0 }}/30</div>
       </div>
       <span v-if="pet().risk>=2" style="font-size:11px;color:#ff7a7a">退阶风险</span>
     </div>

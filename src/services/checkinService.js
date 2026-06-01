@@ -56,20 +56,18 @@ export function interact(checkinId) {
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
   const evolved = petSvc.checkEvolution()
-  // 开宝箱:确认互动后随机奖励游戏时间。宝箱分级:银1~3/金2~5/钻5~10(用 checkinId 派生稳定随机)
-  let blindbox = 0, boxTier = null
+  // 获得宝箱:不当场开,发一个"未开封宝箱"进库存,星晨去奖励页自己点击开箱(延迟满足,仪式感更强)
+  let boxTier = null
   if (task.blindbox) {
     boxTier = BOX_TIER[task.id] || 'silver'
-    const [lo, hi] = BOX_RANGE[boxTier]
-    let h = 0; for (let i = 0; i < c.id.length; i++) h = (h * 31 + c.id.charCodeAt(i)) >>> 0
-    blindbox = lo + (h % (hi - lo + 1))
-    bankSvc.addBonus({ minutes: blindbox, description: `${BOX_NAME[boxTier]}奖励:${task.name}`, createdBy: 'system' })
+    if (!db.boxes) db.boxes = []
+    db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null })
   }
   // 支线打卡可能让本周"全勤天数"达标 → 触发自动奖励
   let weeklyGranted = []
   if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)
-  audit(child().id, 'checkin', c.id, 'interact', { task: task.name, blindbox })
-  return { delta, evolved, task, blindbox, boxTier, weeklyGranted }
+  audit(child().id, 'checkin', c.id, 'interact', { task: task.name, boxTier })
+  return { delta, evolved, task, boxTier, weeklyGranted }
 }
 
 // 用免断签卡补录某天的英语打卡:消耗 1 张卡 → 补一条该日已确认的英语打卡 → 桥接连续天数。
@@ -95,3 +93,22 @@ export function makeUpMissedDay(date, actorId) {
 const BOX_TIER = { t_teeth_am: 'silver', t_teeth_pm: 'silver', t_room: 'silver', t_bath: 'gold', t_hair: 'gold' }
 const BOX_RANGE = { silver: [1, 3], gold: [2, 5], diamond: [5, 10] }
 const BOX_NAME = { silver: '🥈银宝箱', gold: '🥇金宝箱', diamond: '💎钻石宝箱' }
+
+// 未开封宝箱各档数量
+export function ownedBoxes() {
+  const c = { silver: 0, gold: 0, diamond: 0 }
+  for (const b of (db.boxes || [])) if (!b.opened_at) c[b.tier] = (c[b.tier] || 0) + 1
+  return c
+}
+// 打开某档里最早获得的一个未开宝箱:抽随机分钟 → 入时间银行 → 标记已开。返回 { tier, minutes }
+export function openOneByTier(tier) {
+  const box = (db.boxes || []).filter(b => b.tier === tier && !b.opened_at).pop()
+  if (!box) return null
+  const [lo, hi] = BOX_RANGE[box.tier] || BOX_RANGE.silver
+  let h = 0; for (let i = 0; i < box.id.length; i++) h = (h * 31 + box.id.charCodeAt(i)) >>> 0
+  const minutes = lo + (h % (hi - lo + 1))
+  box.opened_at = nowISO(); box.minutes = minutes
+  bankSvc.addBonus({ minutes, description: `${BOX_NAME[box.tier]}:${box.source_task || ''}`, createdBy: 'system' })
+  audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes })
+  return { tier: box.tier, minutes }
+}

@@ -60,6 +60,7 @@ export function buildSeed() {
       { streak: 30, reward_name: '150 元以内大奖' }
     ],
     weekly_claims: [],
+    boxes: [],
     credit_profile: [credit],
     credit_transactions: [],
     time_bank_accounts: [bank],

@@ -7,9 +7,9 @@ import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
-import BoxModal from '../../components/pet/BoxModal.vue'
 import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
 import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
+import { fmtDateTime } from '../../lib/util.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -20,7 +20,6 @@ const dogRef = ref(null)
 const happy = ref(false)
 const evoStage = ref(null)
 const evoHatch = ref(false)     // 进化弹窗是否为"孵化"语境
-const boxReward = ref(null)     // { tier, minutes, taskName } 开箱动画
 const photoTask = ref(null)     // 正在拍照打卡的任务
 const snd = ref(soundEnabled())
 
@@ -33,6 +32,11 @@ const ATTR_META = {
 }
 const attrInfo = ref(null)      // 当前点开的属性 key
 const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_key === key || t.attribute_key2 === key))
+
+// 诚信分记录(点顶部"信任"徽章打开)
+const creditOpen = ref(false)
+const creditLogs = computed(() => (db.credit_transactions || []).slice(0, 40))
+const userName = (id) => (id === 'system' ? '系统' : (db.users.find(u => u.id === id)?.display_name || ''))
 const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
 let actionTimer = null
 
@@ -90,7 +94,6 @@ function onPhotoDone(photoUrl) {
   } catch (e) { toast(e.message) }
 }
 
-let afterBoxRes = null
 // 升级提示 / 进化弹窗:字段在 res.delta 里(leveledUp / newLevel / tierUp)
 function runLevelFx(res) {
   const lv = res.delta || {}
@@ -112,18 +115,12 @@ function interactProp(c) {
   toast(msg)
   // 本周全勤奖励提示(支线互动达标时自动发放)
   ;(res.weeklyGranted || []).forEach((r, i) => setTimeout(() => { sfx.levelup(); toast(`🎉 本周全勤满 ${r.required_days} 天:${r.reward_name}`) }, 1000 + i * 950))
-  if (res.blindbox > 0 && res.boxTier) {
-    // 开宝箱动画;关箱后再播升级/进化,避免弹窗叠加
-    afterBoxRes = res
-    setTimeout(() => { sfx.levelup(); boxReward.value = { tier: res.boxTier, minutes: res.blindbox, taskName: res.task.name } }, 650)
-  } else {
-    runLevelFx(res)
+  // 获得宝箱(不当场开,存进库存,去奖励页自己点开)
+  if (res.boxTier) {
+    const nm = { silver: '🥈 银宝箱', gold: '🥇 金宝箱', diamond: '💎 钻石宝箱' }[res.boxTier] || '宝箱'
+    setTimeout(() => { sfx.levelup(); toast(`🎁 获得${nm}!去「🎁 奖励」页打开它`) }, 700)
   }
-}
-function closeBox() {
-  boxReward.value = null
-  const res = afterBoxRes; afterBoxRes = null
-  if (res) runLevelFx(res)
+  runLevelFx(res)
 }
 
 const NORMAL_REACTIONS = [
@@ -184,7 +181,7 @@ onMounted(() => {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
       <div style="display:flex;gap:8px;align-items:center">
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b">⭐ 信任 Lv.{{ trust.stars }}</span>
+        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes) }}分</span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
@@ -279,8 +276,25 @@ onMounted(() => {
     </div>
 
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" :hatch="evoHatch" @close="evoStage=null; evoHatch=false" />
-    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :task-name="boxReward.taskName" @close="closeBox" />
     <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
+
+    <!-- 诚信分记录 -->
+    <div v-if="creditOpen" class="attr-overlay" @click.self="creditOpen=false">
+      <div class="attr-sheet" style="--ac:#ffd86b">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">⭐ 诚信分 · {{ creditRow().credit_score }}
+          <span style="font-size:13px;font-weight:500;color:#ffd86b">· {{ trust.name }}</span></div>
+        <div class="dim" style="font-size:12px;line-height:1.5;margin-bottom:12px">诚实打卡被家人确认 +3;如果虚报被发现会扣分。诚信分越高,信任等级越高 ⭐</div>
+        <div v-if="!creditLogs.length" class="dim" style="text-align:center;padding:16px 0;font-size:13px">还没有诚信分记录~ 诚实打卡就会涨哦</div>
+        <div v-for="t in creditLogs" :key="t.id" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+          <span style="font-weight:800;font-size:15px;min-width:34px" :style="{ color: t.delta>=0 ? '#6bffb0' : '#ff7a7a' }">{{ t.delta>=0?'+':'' }}{{ t.delta }}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px">{{ t.reason }}</div>
+            <div class="dim" style="font-size:11px">{{ fmtDateTime(t.created_at) }}{{ userName(t.created_by) ? ' · ' + userName(t.created_by) : '' }}</div>
+          </div>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="creditOpen=false">知道啦</button>
+      </div>
+    </div>
   </div>
 </template>
 
