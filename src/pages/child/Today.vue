@@ -95,7 +95,7 @@ let afterBoxRes = null
 function runLevelFx(res) {
   const lv = res.delta || {}
   if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoHatch.value = !!lv.hatched; evoStage.value = lv.tierUp }, 250)
-  else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
+  else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); spawnBurst(fx.value, ['⭐', '✨', '🌟', '💫'], 10); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
 }
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
