@@ -5,6 +5,8 @@ import * as petSvc from './petService.js'
 import * as rewardSvc from './rewardService.js'
 import * as bankSvc from './timeBankService.js'
 import * as itemSvc from './itemService.js'
+import * as coinSvc from './coinService.js'
+import { COIN_PER_MAIN, COIN_PER_SIDE } from '../lib/shop.js'
 
 export function todayCheckins(date = todayStr()) {
   const cid = child().id
@@ -64,11 +66,13 @@ export function interact(checkinId) {
     if (!db.boxes) db.boxes = []
     db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null })
   }
+  // 打卡互动发星币(只能这样赚):英语主线 +10,支线 +5
+  const coinsEarned = coinSvc.earnCoins(task.task_type === 'main' ? COIN_PER_MAIN : COIN_PER_SIDE, `打卡:${task.name}`)
   // 支线打卡可能让本周"全勤天数"达标 → 触发自动奖励
   let weeklyGranted = []
   if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)
-  audit(child().id, 'checkin', c.id, 'interact', { task: task.name, boxTier })
-  return { delta, task, boxTier, weeklyGranted }
+  audit(child().id, 'checkin', c.id, 'interact', { task: task.name, boxTier, coins: coinsEarned })
+  return { delta, task, boxTier, weeklyGranted, coinsEarned }
 }
 
 // 用免断签卡补录某天的英语打卡:消耗 1 张卡 → 补一条该日已确认的英语打卡 → 桥接连续天数。

@@ -13,6 +13,7 @@ import { fmtDateTime } from '../../lib/util.js'
 import { currentRoomImg, roomTrackState, equipRoom } from '../../services/roomService.js'
 import { ownedItems, useItem } from '../../services/itemService.js'
 import { placedFurniture, furnitureState, togglePlace } from '../../services/furnitureService.js'
+import { coins } from '../../services/coinService.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -46,7 +47,7 @@ const roomBg = computed(() => currentRoomImg())
 const roomOpen = ref(false)
 const rooms = computed(() => roomTrackState())
 function pickRoom(r) {
-  if (!r.unlocked) { toast(`累计签到满 ${r.days} 天解锁 ${r.emoji}${r.name}`); return }
+  if (!r.owned) { toast(`还没拥有 ${r.emoji}${r.name},去🛍️商城用星币买下它`); return }
   equipRoom(r.key); sfx.pop(); toast(`已搬进「${r.name}」${r.emoji}`); roomOpen.value = false
 }
 
@@ -55,7 +56,7 @@ const placed = computed(() => placedFurniture())
 const decorOpen = ref(false)
 const furns = computed(() => furnitureState())
 function toggleFurn(f) {
-  if (!f.unlocked) { toast(`累计签到满 ${f.days} 天解锁 ${f.emoji}${f.name}`); return }
+  if (!f.owned) { toast(`还没拥有 ${f.emoji}${f.name},去🛍️商城购买`); return }
   togglePlace(f.key); sfx.pop()
 }
 
@@ -80,6 +81,7 @@ const tasks = computed(() => db.tasks.filter(t => t.is_active))
 const pending = computed(() => checkinSvc.pendingInteractions())
 const doneCount = computed(() => tasks.value.filter(t => { const c = checkinSvc.statusOf(t.id); return c && c.interacted }).length)
 const trust = computed(() => levelInfo(creditRow().credit_score))
+const coinBal = computed(() => coins())
 
 // 蛋阶段
 const isEgg = computed(() => (p.value.stage_idx || 0) <= 0)
@@ -151,6 +153,7 @@ function interactProp(c) {
   sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
+  if (res.coinsEarned) msg += ` 🪙+${res.coinsEarned}`
   toast(msg)
   // 本周全勤奖励提示(支线互动达标时自动发放)
   ;(res.weeklyGranted || []).forEach((r, i) => setTimeout(() => { sfx.levelup(); toast(`🎉 本周全勤满 ${r.required_days} 天:${r.reward_name}`) }, 1000 + i * 950))
@@ -222,6 +225,7 @@ onMounted(() => {
       <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes || 0) }}分</span>
+        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="router.push('/child/shop')">🪙 {{ coinBal }}</span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
       </div>
@@ -341,16 +345,16 @@ onMounted(() => {
     <div v-if="decorOpen" class="attr-overlay" @click.self="decorOpen=false">
       <div class="attr-sheet" style="--ac:#6bffb0">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">🛋️ 装饰小窝</div>
-        <div class="dim" style="font-size:12px;margin-bottom:12px">累计签到解锁家具,点一下摆进窝里 / 收起来。</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">在🛍️商城买下家具后,这里点一下摆进窝里 / 收起来。</div>
         <div v-for="f in furns" :key="f.key" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
           <div style="width:50px;height:50px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.05)">
-            <img :src="f.img" :alt="f.name" :style="f.unlocked ? '' : 'filter:grayscale(1) brightness(.5)'" style="width:40px;height:40px;object-fit:contain" />
+            <img :src="f.img" :alt="f.name" :style="f.owned ? '' : 'filter:grayscale(1) brightness(.5)'" style="width:40px;height:40px;object-fit:contain" />
           </div>
           <div style="flex:1">
             <div style="font-size:14px;font-weight:600">{{ f.emoji }} {{ f.name }}</div>
-            <div class="dim" style="font-size:11px">{{ f.unlocked ? (f.placed ? '已摆在窝里' : '已解锁,未摆出') : '累计签到 ' + f.days + ' 天解锁' }}</div>
+            <div class="dim" style="font-size:11px">{{ f.owned ? (f.placed ? '已摆在窝里' : '已拥有,未摆出') : '未拥有 · 去🛍️商城购买' }}</div>
           </div>
-          <button v-if="f.unlocked" class="btn-ghost" style="padding:6px 12px;font-size:12px"
+          <button v-if="f.owned" class="btn-ghost" style="padding:6px 12px;font-size:12px"
                   :style="f.placed ? 'border-color:rgba(255,158,199,.4);color:#ffb3d9' : 'border-color:rgba(107,255,176,.4);color:#9bffcf'"
                   @click="toggleFurn(f)">{{ f.placed ? '收起' : '摆出' }}</button>
           <span v-else style="font-size:18px">🔒</span>
@@ -363,14 +367,14 @@ onMounted(() => {
     <div v-if="roomOpen" class="attr-overlay" @click.self="roomOpen=false">
       <div class="attr-sheet" style="--ac:#7c6bff">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">🏠 给小愿换个窝</div>
-        <div class="dim" style="font-size:12px;margin-bottom:12px">坚持累计签到解锁更多房间主题。点一个搬进去~</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">在🛍️商城买下房间后,点一个搬进去~</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div v-for="r in rooms" :key="r.key" class="room-pick" :class="{ sel:r.selected, lock:!r.unlocked }" @click="pickRoom(r)">
-            <img :src="r.img" :alt="r.name" :style="r.unlocked ? '' : 'filter:grayscale(1) brightness(.5)'" />
+          <div v-for="r in rooms" :key="r.key" class="room-pick" :class="{ sel:r.selected, lock:!r.owned }" @click="pickRoom(r)">
+            <img :src="r.img" :alt="r.name" :style="r.owned ? '' : 'filter:grayscale(1) brightness(.5)'" />
             <div class="room-pick-cap">
               <span>{{ r.emoji }} {{ r.name }}</span>
               <span v-if="r.selected" style="color:#6bffb0;font-size:11px">✓ 当前</span>
-              <span v-else-if="!r.unlocked" class="dim" style="font-size:10px">累计 {{ r.days }} 天</span>
+              <span v-else-if="!r.owned" class="dim" style="font-size:10px">🔒 商城</span>
             </div>
           </div>
         </div>

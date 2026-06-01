@@ -4,7 +4,7 @@ import { db, streak, mainTask, child } from '../../lib/store.js'
 import { weeklyProgress, nextCumulative, missedMainDays } from '../../services/streakService.js'
 import { ownedFreezeCards } from '../../services/rewardService.js'
 import { makeUpMissedDay } from '../../services/checkinService.js'
-import { skinTrackState, skinDays, nextSkin, equipSkin } from '../../services/skinService.js'
+import { skinTrackState, equipSkin } from '../../services/skinService.js'
 import { todayStr, addDays } from '../../lib/util.js'
 import { REWARDS } from '../../lib/rewardConfig.js'
 import { toast } from '../../lib/toast.js'
@@ -25,12 +25,10 @@ function makeUp(date) {
   } catch (e) { toast(e.message) }
 }
 
-// 签到皮肤跑道
+// 皮肤衣柜(拥有的可装扮;未拥有去商城买)
 const skins = computed(() => skinTrackState())
-const cumDays = computed(() => skinDays())
-const nextSk = computed(() => nextSkin())
 function equip(s) {
-  if (!s.unlocked) { toast(`累计签到满 ${s.days} 天就能解锁 ${s.emoji}${s.name}`); return }
+  if (!s.owned) { toast(`还没拥有 ${s.emoji}${s.name},去🛍️商城用星币买下它`); return }
   equipSkin(s.equipped ? 'default' : s.key)
   sfx.pop()
   toast(s.equipped ? '已脱下装扮,变回原来的样子' : `已给小愿换上「${s.name}」${s.emoji}`)
@@ -70,25 +68,23 @@ const badges = computed(() =>
       </div>
     </div>
 
-    <!-- 签到皮肤奖励跑道 -->
+    <!-- 皮肤衣柜 -->
     <div class="card skin-card" style="padding:16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-        <span style="font-weight:700">🎀 签到皮肤奖励</span>
-        <span class="dim" style="font-size:12px">累计签到 <b style="color:#ffd86b">{{ cumDays }}</b> 天</span>
+        <span style="font-weight:700">🎀 皮肤衣柜</span>
+        <router-link to="/child/shop" class="dim" style="font-size:12px;color:#ffd86b;text-decoration:none">🛍️ 去商城 ›</router-link>
       </div>
-      <div class="dim" style="font-size:11px;margin-bottom:12px">
-        {{ nextSk ? `再坚持 ${nextSk.remain} 天,解锁 ${nextSk.emoji}「${nextSk.name}」皮肤` : '所有皮肤都解锁啦,太厉害了 🎉' }}
-      </div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">拥有的皮肤点一下就能给小愿换上;没有的去商城用星币购买。</div>
       <div class="skin-track">
-        <div v-for="s in skins" :key="s.key" class="skin-node" :class="{ locked:!s.unlocked, equipped:s.equipped }" @click="equip(s)">
+        <div v-for="s in skins" :key="s.key" class="skin-node" :class="{ locked:!s.owned, equipped:s.equipped }" @click="equip(s)">
           <div class="skin-pic">
-            <img :src="s.img" :alt="s.name" :style="s.unlocked ? '' : 'filter:grayscale(1) brightness(.45)'" />
-            <span v-if="!s.unlocked" class="skin-lock">🔒</span>
+            <img :src="s.img" :alt="s.name" :style="s.owned ? '' : 'filter:grayscale(1) brightness(.45)'" />
+            <span v-if="!s.owned" class="skin-lock">🔒</span>
             <span v-if="s.animated" class="skin-anim">✨动</span>
             <span v-if="s.equipped" class="skin-on">装扮中</span>
           </div>
           <div class="skin-nm">{{ s.emoji }} {{ s.name }}</div>
-          <div class="skin-day" :class="{ dim:!s.unlocked }">{{ s.unlocked ? (s.equipped ? '点击脱下' : '点击装扮') : '累计 ' + s.days + ' 天' }}</div>
+          <div class="skin-day" :class="{ dim:!s.owned }">{{ s.owned ? (s.equipped ? '点击脱下' : '点击装扮') : '商城购买' }}</div>
         </div>
       </div>
     </div>
