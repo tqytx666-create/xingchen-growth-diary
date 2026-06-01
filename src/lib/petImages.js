@@ -13,6 +13,10 @@ import skRain from '../assets/skin/skin_rain.png'
 import skSleep from '../assets/skin/skin_sleep.png'
 import skWings from '../assets/skin/skin_wings.png'
 import skWizard from '../assets/skin/skin_wizard.png'
+import skPrincess from '../assets/skin/skin_princess.png'
+import skAstro from '../assets/skin/skin_astro.png'
+import skDino from '../assets/skin/skin_dino.png'
+import skBerry from '../assets/skin/skin_berry.png'
 
 export const IMG = { base, egg, wisdom, clean, sport, charm, god }
 
@@ -23,7 +27,11 @@ export const SKIN_TRACK = [
   { key: 'rain',   name: '黄色雨衣', emoji: '🌧️', days: 14, img: skRain },
   { key: 'sleep',  name: '星星睡帽', emoji: '😴', days: 21, img: skSleep },
   { key: 'wings',  name: '精灵翅膀', emoji: '🧚', days: 30, img: skWings },
-  { key: 'wizard', name: '小魔法师', emoji: '🧙', days: 45, img: skWizard }
+  { key: 'wizard', name: '小魔法师', emoji: '🧙', days: 45, img: skWizard },
+  { key: 'berry',    name: '草莓装',   emoji: '🍓', days: 60,  img: skBerry },
+  { key: 'dino',     name: '小恐龙',   emoji: '🦖', days: 75,  img: skDino },
+  { key: 'princess', name: '公主裙',   emoji: '👑', days: 90,  img: skPrincess },
+  { key: 'astro',    name: '小宇航员', emoji: '🚀', days: 110, img: skAstro }
 ]
 
 import { dominant } from './petConfig.js'
@@ -54,7 +62,8 @@ export const FORM_IMAGE = {
 // 皮肤对应的图(含属性皮肤 + 签到皮肤)
 export const SKIN_IMAGE = {
   default: base, scholar: wisdom, fresh: clean, champ: sport, god,
-  bow: skBow, scarf: skScarf, rain: skRain, sleep: skSleep, wings: skWings, wizard: skWizard
+  bow: skBow, scarf: skScarf, rain: skRain, sleep: skSleep, wings: skWings, wizard: skWizard,
+  berry: skBerry, dino: skDino, princess: skPrincess, astro: skAstro
 }
 
 export function skinImage(key) { return SKIN_IMAGE[key] || base }
