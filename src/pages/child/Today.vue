@@ -6,6 +6,9 @@ import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
+import LivingPet from '../../components/pet/LivingPet.vue'
+import { livingSet, actionForAnim } from '../../lib/living.js'
+import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
 import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
 import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
@@ -42,6 +45,12 @@ const creditOpen = ref(false)
 const creditLogs = computed(() => (db.credit_transactions || []).slice(0, 40))
 const userName = (id) => (id === 'system' ? '系统' : (db.users.find(u => u.id === id)?.display_name || ''))
 
+// 活宠物:皮肤有活视频 + 默认房间 + 已孵化 + 状态正常 + 支持自动播视频(非微信)→ 启用
+const livingSetCur = computed(() => livingSet(p.value.skin))
+const livingActive = computed(() => BLEND_VIDEO_OK && !!livingSetCur.value && (p.value.room || 'night') === 'night'
+  && (p.value.stage_idx || 0) >= 1 && !isLow(p.value) && p.value.risk < 2)
+const livingAction = ref('')
+
 // 宠物窝房间
 const roomBg = computed(() => currentRoomImg())
 const roomOpen = ref(false)
@@ -66,6 +75,7 @@ function useItemOn(it) {
   if (it.count < 1) { toast(`没有${it.name}啦,开宝箱有机会获得 🎁`); return }
   const res = useItem(it.key)
   if (!res) return
+  livingAction.value = res.item.kind === 'feed' ? 'eat' : 'happy'   // 活宠物:喂食→吃,玩耍→开心
   sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 800)
   spawnBurst(fx.value, res.item.burst, 9)
@@ -141,7 +151,8 @@ function runLevelFx(res) {
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
-  const kind = res.task.anim || ''   // 有专属动作才播视频;无(如整理房间)用通用星光,别错播读书
+  livingAction.value = actionForAnim(res.task.anim)   // 活宠物:丝滑切到对应动作视频
+  const kind = res.task.anim || ''   // 静态模式:有专属动作才播视频;无(如整理房间)用通用星光,别错播读书
   if (kind) {
     playTaskAnim(fx.value, kind, dogRef.value?.$el)
     actionAnim.value = kind   // 播放对应动作视频 ~3.8s 后回到待机
@@ -176,6 +187,7 @@ let petCount = 0
 let petResetTimer = null
 function petDog() {
   happy.value = !isLow(p.value); setTimeout(() => (happy.value = false), 600)
+  if (!isLow(p.value)) livingAction.value = 'happy'   // 活宠物:摸头→开心动作
   sfx.pet()
   const low = isLow(p.value)
   spawnBurst(fx.value, low ? ['💧', '🩵'] : ['💛', '💕', '⭐', '✨', '🐾'], low ? 4 : 6)
@@ -238,7 +250,10 @@ onMounted(() => {
         <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx ?? 0]?.name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
-      <div class="pet-room" :style="{ backgroundImage: 'url(' + roomBg + ')' }">
+      <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
+      <LivingPet v-if="livingActive" :set="livingSetCur" :action="livingAction" @done="livingAction=''" @tap="petDog" />
+      <!-- 静态:蛋/低落/换了房间或皮肤/微信 时回落 -->
+      <div v-else class="pet-room" :style="{ backgroundImage: 'url(' + roomBg + ')' }">
         <div class="pet-room-glow"></div>
         <img v-for="f in placed" :key="f.key" :src="f.img" :alt="f.name" class="furn" :style="f.slot" />
         <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
