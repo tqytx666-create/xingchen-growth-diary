@@ -10,6 +10,8 @@ import boxSilver from '../assets/anim/anim_box_silver.mp4'
 import boxGold from '../assets/anim/anim_box_gold.mp4'
 import god from '../assets/anim/anim_god.mp4'
 import happy from '../assets/anim/anim_happy.mp4'
+import skinBowVid from '../assets/anim/anim_skin_bow.mp4'
+import skinWingsVid from '../assets/anim/anim_skin_wings.mp4'
 
 export const ANIM = { idle, brush, bath, study, badminton, evolve, hatch, god, happy }
 // 宝箱开箱视频(按档次)
@@ -17,6 +19,8 @@ export const BOX_ANIM = { silver: boxSilver, gold: boxGold }
 // 各阶段待机视频(stage_idx → 视频);没列的阶段用静态图+CSS。
 // 1幼犬/2星纹→基础摇尾;6神犬→漂浮;3翼星/4辉光/5御星 用静态形态图+CSS动效。
 export const STAGE_IDLE = { 1: idle, 2: idle, 6: god }
+// 会动的皮肤:装扮这些皮肤时播放专属待机视频(没列的皮肤显示静态皮肤图)
+export const SKIN_IDLE = { bow: skinBowVid, wings: skinWingsVid }
 
 // 任务动画类型 → 视频
 export const TASK_ANIM = { study, brush, bath, badminton }

@@ -84,6 +84,7 @@ const badges = computed(() =>
           <div class="skin-pic">
             <img :src="s.img" :alt="s.name" :style="s.unlocked ? '' : 'filter:grayscale(1) brightness(.45)'" />
             <span v-if="!s.unlocked" class="skin-lock">🔒</span>
+            <span v-if="s.animated" class="skin-anim">✨动</span>
             <span v-if="s.equipped" class="skin-on">装扮中</span>
           </div>
           <div class="skin-nm">{{ s.emoji }} {{ s.name }}</div>
@@ -162,6 +163,7 @@ const badges = computed(() =>
 .skin-pic img { width:84px; height:84px; object-fit:contain; }
 .skin-lock { position:absolute; inset:0; display:grid; place-items:center; font-size:24px; }
 .skin-on { position:absolute; bottom:0; left:0; right:0; font-size:10px; font-weight:700; color:#1a1426; background:#ffd86b; padding:1px 0; }
+.skin-anim { position:absolute; top:4px; left:4px; font-size:9px; font-weight:700; color:#1a1426; background:linear-gradient(90deg,#8be9ff,#c79bff); border-radius:999px; padding:1px 6px; }
 .skin-nm { font-size:11px; font-weight:600; margin-top:5px; white-space:nowrap; }
 .skin-day { font-size:10px; color:#ffd86b; margin-top:1px; }
 .skin-day.dim { color:rgba(255,255,255,.4); }

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
-import { ANIM, BLEND_VIDEO_OK, STAGE_IDLE } from '../../lib/petAnims.js'
+import { ANIM, BLEND_VIDEO_OK, STAGE_IDLE, SKIN_IDLE } from '../../lib/petAnims.js'
 import { isLow, sizeForLevel, animClassForLevel } from '../../lib/petConfig.js'
 
 const props = defineProps({
@@ -18,14 +18,16 @@ const emit = defineEmits(['pet'])
 const img = computed(() => mainImage(props.pet, props.attrs))
 const px = computed(() => props.size || sizeForLevel(props.pet.level || 1))
 
-const skinDefault = computed(() => !props.pet.skin || props.pet.skin === 'default')
 const stageIdx = computed(() => props.pet.stage_idx || 0)
 // 蛋阶段(stage 0)只显示静态蛋图,不放任何视频
 const hatched = computed(() => stageIdx.value >= 1)
-// 按阶段选待机视频:幼犬/成长期(1-2)用基础摇尾、神犬(5)用漂浮;进阶形态(3-4)暂无专属视频→静态图+CSS。
-// 微信X5/非默认皮肤/低落/退阶风险一律回落静态图。
+// 待机视频:① 装扮了"会动的皮肤"→播皮肤专属待机;② 默认皮肤→按阶段(幼犬/成长摇尾、神犬漂浮)。
+// 蛋阶段、微信X5、低落/退阶风险一律回落静态图。
 const idleSrc = computed(() => {
-  if (!props.useVideo || !BLEND_VIDEO_OK || !skinDefault.value || isLow(props.pet) || props.pet.risk >= 2) return null
+  if (!props.useVideo || !BLEND_VIDEO_OK || isLow(props.pet) || props.pet.risk >= 2) return null
+  if (stageIdx.value <= 0) return null
+  const skin = props.pet.skin
+  if (skin && skin !== 'default') return SKIN_IDLE[skin] || null
   return STAGE_IDLE[stageIdx.value] || null
 })
 // 静态形态图的 CSS 待机动效(幼犬抖动/成长蹦跳/进阶呼吸/精英摆动/神犬漂浮发光),仅在不播待机视频时启用
