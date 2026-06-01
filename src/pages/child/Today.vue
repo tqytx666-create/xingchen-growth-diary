@@ -12,6 +12,7 @@ import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
 import { fmtDateTime } from '../../lib/util.js'
 import { currentRoomImg, roomTrackState, equipRoom } from '../../services/roomService.js'
 import { ownedItems, useItem } from '../../services/itemService.js'
+import { placedFurniture, furnitureState, togglePlace } from '../../services/furnitureService.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -47,6 +48,15 @@ const rooms = computed(() => roomTrackState())
 function pickRoom(r) {
   if (!r.unlocked) { toast(`累计签到满 ${r.days} 天解锁 ${r.emoji}${r.name}`); return }
   equipRoom(r.key); sfx.pop(); toast(`已搬进「${r.name}」${r.emoji}`); roomOpen.value = false
+}
+
+// 家具
+const placed = computed(() => placedFurniture())
+const decorOpen = ref(false)
+const furns = computed(() => furnitureState())
+function toggleFurn(f) {
+  if (!f.unlocked) { toast(`累计签到满 ${f.days} 天解锁 ${f.emoji}${f.name}`); return }
+  togglePlace(f.key); sfx.pop()
 }
 
 // 道具
@@ -223,7 +233,9 @@ onMounted(() => {
       </div>
       <div class="pet-room" :style="{ backgroundImage: 'url(' + roomBg + ')' }">
         <div class="pet-room-glow"></div>
+        <img v-for="f in placed" :key="f.key" :src="f.img" :alt="f.name" class="furn" :style="f.slot" />
         <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
+        <button class="room-btn decor-btn" title="装饰" @click.stop="decorOpen=true">🛋️</button>
         <div class="pet-slot">
           <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" :action-anim="actionAnim" @pet="petDog" />
           <div ref="fx" class="fx"></div>
@@ -322,6 +334,28 @@ onMounted(() => {
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" :hatch="evoHatch" @close="evoStage=null; evoHatch=false" />
     <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
 
+    <!-- 装饰(摆家具) -->
+    <div v-if="decorOpen" class="attr-overlay" @click.self="decorOpen=false">
+      <div class="attr-sheet" style="--ac:#6bffb0">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">🛋️ 装饰小窝</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">累计签到解锁家具,点一下摆进窝里 / 收起来。</div>
+        <div v-for="f in furns" :key="f.key" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+          <div style="width:50px;height:50px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.05)">
+            <img :src="f.img" :alt="f.name" :style="f.unlocked ? '' : 'filter:grayscale(1) brightness(.5)'" style="width:40px;height:40px;object-fit:contain" />
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600">{{ f.emoji }} {{ f.name }}</div>
+            <div class="dim" style="font-size:11px">{{ f.unlocked ? (f.placed ? '已摆在窝里' : '已解锁,未摆出') : '累计签到 ' + f.days + ' 天解锁' }}</div>
+          </div>
+          <button v-if="f.unlocked" class="btn-ghost" style="padding:6px 12px;font-size:12px"
+                  :style="f.placed ? 'border-color:rgba(255,158,199,.4);color:#ffb3d9' : 'border-color:rgba(107,255,176,.4);color:#9bffcf'"
+                  @click="toggleFurn(f)">{{ f.placed ? '收起' : '摆出' }}</button>
+          <span v-else style="font-size:18px">🔒</span>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="decorOpen=false">完成</button>
+      </div>
+    </div>
+
     <!-- 换房间 -->
     <div v-if="roomOpen" class="attr-overlay" @click.self="roomOpen=false">
       <div class="attr-sheet" style="--ac:#7c6bff">
@@ -369,6 +403,9 @@ onMounted(() => {
   border: 1px solid rgba(255,255,255,.25); background: rgba(20,16,32,.55); backdrop-filter: blur(4px);
   font-size: 16px; cursor: pointer; display: grid; place-items: center; }
 .room-btn:active { transform: scale(.92); }
+.decor-btn { right: 48px; }
+.furn { position: absolute; z-index: 2; height: auto; object-fit: contain; pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
 .room-pick { position: relative; border-radius: 14px; overflow: hidden; cursor: pointer; border: 1px solid rgba(255,255,255,.1); aspect-ratio: 3/2; }
 .room-pick.sel { border-color: #ffd86b; box-shadow: 0 0 0 1px #ffd86b; }
 .room-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }

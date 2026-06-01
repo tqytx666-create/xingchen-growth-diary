@@ -41,6 +41,16 @@ export const ROOM_TRACK = [
   { key: 'space',  name: '太空舱',   emoji: '🚀', days: 70, img: roomSpace }
 ]
 export function roomImg(key) { return (ROOM_TRACK.find(r => r.key === key) || ROOM_TRACK[0]).img }
+
+// 可摆放家具(按累计签到解锁,摆在房间固定槽位)
+import furnBowl from '../assets/furniture/furn_bowl.png'
+import furnToybox from '../assets/furniture/furn_toybox.png'
+import furnPlant from '../assets/furniture/furn_plant.png'
+export const FURNITURE = [
+  { key: 'bowl',   name: '零食碗', emoji: '🍖', days: 10, img: furnBowl,   slot: { left: '15%', bottom: '11%', width: '58px' } },
+  { key: 'plant',  name: '小绿植', emoji: '🪴', days: 35, img: furnPlant,  slot: { left: '4%',  bottom: '26%', width: '46px' } },
+  { key: 'toybox', name: '玩具箱', emoji: '🧸', days: 60, img: furnToybox, slot: { right: '11%', bottom: '11%', width: '64px' } }
+]
 // 各阶段(stage_idx 0-6)对应形态图
 export const STAGE_IMG = [egg, base, evo2, evo3, evo4, evo5, god]
 
