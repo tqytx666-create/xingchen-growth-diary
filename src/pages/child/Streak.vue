@@ -4,9 +4,11 @@ import { db, streak, mainTask, child } from '../../lib/store.js'
 import { weeklyProgress, nextCumulative, missedMainDays } from '../../services/streakService.js'
 import { ownedFreezeCards } from '../../services/rewardService.js'
 import { makeUpMissedDay } from '../../services/checkinService.js'
+import { skinTrackState, skinDays, nextSkin, equipSkin } from '../../services/skinService.js'
 import { todayStr, addDays } from '../../lib/util.js'
 import { REWARDS } from '../../lib/rewardConfig.js'
 import { toast } from '../../lib/toast.js'
+import { sfx } from '../../lib/sound.js'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
@@ -21,6 +23,17 @@ function makeUp(date) {
     makeUpMissedDay(date, child().id)
     toast('补卡成功!用掉 1 张免断签卡,连续天数接上啦 🛡️')
   } catch (e) { toast(e.message) }
+}
+
+// 签到皮肤跑道
+const skins = computed(() => skinTrackState())
+const cumDays = computed(() => skinDays())
+const nextSk = computed(() => nextSkin())
+function equip(s) {
+  if (!s.unlocked) { toast(`累计签到满 ${s.days} 天就能解锁 ${s.emoji}${s.name}`); return }
+  equipSkin(s.equipped ? 'default' : s.key)
+  sfx.pop()
+  toast(s.equipped ? '已脱下装扮,变回原来的样子' : `已给小愿换上「${s.name}」${s.emoji}`)
 }
 
 const weekDays = computed(() => {
@@ -53,6 +66,28 @@ const badges = computed(() =>
              :style="d.done ? 'background:linear-gradient(160deg,rgba(255,216,107,.3),rgba(255,179,71,.15));border:1px solid #ffd86b;color:#ffd86b;font-weight:700' : (d.future ? 'background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.35)' : 'background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5)')">
           <div>周{{ d.l }}</div>
           <div style="font-size:17px;line-height:1.1;margin-top:1px">{{ d.done ? '🐾' : (d.today ? '⭐' : (d.future ? '·' : '–')) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 签到皮肤奖励跑道 -->
+    <div class="card skin-card" style="padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <span style="font-weight:700">🎀 签到皮肤奖励</span>
+        <span class="dim" style="font-size:12px">累计签到 <b style="color:#ffd86b">{{ cumDays }}</b> 天</span>
+      </div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">
+        {{ nextSk ? `再坚持 ${nextSk.remain} 天,解锁 ${nextSk.emoji}「${nextSk.name}」皮肤` : '所有皮肤都解锁啦,太厉害了 🎉' }}
+      </div>
+      <div class="skin-track">
+        <div v-for="s in skins" :key="s.key" class="skin-node" :class="{ locked:!s.unlocked, equipped:s.equipped }" @click="equip(s)">
+          <div class="skin-pic">
+            <img :src="s.img" :alt="s.name" :style="s.unlocked ? '' : 'filter:grayscale(1) brightness(.45)'" />
+            <span v-if="!s.unlocked" class="skin-lock">🔒</span>
+            <span v-if="s.equipped" class="skin-on">装扮中</span>
+          </div>
+          <div class="skin-nm">{{ s.emoji }} {{ s.name }}</div>
+          <div class="skin-day" :class="{ dim:!s.unlocked }">{{ s.unlocked ? (s.equipped ? '点击脱下' : '点击装扮') : '累计 ' + s.days + ' 天' }}</div>
         </div>
       </div>
     </div>
@@ -113,4 +148,21 @@ const badges = computed(() =>
 <style scoped>
 .day-cell.today { animation: todayPulse 1.6s ease-in-out infinite; }
 @keyframes todayPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,216,107,.4);} 50%{box-shadow:0 0 0 4px rgba(255,216,107,.12);} }
+
+/* 签到皮肤跑道 */
+.skin-card { background:radial-gradient(130% 90% at 50% 0%, rgba(255,158,199,.16), transparent 55%), rgba(255,255,255,.04); }
+.skin-track { display:flex; gap:11px; overflow-x:auto; padding:2px 2px 6px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
+.skin-track::-webkit-scrollbar { height:4px; }
+.skin-track::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:9px; }
+.skin-node { flex:0 0 96px; scroll-snap-align:start; text-align:center; cursor:pointer; transition:transform .12s; }
+.skin-node:active { transform:scale(.95); }
+.skin-pic { position:relative; width:96px; height:96px; border-radius:16px; display:grid; place-items:center; overflow:hidden;
+  background:radial-gradient(circle at 50% 35%, rgba(124,107,255,.25), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.1); }
+.skin-node.equipped .skin-pic { border-color:#ffd86b; box-shadow:0 0 0 1px #ffd86b, 0 0 12px -2px #ffd86b; }
+.skin-pic img { width:84px; height:84px; object-fit:contain; }
+.skin-lock { position:absolute; inset:0; display:grid; place-items:center; font-size:24px; }
+.skin-on { position:absolute; bottom:0; left:0; right:0; font-size:10px; font-weight:700; color:#1a1426; background:#ffd86b; padding:1px 0; }
+.skin-nm { font-size:11px; font-weight:600; margin-top:5px; white-space:nowrap; }
+.skin-day { font-size:10px; color:#ffd86b; margin-top:1px; }
+.skin-day.dim { color:rgba(255,255,255,.4); }
 </style>

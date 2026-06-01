@@ -6,8 +6,25 @@ import clean from '../assets/pet/pet_clean.png'
 import sport from '../assets/pet/pet_sport.png'
 import charm from '../assets/pet/pet_charm.png'
 import god from '../assets/pet/pet_god.png'
+// 签到皮肤(装扮,基于基础形态加装扮)
+import skBow from '../assets/skin/skin_bow.png'
+import skScarf from '../assets/skin/skin_scarf.png'
+import skRain from '../assets/skin/skin_rain.png'
+import skSleep from '../assets/skin/skin_sleep.png'
+import skWings from '../assets/skin/skin_wings.png'
+import skWizard from '../assets/skin/skin_wizard.png'
 
 export const IMG = { base, egg, wisdom, clean, sport, charm, god }
+
+// 签到皮肤跑道:按"累计英语签到天数"解锁,在签到页像每日登录奖励一样展示
+export const SKIN_TRACK = [
+  { key: 'bow',    name: '粉蝴蝶结', emoji: '🎀', days: 3,  img: skBow },
+  { key: 'scarf',  name: '冬日围巾', emoji: '🧣', days: 7,  img: skScarf },
+  { key: 'rain',   name: '黄色雨衣', emoji: '🌧️', days: 14, img: skRain },
+  { key: 'sleep',  name: '星星睡帽', emoji: '😴', days: 21, img: skSleep },
+  { key: 'wings',  name: '精灵翅膀', emoji: '🧚', days: 30, img: skWings },
+  { key: 'wizard', name: '小魔法师', emoji: '🧙', days: 45, img: skWizard }
+]
 
 import { dominant } from './petConfig.js'
 
@@ -34,9 +51,10 @@ export const FORM_IMAGE = {
   charm, elite: god, god
 }
 
-// 皮肤对应的图
+// 皮肤对应的图(含属性皮肤 + 签到皮肤)
 export const SKIN_IMAGE = {
-  default: base, scholar: wisdom, fresh: clean, champ: sport, god
+  default: base, scholar: wisdom, fresh: clean, champ: sport, god,
+  bow: skBow, scarf: skScarf, rain: skRain, sleep: skSleep, wings: skWings, wizard: skWizard
 }
 
 export function skinImage(key) { return SKIN_IMAGE[key] || base }
