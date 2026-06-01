@@ -10,6 +10,7 @@ import EvolutionModal from '../../components/pet/EvolutionModal.vue'
 import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
 import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
 import { fmtDateTime } from '../../lib/util.js'
+import { currentRoomImg, roomTrackState, equipRoom } from '../../services/roomService.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -37,6 +38,15 @@ const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_k
 const creditOpen = ref(false)
 const creditLogs = computed(() => (db.credit_transactions || []).slice(0, 40))
 const userName = (id) => (id === 'system' ? '系统' : (db.users.find(u => u.id === id)?.display_name || ''))
+
+// 宠物窝房间
+const roomBg = computed(() => currentRoomImg())
+const roomOpen = ref(false)
+const rooms = computed(() => roomTrackState())
+function pickRoom(r) {
+  if (!r.unlocked) { toast(`累计签到满 ${r.days} 天解锁 ${r.emoji}${r.name}`); return }
+  equipRoom(r.key); sfx.pop(); toast(`已搬进「${r.name}」${r.emoji}`); roomOpen.value = false
+}
 const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
 let actionTimer = null
 
@@ -195,8 +205,9 @@ onMounted(() => {
         <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
-      <div class="pet-room">
+      <div class="pet-room" :style="{ backgroundImage: 'url(' + roomBg + ')' }">
         <div class="pet-room-glow"></div>
+        <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
         <div class="pet-slot">
           <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" :action-anim="actionAnim" @pet="petDog" />
           <div ref="fx" class="fx"></div>
@@ -281,6 +292,25 @@ onMounted(() => {
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" :hatch="evoHatch" @close="evoStage=null; evoHatch=false" />
     <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
 
+    <!-- 换房间 -->
+    <div v-if="roomOpen" class="attr-overlay" @click.self="roomOpen=false">
+      <div class="attr-sheet" style="--ac:#7c6bff">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">🏠 给小愿换个窝</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">坚持累计签到解锁更多房间主题。点一个搬进去~</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div v-for="r in rooms" :key="r.key" class="room-pick" :class="{ sel:r.selected, lock:!r.unlocked }" @click="pickRoom(r)">
+            <img :src="r.img" :alt="r.name" :style="r.unlocked ? '' : 'filter:grayscale(1) brightness(.5)'" />
+            <div class="room-pick-cap">
+              <span>{{ r.emoji }} {{ r.name }}</span>
+              <span v-if="r.selected" style="color:#6bffb0;font-size:11px">✓ 当前</span>
+              <span v-else-if="!r.unlocked" class="dim" style="font-size:10px">累计 {{ r.days }} 天</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="roomOpen=false">关闭</button>
+      </div>
+    </div>
+
     <!-- 诚信分记录 -->
     <div v-if="creditOpen" class="attr-overlay" @click.self="creditOpen=false">
       <div class="attr-sheet" style="--ac:#ffd86b">
@@ -304,7 +334,16 @@ onMounted(() => {
 <style scoped>
 /* 宠物窝:夜晚星空小房间,宠物坐在窝里 */
 .pet-room { position: relative; height: 240px; border-radius: 18px; overflow: hidden; margin-top: 6px;
-  background-image: url('../../assets/room/room_night.jpg'); background-size: cover; background-position: center 42%; }
+  background-size: cover; background-position: center 42%; transition: background-image .3s; }
+.room-btn { position: absolute; top: 8px; right: 8px; z-index: 6; width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(20,16,32,.55); backdrop-filter: blur(4px);
+  font-size: 16px; cursor: pointer; display: grid; place-items: center; }
+.room-btn:active { transform: scale(.92); }
+.room-pick { position: relative; border-radius: 14px; overflow: hidden; cursor: pointer; border: 1px solid rgba(255,255,255,.1); aspect-ratio: 3/2; }
+.room-pick.sel { border-color: #ffd86b; box-shadow: 0 0 0 1px #ffd86b; }
+.room-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.room-pick-cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 8px; font-size: 12px; font-weight: 600;
+  display: flex; justify-content: space-between; align-items: center; background: linear-gradient(transparent, rgba(10,8,20,.9)); }
 .pet-room-glow { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); width: 64%; height: 36%;
   background: radial-gradient(ellipse at center, rgba(8,5,18,.5), transparent 70%); pointer-events: none; }
 .pet-slot { position: absolute; left: 0; right: 0; top: 0; height: 70%; display: flex; align-items: flex-end; justify-content: center; }

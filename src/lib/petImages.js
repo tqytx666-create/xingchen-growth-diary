@@ -24,6 +24,19 @@ import skDino from '../assets/skin/skin_dino.png'
 import skBerry from '../assets/skin/skin_berry.png'
 
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
+
+// 宠物窝房间主题(按累计签到天数解锁;深色调保证宠物视频不穿帮)
+import roomNight from '../assets/room/room_night.jpg'
+import roomForest from '../assets/room/room_forest.jpg'
+import roomOcean from '../assets/room/room_ocean.jpg'
+import roomSpace from '../assets/room/room_space.jpg'
+export const ROOM_TRACK = [
+  { key: 'night',  name: '星空小窝', emoji: '🌙', days: 0,  img: roomNight },
+  { key: 'forest', name: '森林树屋', emoji: '🌳', days: 20, img: roomForest },
+  { key: 'ocean',  name: '海洋之家', emoji: '🐚', days: 40, img: roomOcean },
+  { key: 'space',  name: '太空舱',   emoji: '🚀', days: 70, img: roomSpace }
+]
+export function roomImg(key) { return (ROOM_TRACK.find(r => r.key === key) || ROOM_TRACK[0]).img }
 // 各阶段(stage_idx 0-6)对应形态图
 export const STAGE_IMG = [egg, base, evo2, evo3, evo4, evo5, god]
 
