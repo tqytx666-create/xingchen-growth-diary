@@ -61,6 +61,7 @@ export function buildSeed() {
     ],
     weekly_claims: [],
     boxes: [],
+    items: { bone: 2, fish: 2, ball: 1, wand: 1 },
     credit_profile: [credit],
     credit_transactions: [],
     time_bank_accounts: [bank],

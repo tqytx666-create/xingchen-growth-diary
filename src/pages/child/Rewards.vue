@@ -54,7 +54,10 @@ const boxReward = ref(null)   // { tier, minutes } 开箱动画
 function openBox(tier) {
   if ((boxes.value[tier] || 0) < 1) return
   const r = openOneByTier(tier)
-  if (r) { sfx.levelup(); boxReward.value = r }
+  if (r) {
+    sfx.levelup(); boxReward.value = r
+    if (r.item) setTimeout(() => toast(`🎁 还开出了道具 ${r.item.emoji}「${r.item.name}」!去首页用它陪小愿`), 2600)
+  }
 }
 </script>
 

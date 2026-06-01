@@ -11,6 +11,7 @@ import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
 import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
 import { fmtDateTime } from '../../lib/util.js'
 import { currentRoomImg, roomTrackState, equipRoom } from '../../services/roomService.js'
+import { ownedItems, useItem } from '../../services/itemService.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
 
@@ -46,6 +47,21 @@ const rooms = computed(() => roomTrackState())
 function pickRoom(r) {
   if (!r.unlocked) { toast(`累计签到满 ${r.days} 天解锁 ${r.emoji}${r.name}`); return }
   equipRoom(r.key); sfx.pop(); toast(`已搬进「${r.name}」${r.emoji}`); roomOpen.value = false
+}
+
+// 道具
+const items = computed(() => ownedItems())
+function useItemOn(it) {
+  if (it.count < 1) { toast(`没有${it.name}啦,开宝箱有机会获得 🎁`); return }
+  const res = useItem(it.key)
+  if (!res) return
+  sfx.pop()
+  happy.value = true; setTimeout(() => (happy.value = false), 800)
+  spawnBurst(fx.value, res.item.burst, 9)
+  const si = p.value.stage_idx || 0
+  if (si >= 1 && si <= 2) { actionAnim.value = 'happy'; clearTimeout(actionTimer); actionTimer = setTimeout(() => { actionAnim.value = '' }, 2500) }
+  toast(res.item.msg)
+  runLevelFx({ delta: res.lv })   // 道具经验可能触发孵化/升级
 }
 const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
 let actionTimer = null
@@ -235,6 +251,20 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 道具栏 -->
+    <div class="card" style="padding:11px 13px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+        <span style="font-weight:600;font-size:14px">🎒 道具</span>
+        <span class="dim" style="font-size:11px">点一下喂给小愿,开心又长经验</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:space-around">
+        <button v-for="it in items" :key="it.key" class="item-btn" :class="{ empty: it.count < 1 }" @click="useItemOn(it)">
+          <div class="item-pic"><img :src="it.img" :alt="it.name" /><span class="item-badge">{{ it.count }}</span></div>
+          <span style="font-size:10px">{{ it.name }}</span>
+        </button>
+      </div>
+    </div>
+
     <div style="text-align:center;font-size:12px;line-height:1.55;margin:2px 6px 14px" :class="{ dim: !evoHint.warn }" v-html="evoHint.html"></div>
 
     <!-- 属性(点开看说明) -->
@@ -347,6 +377,15 @@ onMounted(() => {
 .pet-room-glow { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); width: 64%; height: 36%;
   background: radial-gradient(ellipse at center, rgba(8,5,18,.5), transparent 70%); pointer-events: none; }
 .pet-slot { position: absolute; left: 0; right: 0; top: 0; height: 70%; display: flex; align-items: flex-end; justify-content: center; }
+/* 道具栏 */
+.item-btn { background: none; border: none; padding: 0; cursor: pointer; color: #fff; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: transform .12s; }
+.item-btn:active { transform: scale(.9); }
+.item-btn.empty { opacity: .4; }
+.item-pic { position: relative; width: 52px; height: 52px; border-radius: 13px; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 35%, rgba(255,216,107,.22), rgba(255,255,255,.05)); border: 1px solid rgba(255,255,255,.1); }
+.item-pic img { width: 40px; height: 40px; object-fit: contain; }
+.item-badge { position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
 .attr-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center;

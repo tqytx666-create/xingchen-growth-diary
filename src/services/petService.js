@@ -69,6 +69,17 @@ export function applyTaskExp(task, sourceId) {
   return { delta, ...lv }
 }
 
+// 使用道具:加心情(变开心、消退阶风险)+ 少量经验(可触发孵化/升级)。返回 addExp 的结果(含 hatched/tierUp)
+export function applyItem(item) {
+  const a = petAttrs(); const p = pet()
+  if (item.mood) a.mood_score = clamp(a.mood_score + item.mood)
+  p.mood = 'happy'
+  if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
+  a.updated_at = nowISO()
+  event('item', item.key, 'item_use', {}, `用了${item.name},${item.msg}`)
+  return item.exp ? addExp(item.exp, 'item_' + item.key) : { leveledUp: false, newLevel: p.level, tierUp: null }
+}
+
 // 虚报惩罚
 export function applyFalseReportPenalty(task, interacted) {
   const a = petAttrs(); const p = pet()
