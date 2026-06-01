@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { db, currentUser } from '../../lib/store.js'
 import * as vs from '../../services/verificationService.js'
 import { fmtDateTime } from '../../lib/util.js'
@@ -7,6 +7,7 @@ import { toast } from '../../lib/toast.js'
 
 const me = computed(() => currentUser())
 const list = computed(() => db.checkins.slice(0, 80))
+const lightbox = ref('')   // 放大查看的照片 URL
 const STATUS = {
   self_reported: { t: '自报完成', c: '#ffd86b' }, confirmed: { t: '已确认', c: '#6bffb0' },
   false_reported: { t: '已标记虚报', c: '#ff7a7a' }, disputed: { t: '有争议', c: '#ff9ec7' }, revoked: { t: '已撤销', c: '#888' }
@@ -39,6 +40,10 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
         </div>
         <span style="font-size:12px;font-weight:600" :style="{ color: STATUS[c.status].c }">{{ STATUS[c.status].t }}</span>
       </div>
+      <img v-if="c.photo_url" :src="c.photo_url" alt="打卡照片" loading="lazy"
+           style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:zoom-in;background:rgba(255,255,255,.05)"
+           @click="lightbox=c.photo_url" />
+      <div v-else class="dim" style="font-size:11px;margin-top:8px">📷 本次没有上传照片</div>
       <div v-if="c.verified_by" class="dim" style="font-size:11px;margin-top:6px">由 {{ actor(c.verified_by) }} 处理</div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button v-if="c.status!=='confirmed'" class="btn-ghost" style="padding:7px 12px;font-size:13px;border-color:rgba(107,255,176,.4);color:#9bffcf" @click="confirm(c)">确认属实</button>
@@ -46,6 +51,11 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
         <button class="btn-ghost" style="padding:7px 12px;font-size:13px" @click="dispute(c)">争议</button>
         <button v-if="c.status!=='self_reported'" class="btn-ghost" style="padding:7px 12px;font-size:13px" @click="revoke(c)">撤销</button>
       </div>
+    </div>
+
+    <div v-if="lightbox" @click="lightbox=''"
+         style="position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:16px;cursor:zoom-out">
+      <img :src="lightbox" alt="打卡照片" style="max-width:100%;max-height:100%;border-radius:12px" />
     </div>
   </div>
 </template>

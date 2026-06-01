@@ -7,6 +7,8 @@ import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
+import BoxModal from '../../components/pet/BoxModal.vue'
+import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
 import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
 import { toast } from '../../lib/toast.js'
 import { sfx, soundEnabled, toggleSound } from '../../lib/sound.js'
@@ -17,6 +19,8 @@ const fx = ref(null)
 const dogRef = ref(null)
 const happy = ref(false)
 const evoStage = ref(null)
+const boxReward = ref(null)     // { tier, minutes, taskName } 开箱动画
+const photoTask = ref(null)     // 正在拍照打卡的任务
 const snd = ref(soundEnabled())
 const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
 let actionTimer = null
@@ -55,14 +59,27 @@ const evoHint = computed(() => {
 
 function doTask(t) {
   if (taskState(t) !== 'none') return
+  photoTask.value = t      // 先弹拍照打卡窗
+}
+function onPhotoDone(photoUrl) {
+  const t = photoTask.value
+  photoTask.value = null
+  if (!t) return
   try {
-    const res = checkinSvc.createCheckin(t.id)
+    const res = checkinSvc.createCheckin(t.id, { photoUrl })
     sfx.checkin()
-    toast(`已打卡:${t.name} ✅ 等家人确认就能陪小愿玩啦`)
-    res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 本周英语满 ${r.required_days} 天:${r.reward_name}`), 700))
+    toast(photoUrl ? `已拍照打卡:${t.name} 📸 等家人确认` : `已打卡:${t.name} ✅ 等家人确认就能陪小愿玩啦`)
+    res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 本周全勤满 ${r.required_days} 天:${r.reward_name}`), 700))
   } catch (e) { toast(e.message) }
 }
 
+let afterBoxRes = null
+// 升级提示 / 进化弹窗:字段在 res.delta 里(leveledUp / newLevel / tierUp)
+function runLevelFx(res) {
+  const lv = res.delta || {}
+  if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoStage.value = lv.tierUp }, 250)
+  else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
+}
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
@@ -76,9 +93,20 @@ function interactProp(c) {
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
   toast(msg)
-  if (res.blindbox > 0) setTimeout(() => { sfx.levelup(); toast(`🎁 开盲盒!随机得到 ${res.blindbox} 分钟游戏时间`) }, 700)
-  if (res.leveledUp && !res.evolved) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${res.newLevel} 啦!`) }, res.blindbox > 0 ? 1400 : 750)
-  if (res.evolved) setTimeout(() => { sfx.evolve(); evoStage.value = res.evolved }, 800)
+  // 本周全勤奖励提示(支线互动达标时自动发放)
+  ;(res.weeklyGranted || []).forEach((r, i) => setTimeout(() => { sfx.levelup(); toast(`🎉 本周全勤满 ${r.required_days} 天:${r.reward_name}`) }, 1000 + i * 950))
+  if (res.blindbox > 0 && res.boxTier) {
+    // 开宝箱动画;关箱后再播升级/进化,避免弹窗叠加
+    afterBoxRes = res
+    setTimeout(() => { sfx.levelup(); boxReward.value = { tier: res.boxTier, minutes: res.blindbox, taskName: res.task.name } }, 650)
+  } else {
+    runLevelFx(res)
+  }
+}
+function closeBox() {
+  boxReward.value = null
+  const res = afterBoxRes; afterBoxRes = null
+  if (res) runLevelFx(res)
 }
 
 const NORMAL_REACTIONS = [
@@ -192,7 +220,7 @@ onMounted(() => {
       <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
-        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁盲盒</span></div>
+        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁开宝箱</span></div>
         <span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:600"
               :style="t.task_type==='main' ? 'background:rgba(255,216,107,.2);color:#ffd86b' : 'background:rgba(124,107,255,.25);color:#c3b8ff'">
           {{ t.task_type==='main' ? '主线' : '支线' }}
@@ -207,5 +235,7 @@ onMounted(() => {
     </div>
 
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" @close="evoStage=null" />
+    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :task-name="boxReward.taskName" @close="closeBox" />
+    <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
   </div>
 </template>

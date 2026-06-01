@@ -1,0 +1,80 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import boxSilver from '../../assets/box/box_silver.png'
+import boxGold from '../../assets/box/box_gold.png'
+import boxDiamond from '../../assets/box/box_diamond.png'
+
+const props = defineProps({
+  tier: { type: String, default: 'silver' },   // silver / gold / diamond
+  minutes: { type: Number, default: 0 },
+  taskName: { type: String, default: '' }
+})
+const emit = defineEmits(['close'])
+
+const IMG = { silver: boxSilver, gold: boxGold, diamond: boxDiamond }
+const META = {
+  silver:  { name: '银宝箱',   emoji: '🥈', glow: '#d8e0ec' },
+  gold:    { name: '金宝箱',   emoji: '🥇', glow: '#ffd86b' },
+  diamond: { name: '钻石宝箱', emoji: '💎', glow: '#8be9ff' }
+}
+const meta = computed(() => META[props.tier] || META.silver)
+const img = computed(() => IMG[props.tier] || IMG.silver)
+
+const opened = ref(false)   // 是否已开盖揭晓
+onMounted(() => {
+  // 抖动 ~1.1s 后开箱揭晓
+  setTimeout(() => { opened.value = true }, 1100)
+})
+function done() { if (opened.value) emit('close') }
+</script>
+
+<template>
+  <div class="box-overlay" @click="done">
+    <div class="box-stage" :style="{ '--glow': meta.glow }">
+      <div class="box-title">{{ meta.emoji }} {{ meta.name }}</div>
+      <div class="box-wrap" :class="opened ? 'is-open' : 'is-shake'">
+        <div class="box-halo"></div>
+        <img :src="img" :alt="meta.name" class="box-img" draggable="false" />
+      </div>
+      <transition name="reveal">
+        <div v-if="opened" class="box-reward">
+          <div class="box-min">+{{ minutes }} 分钟</div>
+          <div class="box-sub">游戏时间已存入时间银行</div>
+          <div class="box-tap">轻触关闭</div>
+        </div>
+      </transition>
+      <div v-if="!opened" class="box-hint">{{ taskName }} · 开箱中…</div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.box-overlay{position:fixed;inset:0;z-index:80;display:grid;place-items:center;
+  background:radial-gradient(60% 50% at 50% 45%, rgba(20,16,40,.78), rgba(6,4,16,.92));
+  backdrop-filter:blur(3px);animation:fadein .25s ease}
+.box-stage{text-align:center;padding:24px;max-width:320px}
+.box-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:14px;
+  text-shadow:0 0 12px var(--glow)}
+.box-wrap{position:relative;width:200px;height:200px;margin:0 auto;display:grid;place-items:center}
+.box-img{width:170px;height:170px;object-fit:contain;position:relative;z-index:2;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
+.box-halo{position:absolute;inset:-10%;border-radius:50%;z-index:1;
+  background:radial-gradient(circle, var(--glow) 0%, transparent 62%);opacity:0;transition:opacity .4s}
+.is-shake .box-img{animation:boxshake .55s ease-in-out infinite}
+.is-open .box-halo{opacity:.85;animation:halopulse 1.6s ease-out infinite}
+.is-open .box-img{animation:boxpop .6s cubic-bezier(.2,1.4,.4,1) forwards}
+.box-reward{margin-top:16px}
+.box-min{font-size:30px;font-weight:800;color:#fff;text-shadow:0 0 16px var(--glow)}
+.box-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}
+.box-tap{font-size:11px;color:rgba(255,255,255,.45);margin-top:14px}
+.box-hint{font-size:12px;color:rgba(255,255,255,.6);margin-top:16px}
+@keyframes boxshake{0%,100%{transform:translateX(0) rotate(0)}
+  20%{transform:translateX(-5px) rotate(-4deg)}40%{transform:translateX(5px) rotate(4deg)}
+  60%{transform:translateX(-4px) rotate(-3deg)}80%{transform:translateX(4px) rotate(3deg)}}
+@keyframes boxpop{0%{transform:scale(.9)}40%{transform:scale(1.18) translateY(-6px)}
+  100%{transform:scale(1.05) translateY(0)}}
+@keyframes halopulse{0%{transform:scale(.85);opacity:.85}100%{transform:scale(1.25);opacity:.25}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.reveal-enter-active{transition:all .5s cubic-bezier(.2,1.3,.4,1)}
+.reveal-enter-from{opacity:0;transform:translateY(14px) scale(.8)}
+</style>

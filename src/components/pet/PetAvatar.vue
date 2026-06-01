@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
-import { ANIM } from '../../lib/petAnims.js'
+import { ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 import { isLow, sizeForLevel } from '../../lib/petConfig.js'
 
 const props = defineProps({
@@ -19,10 +19,10 @@ const img = computed(() => mainImage(props.pet, props.attrs))
 const px = computed(() => props.size || sizeForLevel(props.pet.level || 1))
 
 const skinDefault = computed(() => !props.pet.skin || props.pet.skin === 'default')
-// 底层待机:默认皮肤 + 正常状态才用视频,否则用静态图
-const idleVideo = computed(() => props.useVideo && skinDefault.value && !isLow(props.pet) && props.pet.risk < 2)
-// 顶层动作视频(叠加,不替换底层 → 无重建闪烁)
-const actionSrc = computed(() => (props.actionAnim && ANIM[props.actionAnim]) ? ANIM[props.actionAnim] : null)
+// 底层待机:默认皮肤 + 正常状态才用视频;微信X5/不支持混合模式的环境回落静态图
+const idleVideo = computed(() => props.useVideo && BLEND_VIDEO_OK && skinDefault.value && !isLow(props.pet) && props.pet.risk < 2)
+// 顶层动作视频(叠加,不替换底层 → 无重建闪烁);同样在不支持的环境关闭,避免黑框
+const actionSrc = computed(() => (BLEND_VIDEO_OK && props.actionAnim && ANIM[props.actionAnim]) ? ANIM[props.actionAnim] : null)
 
 const stateClass = computed(() => {
   if (props.pet.risk >= 2) return 'risk'

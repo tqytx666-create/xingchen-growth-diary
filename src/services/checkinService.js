@@ -28,6 +28,7 @@ export function createCheckin(taskId, opts = {}) {
     id: uid('c_'), task_id: taskId, child_id: cid, checkin_date: date,
     status: 'self_reported', self_reported_at: nowISO(),
     verified_by: null, verified_at: null, note: opts.note || null,
+    photo_url: opts.photoUrl || null,
     interacted: false
   }
   db.checkins.unshift(checkin)
@@ -55,13 +56,23 @@ export function interact(checkinId) {
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
   const evolved = petSvc.checkEvolution()
-  // 盲盒:确认互动后随机奖励 1~5 分钟游戏时间(用 checkinId 派生稳定随机,避免每次渲染变)
-  let blindbox = 0
+  // 开宝箱:确认互动后随机奖励游戏时间。宝箱分级:银1~3/金2~5/钻5~10(用 checkinId 派生稳定随机)
+  let blindbox = 0, boxTier = null
   if (task.blindbox) {
+    boxTier = BOX_TIER[task.id] || 'silver'
+    const [lo, hi] = BOX_RANGE[boxTier]
     let h = 0; for (let i = 0; i < c.id.length; i++) h = (h * 31 + c.id.charCodeAt(i)) >>> 0
-    blindbox = (h % 5) + 1
-    bankSvc.addBonus({ minutes: blindbox, description: `盲盒奖励:${task.name}`, createdBy: 'system' })
+    blindbox = lo + (h % (hi - lo + 1))
+    bankSvc.addBonus({ minutes: blindbox, description: `${BOX_NAME[boxTier]}奖励:${task.name}`, createdBy: 'system' })
   }
+  // 支线打卡可能让本周"全勤天数"达标 → 触发自动奖励
+  let weeklyGranted = []
+  if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)
   audit(child().id, 'checkin', c.id, 'interact', { task: task.name, blindbox })
-  return { delta, evolved, task, blindbox }
+  return { delta, evolved, task, blindbox, boxTier, weeklyGranted }
 }
+
+// 宝箱分级:银(刷牙/房间)金(洗澡)钻(洗头)
+const BOX_TIER = { t_teeth_am: 'silver', t_teeth_pm: 'silver', t_room: 'silver', t_bath: 'gold', t_hair: 'diamond' }
+const BOX_RANGE = { silver: [1, 3], gold: [2, 5], diamond: [5, 10] }
+const BOX_NAME = { silver: '🥈银宝箱', gold: '🥇金宝箱', diamond: '💎钻石宝箱' }

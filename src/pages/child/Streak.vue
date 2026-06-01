@@ -59,11 +59,11 @@ const badges = computed(() =>
 
     <div class="card" style="padding:16px;margin-bottom:16px">
       <div style="font-weight:600;margin-bottom:4px">⚡ 本周小奖励(自动到账)</div>
-      <div class="dim" style="font-size:11px;margin-bottom:12px">本周英语坚持到这些天数,游戏时间自动发到时间银行,无需申请</div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">本周「全勤天数」(当天早晚刷牙+洗澡+房间整洁都完成)到这些天数,游戏时间自动发到时间银行,无需申请。本周已全勤 {{ wp.sideFull }} 天。</div>
       <div v-for="r in wp.rules" :key="r.required_days" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
         <span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700"
-              :style="wp.count>=r.required_days ? 'background:#6bffb0;color:#0a3d28' : 'background:rgba(255,255,255,.1)'">{{ wp.count>=r.required_days ? '✓' : r.required_days }}</span>
-        <span style="flex:1;font-size:14px" :class="{ dim: wp.count < r.required_days }">满 {{ r.required_days }} 天:{{ r.reward_name }}</span>
+              :style="wp.sideFull>=r.required_days ? 'background:#6bffb0;color:#0a3d28' : 'background:rgba(255,255,255,.1)'">{{ wp.sideFull>=r.required_days ? '✓' : r.required_days }}</span>
+        <span style="flex:1;font-size:14px" :class="{ dim: wp.sideFull < r.required_days }">满 {{ r.required_days }} 天:{{ r.reward_name }}</span>
       </div>
     </div>
 

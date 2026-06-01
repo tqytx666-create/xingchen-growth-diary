@@ -45,11 +45,12 @@ export function buildSeed() {
     pet_attributes: [petAttrs],
     pet_events: [],
     streaks: [streak],
-    // 本周英语坚持的"短期自动奖励"——达成即自动到账(游戏时间),无需家长审批
+    // 本周"支线全勤"短期自动奖励——按支线全勤天数发放,达成即自动到账游戏时间,无需审批。
+    // 全勤=当天 早刷牙+晚刷牙+洗澡+房间整洁 都打卡。三档全拿=10+20+50=80 分。
     weekly_reward_rules: [
-      { required_days: 3, reward_name: '小奖励:游戏时间 +10 分', reward_type: 'time_bank', amount: 10 },
-      { required_days: 5, reward_name: '加油奖励:游戏时间 +15 分', reward_type: 'time_bank', amount: 15 },
-      { required_days: 7, reward_name: '周满勤宝箱:游戏时间 +30 分', reward_type: 'time_bank', amount: 30 }
+      { required_days: 3, reward_name: '坚持小奖励:游戏时间 +10 分', reward_type: 'time_bank', amount: 10 },
+      { required_days: 5, reward_name: '加油奖励:游戏时间 +20 分', reward_type: 'time_bank', amount: 20 },
+      { required_days: 7, reward_name: '本周全勤宝箱:游戏时间 +50 分', reward_type: 'time_bank', amount: 50 }
     ],
     cumulative_reward_rules: [
       { streak: 7, reward_name: '名创优品小奖励' },

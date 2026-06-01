@@ -2,19 +2,21 @@ import { db, audit, bank } from '../lib/store.js'
 import { nowISO, uid, round2 } from '../lib/util.js'
 import { REWARDS } from '../lib/rewardConfig.js'
 import * as bankSvc from './timeBankService.js'
+import { sideFullDays } from './streakService.js'
 
-// 本周英语坚持的短期奖励:达成门槛即"自动发放"游戏时间(进时间银行),无需审批
+// 本周支线全勤短期奖励:按"支线全勤天数"达标即自动发放游戏时间(进时间银行),无需审批
 export function checkWeeklyRewards(childId) {
   const s = db.streaks[0]
   const wk = s.current_week_start
+  const fullDays = sideFullDays()
   const granted = []
   for (const rule of db.weekly_reward_rules) {
-    if (s.current_week_count >= rule.required_days) {
+    if (fullDays >= rule.required_days) {
       const already = db.weekly_claims.find(w => w.week_start === wk && w.required_days === rule.required_days)
       if (!already) {
         db.weekly_claims.push({ id: uid('wc_'), child_id: childId, week_start: wk, required_days: rule.required_days, reward_name: rule.reward_name, reward_type: rule.reward_type, claimed_at: nowISO() })
         if (rule.reward_type === 'time_bank' && rule.amount > 0) {
-          bankSvc.addBonus({ minutes: rule.amount, description: `本周英语满${rule.required_days}天奖励`, createdBy: 'system' })
+          bankSvc.addBonus({ minutes: rule.amount, description: `本周支线全勤满${rule.required_days}天奖励`, createdBy: 'system' })
         }
         granted.push(rule)
         audit('system', 'weekly_reward', wk, 'grant', { reward: rule.reward_name })

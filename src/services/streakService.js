@@ -45,9 +45,32 @@ export function recompute() {
   s.updated_at = nowISO()
 }
 
+// 每日"全勤"要求的支线任务:早刷牙+晚刷牙+洗澡+房间整洁(洗头是3天一次、羽毛球无每日要求,均不计)
+const DAILY_SIDE_TASKS = ['t_teeth_am', 't_teeth_pm', 't_bath', 't_room']
+
+// 本周"支线全勤天数":本周内有几天把上面 4 个每日支线任务全部打卡(虚报/撤销不算)
+export function sideFullDays() {
+  const s = streak()
+  const today = todayStr()
+  const wkStart = s.current_week_start || weekStart(today)
+  // 按日期归集本周有效的支线打卡
+  const byDate = {}
+  for (const c of db.checkins) {
+    if (c.status === 'false_reported' || c.status === 'revoked') continue
+    if (c.checkin_date < wkStart || c.checkin_date > today) continue
+    if (!DAILY_SIDE_TASKS.includes(c.task_id)) continue
+    ;(byDate[c.checkin_date] ||= new Set()).add(c.task_id)
+  }
+  let full = 0
+  for (const date in byDate) {
+    if (DAILY_SIDE_TASKS.every(t => byDate[date].has(t))) full++
+  }
+  return full
+}
+
 export function weeklyProgress() {
   const s = streak()
-  return { count: s.current_week_count, weekStart: s.current_week_start, rules: db.weekly_reward_rules }
+  return { count: s.current_week_count, weekStart: s.current_week_start, rules: db.weekly_reward_rules, sideFull: sideFullDays() }
 }
 
 export function nextCumulative() {
