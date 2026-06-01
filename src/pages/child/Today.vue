@@ -46,9 +46,9 @@ const creditLogs = computed(() => (db.credit_transactions || []).slice(0, 40))
 const userName = (id) => (id === 'system' ? '系统' : (db.users.find(u => u.id === id)?.display_name || ''))
 
 // 活宠物:皮肤有活视频 + 默认房间 + 已孵化 + 状态正常 + 支持自动播视频(非微信)→ 启用
-const livingSetCur = computed(() => livingSet(p.value.skin))
+const livingSetCur = computed(() => livingSet(p.value))
 const livingActive = computed(() => BLEND_VIDEO_OK && !!livingSetCur.value && (p.value.room || 'night') === 'night'
-  && (p.value.stage_idx || 0) >= 1 && !isLow(p.value) && p.value.risk < 2)
+  && !isLow(p.value) && p.value.risk < 2)
 const livingAction = ref('')
 
 // 宠物窝房间
