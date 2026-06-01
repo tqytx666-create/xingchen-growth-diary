@@ -54,6 +54,7 @@ export function interact(checkinId) {
   const c = db.checkins.find(x => x.id === checkinId)
   if (!c || c.status !== 'confirmed' || c.interacted) return null
   const task = db.tasks.find(t => t.id === c.task_id)
+  if (!task) return null
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
   // 获得宝箱:不当场开,发一个"未开封宝箱"进库存,星晨去奖励页自己点击开箱(延迟满足,仪式感更强)

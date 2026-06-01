@@ -38,7 +38,7 @@ function equip(s) {
 
 const weekDays = computed(() => {
   const mt = mainTask()
-  const done = new Set(db.checkins.filter(c => c.task_id === mt.id && c.status !== 'false_reported' && c.status !== 'revoked').map(c => c.checkin_date))
+  const done = new Set(db.checkins.filter(c => c.task_id === mt?.id && c.status !== 'false_reported' && c.status !== 'revoked').map(c => c.checkin_date))
   const labels = ['一', '二', '三', '四', '五', '六', '日']
   return labels.map((l, i) => { const d = addDays(ws.value, i); return { l, date: d, done: done.has(d), today: d === todayStr(), future: d > todayStr() } })
 })

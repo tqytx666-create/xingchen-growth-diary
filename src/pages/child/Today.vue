@@ -139,12 +139,15 @@ function runLevelFx(res) {
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
-  const kind = res.task.anim || 'study'
-  playTaskAnim(fx.value, kind, dogRef.value?.$el)
-  // 播放对应动作视频 ~3.8s 后回到待机
-  actionAnim.value = kind
-  clearTimeout(actionTimer)
-  actionTimer = setTimeout(() => { actionAnim.value = '' }, 3800)
+  const kind = res.task.anim || ''   // 有专属动作才播视频;无(如整理房间)用通用星光,别错播读书
+  if (kind) {
+    playTaskAnim(fx.value, kind, dogRef.value?.$el)
+    actionAnim.value = kind   // 播放对应动作视频 ~3.8s 后回到待机
+    clearTimeout(actionTimer)
+    actionTimer = setTimeout(() => { actionAnim.value = '' }, 3800)
+  } else {
+    spawnBurst(fx.value, ['✨', '💛', '🐾'], 6)
+  }
   sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 600)
   let msg = res.task.task_type === 'main' ? `小愿吸收了知识星!智慧 +${res.task.base_exp} 🧠` : `${res.task.name}互动完成!`
@@ -218,7 +221,7 @@ onMounted(() => {
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes) }}分</span>
+        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600">⏱️ {{ Math.floor(bankRow().current_balance_minutes || 0) }}分</span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
       </div>

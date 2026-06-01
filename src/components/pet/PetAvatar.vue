@@ -31,7 +31,7 @@ const idleSrc = computed(() => {
   return STAGE_IDLE[stageIdx.value] || null
 })
 // 静态形态图的 CSS 待机动效(幼犬抖动/成长蹦跳/进阶呼吸/精英摆动/神犬漂浮发光),仅在不播待机视频时启用
-const animClass = computed(() => (hatched.value && !idleSrc.value) ? animClassForLevel(props.pet.level) : '')
+const animClass = computed(() => (hatched.value && !idleSrc.value && !isLow(props.pet) && props.pet.risk < 2) ? animClassForLevel(props.pet.level) : '')
 // 顶层动作视频(叠加,不替换底层 → 无重建闪烁);蛋阶段/不支持的环境关闭,避免黑框
 const actionSrc = computed(() => (hatched.value && BLEND_VIDEO_OK && props.actionAnim && ANIM[props.actionAnim]) ? ANIM[props.actionAnim] : null)
 
