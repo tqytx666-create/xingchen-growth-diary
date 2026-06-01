@@ -77,7 +77,7 @@ export function applyItem(item) {
   if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
   a.updated_at = nowISO()
   event('item', item.key, 'item_use', {}, `用了${item.name},${item.msg}`)
-  return item.exp ? addExp(item.exp, 'item_' + item.key) : { leveledUp: false, newLevel: p.level, tierUp: null }
+  return item.exp ? addExp(item.exp, 'item_' + item.key) : { leveledUp: false, newLevel: p.level, tierUp: null, hatched: false }
 }
 
 // 虚报惩罚

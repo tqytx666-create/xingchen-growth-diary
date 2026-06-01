@@ -10,9 +10,9 @@ import PetAvatar from '../../components/pet/PetAvatar.vue'
 const router = useRouter()
 const me = computed(() => currentUser())
 const today = todayStr()
-const mt = mainTask()
+const mt = computed(() => mainTask())
 const todayCheckins = computed(() => db.checkins.filter(c => c.checkin_date === today && c.status !== 'revoked'))
-const englishToday = computed(() => todayCheckins.value.find(c => c.task_id === mt.id))
+const englishToday = computed(() => mt.value && todayCheckins.value.find(c => c.task_id === mt.value.id))
 const unverified = computed(() => db.checkins.filter(c => c.status === 'self_reported').length)
 const pendingReq = computed(() => db.reward_requests.filter(r => r.status === 'pending').length)
 const trust = computed(() => levelInfo(credit().credit_score))
@@ -80,7 +80,7 @@ function logout() { setUser(null); router.push('/login') }
         <PetAvatar :pet="pet()" :attrs="petAttrs()" :size="64" :interactive="false" :use-video="false" />
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx].name }}{{ (pet().stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + pet().level }}</div>
+        <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx ?? 0]?.name }}{{ (pet().stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + pet().level }}</div>
         <div class="dim" style="font-size:12px;margin-top:2px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ petAttrs().charm }}</div>
         <div v-if="(pet().stage_idx||0)<=0" class="dim" style="font-size:11px;margin-top:2px;color:#ffd86b">🥚 孵化进度 {{ pet().exp||0 }}/30</div>
       </div>

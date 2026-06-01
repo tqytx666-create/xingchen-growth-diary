@@ -56,7 +56,9 @@ async function pushNow() {
   lastSerialized = json
   syncState.syncing = true
   try {
-    await supabase.from('xc_state').update({ data: JSON.parse(json), updated_at: nowISO() }).eq('id', STATE_ID)
+    // upsert:云端行不存在时也能创建(update 匹配 0 行会静默丢数据);并检查 error 不再吞掉
+    const { error } = await supabase.from('xc_state').upsert({ id: STATE_ID, data: JSON.parse(json), updated_at: nowISO() })
+    if (error) console.warn('[sync] push error', error)
   } catch (e) {
     console.warn('[sync] push failed', e)
   } finally {

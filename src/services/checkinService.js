@@ -56,7 +56,6 @@ export function interact(checkinId) {
   const task = db.tasks.find(t => t.id === c.task_id)
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
-  const evolved = petSvc.checkEvolution()
   // 获得宝箱:不当场开,发一个"未开封宝箱"进库存,星晨去奖励页自己点击开箱(延迟满足,仪式感更强)
   let boxTier = null
   if (task.blindbox) {
@@ -68,7 +67,7 @@ export function interact(checkinId) {
   let weeklyGranted = []
   if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)
   audit(child().id, 'checkin', c.id, 'interact', { task: task.name, boxTier })
-  return { delta, evolved, task, boxTier, weeklyGranted }
+  return { delta, task, boxTier, weeklyGranted }
 }
 
 // 用免断签卡补录某天的英语打卡:消耗 1 张卡 → 补一条该日已确认的英语打卡 → 桥接连续天数。
