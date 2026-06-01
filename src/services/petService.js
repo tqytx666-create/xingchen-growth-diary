@@ -1,6 +1,6 @@
 import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid } from '../lib/util.js'
-import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel } from '../lib/petConfig.js'
+import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP } from '../lib/petConfig.js'
 
 function event(sourceType, sourceId, eventType, delta, message) {
   db.pet_events.unshift({
@@ -10,10 +10,22 @@ function event(sourceType, sourceId, eventType, delta, message) {
   if (db.pet_events.length > 300) db.pet_events.pop()
 }
 
-// 加经验并处理升级 / 跨阶段进化。返回 { leveledUp, newLevel, tierUp }
+// 加经验并处理升级 / 跨阶段进化。返回 { leveledUp, newLevel, tierUp, hatched }
 function addExp(amount, sourceId) {
   const p = pet()
-  if (p.level == null) { p.level = 1; p.exp = 0 }
+  if (p.level == null) { p.level = 0; p.exp = 0; p.stage_idx = 0 }
+
+  // 蛋阶段(stage 0):攒经验到 HATCH_EXP 才孵化成幼犬 Lv.1
+  if ((p.stage_idx || 0) <= 0) {
+    p.exp = (p.exp || 0) + amount
+    if (p.exp >= HATCH_EXP) {
+      p.exp = 0; p.level = 1; p.stage_idx = 1
+      event('evolution', sourceId, 'evolution', {}, `🥚✨ 初遇蛋孵化啦!${p.name} 出生成了幼犬!`)
+      return { leveledUp: false, newLevel: 1, tierUp: STAGES[1], hatched: true }
+    }
+    return { leveledUp: false, newLevel: 0, tierUp: null, hatched: false }
+  }
+
   const beforeTier = tierFromLevel(p.level)
   p.exp = (p.exp || 0) + amount
   let leveledUp = false

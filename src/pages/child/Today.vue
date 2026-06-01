@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
-import { dominant, FORM_LABEL, STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START } from '../../lib/petConfig.js'
+import { dominant, FORM_LABEL, STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -19,6 +19,7 @@ const fx = ref(null)
 const dogRef = ref(null)
 const happy = ref(false)
 const evoStage = ref(null)
+const evoHatch = ref(false)     // 进化弹窗是否为"孵化"语境
 const boxReward = ref(null)     // { tier, minutes, taskName } 开箱动画
 const photoTask = ref(null)     // 正在拍照打卡的任务
 const snd = ref(soundEnabled())
@@ -40,9 +41,11 @@ const pending = computed(() => checkinSvc.pendingInteractions())
 const doneCount = computed(() => tasks.value.filter(t => { const c = checkinSvc.statusOf(t.id); return c && c.interacted }).length)
 const trust = computed(() => levelInfo(creditRow().credit_score))
 
-// 经验进度
-const expNeed = computed(() => expForLevel(p.value.level || 1))
-const expPct = computed(() => p.value.level >= MAX_LEVEL ? 100 : Math.min(100, Math.round((p.value.exp || 0) / expNeed.value * 100)))
+// 蛋阶段
+const isEgg = computed(() => (p.value.stage_idx || 0) <= 0)
+// 经验进度(蛋阶段是孵化进度,满 HATCH_EXP 孵化)
+const expNeed = computed(() => isEgg.value ? HATCH_EXP : expForLevel(p.value.level || 1))
+const expPct = computed(() => (!isEgg.value && p.value.level >= MAX_LEVEL) ? 100 : Math.min(100, Math.round((p.value.exp || 0) / expNeed.value * 100)))
 
 function taskState(t) {
   const c = checkinSvc.statusOf(t.id)
@@ -56,6 +59,10 @@ function taskState(t) {
 }
 
 const evoHint = computed(() => {
+  if (isEgg.value) {
+    const need = Math.max(0, HATCH_EXP - (p.value.exp || 0))
+    return { warn: false, html: `🥚 这是「初遇蛋」。坚持打卡攒经验,还差 <b>${need}</b> 点就孵化成幼犬啦 ✨` }
+  }
   if (p.value.risk >= 2) return { warn: true, html: `⚠️ 连续没完成英语,<b>${p.value.name}</b> 进入<b style="color:#ff7a7a">退阶风险</b>。连续学几天可恢复。` }
   if (isLow(p.value)) return { warn: false, html: `今天 <b>${p.value.name}</b> 的能量弱了一些。明天补上英语,它还能重新变聪明 ✨` }
   if (pending.value.length) return { warn: false, html: `🎉 家人确认啦!点下面的道具,陪 <b>${p.value.name}</b> 互动长经验吧` }
@@ -87,7 +94,7 @@ let afterBoxRes = null
 // 升级提示 / 进化弹窗:字段在 res.delta 里(leveledUp / newLevel / tierUp)
 function runLevelFx(res) {
   const lv = res.delta || {}
-  if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoStage.value = lv.tierUp }, 250)
+  if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoHatch.value = !!lv.hatched; evoStage.value = lv.tierUp }, 250)
   else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
 }
 function interactProp(c) {
@@ -181,7 +188,7 @@ onMounted(() => {
     <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:12px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }} · Lv.{{ p.level }}</span>
+        <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
       <div style="display:flex;justify-content:center;align-items:flex-end;height:218px;position:relative">
@@ -192,8 +199,8 @@ onMounted(() => {
       <!-- 经验条 -->
       <div style="position:relative;z-index:5;margin-top:2px">
         <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
-          <span class="dim">经验 Lv.{{ p.level }}</span>
-          <span class="dim">{{ p.level>=30 ? '满级' : (p.exp||0)+' / '+expNeed }}</span>
+          <span class="dim">{{ isEgg ? '🥚 孵化进度' : '经验 Lv.' + p.level }}</span>
+          <span class="dim">{{ isEgg ? (p.exp||0)+' / '+expNeed : (p.level>=30 ? '满级' : (p.exp||0)+' / '+expNeed) }}</span>
         </div>
         <div class="bar"><i style="background:linear-gradient(90deg,#ffd86b,#ffb347)" :style="{width:expPct+'%'}"></i></div>
       </div>
@@ -264,7 +271,7 @@ onMounted(() => {
       <span v-else style="font-size:12px;color:#ff9ec7;text-align:center">争议中</span>
     </div>
 
-    <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" @close="evoStage=null" />
+    <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" :hatch="evoHatch" @close="evoStage=null; evoHatch=false" />
     <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :task-name="boxReward.taskName" @close="closeBox" />
     <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
   </div>

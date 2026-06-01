@@ -2,7 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
 import { ANIM } from '../../lib/petAnims.js'
-const props = defineProps({ pet: Object, attrs: Object, stage: Object })
+const props = defineProps({ pet: Object, attrs: Object, stage: Object, hatch: Boolean })
 const emit = defineEmits(['close'])
 const src = computed(() => mainImage(props.pet, props.attrs))
 const evolveVideo = ANIM.evolve
@@ -15,15 +15,20 @@ onMounted(() => {
     const dist = 80 + Math.random() * 50
     bursts.value.push({ id: i, x: Math.cos(ang) * dist, y: Math.sin(ang) * dist, d: Math.random() * 0.2, e: ['⭐', '✨', '🌟'][i % 3] })
   }
-  setTimeout(() => { phase.value = 'playing' }, 450)   // 白光闪后播视频
-  setTimeout(() => { phase.value = 'reveal' }, 3600)   // 视频播 ~3s 后揭晓新形态
+  if (props.hatch) {
+    // 孵化:白光闪 → 直接揭晓幼犬(不播狗的进化视频)
+    setTimeout(() => { phase.value = 'reveal' }, 650)
+  } else {
+    setTimeout(() => { phase.value = 'playing' }, 450)   // 白光闪后播视频
+    setTimeout(() => { phase.value = 'reveal' }, 3600)   // 视频播 ~3s 后揭晓新形态
+  }
 })
 </script>
 <template>
   <div class="modal" @click.self="emit('close')">
     <div class="evo-flash" :class="{ gone: phase !== 'flash' }"></div>
     <div class="modal-card" :class="phase==='flash' ? 'flash' : 'reveal'">
-      <h2 style="font-size:22px;color:#ffd86b;margin-bottom:8px">✨ 进化! {{ stage.name }}</h2>
+      <h2 style="font-size:22px;color:#ffd86b;margin-bottom:8px">{{ hatch ? '🥚✨ 孵化!' : '✨ 进化!' }} {{ stage.name }}</h2>
       <div class="evo-dog-wrap">
         <div class="evo-ring"></div>
         <!-- 进化过程:播放发光进化视频 -->
@@ -36,7 +41,8 @@ onMounted(() => {
         </template>
       </div>
       <p class="dim" style="font-size:14px;line-height:1.6;margin:6px 0 18px">
-        {{ pet.name }} 进化成了 {{ stage.name }}!继续坚持,它会变得更强大。
+        <template v-if="hatch">初遇蛋孵化啦!{{ pet.name }} 出生成了 {{ stage.name }} 🐾 一切才刚刚开始,继续陪它长大吧。</template>
+        <template v-else>{{ pet.name }} 进化成了 {{ stage.name }}!继续坚持,它会变得更强大。</template>
       </p>
       <button class="btn-accent" style="padding:12px 28px" @click="emit('close')">太棒了!</button>
     </div>

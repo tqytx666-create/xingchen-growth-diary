@@ -24,7 +24,8 @@ export function buildSeed() {
     { id: 't_badminton', name: '打羽毛球', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 7, icon: '🏸', anim: 'badminton', desc: '支线 · 活力 + 运动时间', is_active: true, created_at: nowISO() }
   ]
 
-  const pet = { id: 'pet_1', child_id: child.id, name: '小愿', species: '星愿犬', level: 1, exp: 0, stage_idx: 1, mood: 'normal', risk: 0, evolution_seed: uid('seed_'), skin: 'default', created_at: nowISO() }
+  // 初始是「初遇蛋」(level 0 / stage 0),坚持打卡攒够 HATCH_EXP 经验才孵化成幼犬
+  const pet = { id: 'pet_1', child_id: child.id, name: '小愿', species: '星愿犬', level: 0, exp: 0, stage_idx: 0, mood: 'normal', risk: 0, evolution_seed: uid('seed_'), skin: 'default', created_at: nowISO() }
   const petAttrs = { id: 'pa_1', pet_id: pet.id, wisdom: 12, cleanliness: 8, vitality: 6, charm: 4, mood_score: 70, trust_bond: 50, updated_at: nowISO() }
 
   const streak = {

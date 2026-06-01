@@ -5,6 +5,9 @@ export const MAX_LEVEL = 30
 // 每级所需经验(随级数缓慢增长):Lv1→2 需 24,Lv29→30 需 82
 export function expForLevel(level) { return 24 + (level - 1) * 2 }
 
+// 初遇蛋:攒够这么多经验(≈5~6 次打卡)才孵化成幼犬 Lv.1
+export const HATCH_EXP = 30
+
 // 5 个视觉阶段(stage_idx 1-5),由等级映射。0 号留给"蛋"。
 export const STAGES = [
   { name: '初遇蛋', lv: 0 },

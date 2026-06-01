@@ -48,7 +48,7 @@ const events = computed(() => db.pet_events.slice(0, 30))
                @keyup.enter="saveName" @blur="saveName" />
         <button class="btn-accent" style="padding:6px 12px;font-size:13px" @click="saveName">保存</button>
       </div>
-      <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx].name }} · Lv.{{ p.level }}</div>
+      <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx].name }}{{ (p.stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + p.level }}</div>
     </div>
 
     <div style="display:flex;gap:8px;margin-bottom:14px">
