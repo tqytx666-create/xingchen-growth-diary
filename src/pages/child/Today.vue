@@ -195,9 +195,12 @@ onMounted(() => {
         <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx].name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
-      <div style="display:flex;justify-content:center;align-items:flex-end;height:218px;position:relative">
-        <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" :action-anim="actionAnim" @pet="petDog" />
-        <div ref="fx" class="fx"></div>
+      <div class="pet-room">
+        <div class="pet-room-glow"></div>
+        <div class="pet-slot">
+          <PetAvatar ref="dogRef" :pet="p" :attrs="a" :happy="happy" :action-anim="actionAnim" @pet="petDog" />
+          <div ref="fx" class="fx"></div>
+        </div>
       </div>
 
       <!-- 经验条 -->
@@ -299,6 +302,12 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* 宠物窝:夜晚星空小房间,宠物坐在窝里 */
+.pet-room { position: relative; height: 240px; border-radius: 18px; overflow: hidden; margin-top: 6px;
+  background-image: url('../../assets/room/room_night.jpg'); background-size: cover; background-position: center 42%; }
+.pet-room-glow { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); width: 64%; height: 36%;
+  background: radial-gradient(ellipse at center, rgba(8,5,18,.5), transparent 70%); pointer-events: none; }
+.pet-slot { position: absolute; left: 0; right: 0; top: 0; height: 70%; display: flex; align-items: flex-end; justify-content: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
 .attr-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center;
