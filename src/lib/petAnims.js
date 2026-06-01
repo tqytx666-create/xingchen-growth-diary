@@ -14,8 +14,9 @@ import happy from '../assets/anim/anim_happy.mp4'
 export const ANIM = { idle, brush, bath, study, badminton, evolve, hatch, god, happy }
 // 宝箱开箱视频(按档次)
 export const BOX_ANIM = { silver: boxSilver, gold: boxGold }
-// 各阶段待机视频(stage_idx → 视频);没列的阶段用静态图+CSS
-export const STAGE_IDLE = { 1: idle, 2: idle, 5: god }
+// 各阶段待机视频(stage_idx → 视频);没列的阶段用静态图+CSS。
+// 1幼犬/2星纹→基础摇尾;6神犬→漂浮;3翼星/4辉光/5御星 用静态形态图+CSS动效。
+export const STAGE_IDLE = { 1: idle, 2: idle, 6: god }
 
 // 任务动画类型 → 视频
 export const TASK_ANIM = { study, brush, bath, badminton }

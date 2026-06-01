@@ -6,6 +6,11 @@ import clean from '../assets/pet/pet_clean.png'
 import sport from '../assets/pet/pet_sport.png'
 import charm from '../assets/pet/pet_charm.png'
 import god from '../assets/pet/pet_god.png'
+// 进化线形态(基础→星纹→翼星→辉光→御星→神犬)
+import evo2 from '../assets/pet/pet_evo2.png'
+import evo3 from '../assets/pet/pet_evo3.png'
+import evo4 from '../assets/pet/pet_evo4.png'
+import evo5 from '../assets/pet/pet_evo5.png'
 // 签到皮肤(装扮,基于基础形态加装扮)
 import skBow from '../assets/skin/skin_bow.png'
 import skScarf from '../assets/skin/skin_scarf.png'
@@ -18,7 +23,9 @@ import skAstro from '../assets/skin/skin_astro.png'
 import skDino from '../assets/skin/skin_dino.png'
 import skBerry from '../assets/skin/skin_berry.png'
 
-export const IMG = { base, egg, wisdom, clean, sport, charm, god }
+export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
+// 各阶段(stage_idx 0-6)对应形态图
+export const STAGE_IMG = [egg, base, evo2, evo3, evo4, evo5, god]
 
 // 签到皮肤跑道:按"累计英语签到天数"解锁,在签到页像每日登录奖励一样展示
 export const SKIN_TRACK = [
@@ -34,29 +41,17 @@ export const SKIN_TRACK = [
   { key: 'astro',    name: '小宇航员', emoji: '🚀', days: 110, img: skAstro }
 ]
 
-import { dominant } from './petConfig.js'
-
-// 主头像:按皮肤/阶段+主导属性 选图。
-// 注:状态不佳(低落/退阶风险)不再换图,改由 PetAvatar 给原图加灰色蒙板。
+// 主头像:蛋→看进化阶段;装扮了皮肤则显示皮肤。
+// 注:状态不佳(低落/退阶风险)不换图,由 PetAvatar 给原图加灰色蒙板。
 export function mainImage(pet, attrs) {
-  if (pet.stage_idx <= 0) return IMG.egg
+  if ((pet.stage_idx || 0) <= 0) return IMG.egg
   if (pet.skin && pet.skin !== 'default') return skinImage(pet.skin)
-  if (pet.stage_idx >= 5) return IMG.god
-  if (pet.stage_idx >= 3) {
-    const dom = dominant(attrs)
-    if (dom === 'wisdom') return IMG.wisdom
-    if (dom === 'cleanliness') return IMG.clean
-    if (dom === 'vitality') return IMG.sport
-    if (dom === 'charm') return IMG.charm
-  }
-  return IMG.base
+  return STAGE_IMG[Math.min(pet.stage_idx, 6)] || IMG.base
 }
 
-// 图鉴每个形态对应的图
+// 图鉴每个形态对应的图(对齐 petConfig.DEX 的 key)
 export const FORM_IMAGE = {
-  egg, puppy: base, grow: base,
-  wisdom, clean, sport,
-  charm, elite: god, god
+  egg, base, evo2, evo3, evo4, evo5, god
 }
 
 // 皮肤对应的图(含属性皮肤 + 签到皮肤)

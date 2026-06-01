@@ -21,12 +21,7 @@ function saveName() {
   editing.value = false
 }
 
-const curForm = computed(() => {
-  if (p.value.stage_idx >= 5) return 'god'
-  if (p.value.stage_idx >= 3) return ({ wisdom: 'wisdom', cleanliness: 'clean', vitality: 'sport', charm: 'charm' })[dominant(a.value)]
-  if (p.value.stage_idx >= 2) return 'grow'
-  return p.value.stage_idx >= 1 ? 'puppy' : 'egg'
-})
+const curForm = computed(() => ['egg', 'base', 'evo2', 'evo3', 'evo4', 'evo5', 'god'][Math.min(p.value.stage_idx || 0, 6)])
 function pickSkin(sk) {
   if (!sk.unlock(a.value, p.value)) { toast('未解锁:需' + sk.why); return }
   p.value.skin = sk.key; toast(`已换上「${sk.t}」皮肤 🎨`)
