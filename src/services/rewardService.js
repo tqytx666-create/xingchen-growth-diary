@@ -50,6 +50,21 @@ export function createRequest(rewardId, actorId) {
   return req
 }
 
+// ---- 免断签卡(可持有道具)----
+const FREEZE_CARD_ID = 'r_card_nostreak'
+// 已持有(家长已批准、尚未使用)的免断签卡数量
+export function ownedFreezeCards() {
+  return db.reward_requests.filter(r => r.reward_id === FREEZE_CARD_ID && r.status === 'fulfilled' && !r.consumed_at).length
+}
+// 消耗一张免断签卡(补卡时调用);无可用则抛错
+export function consumeFreezeCard(actorId) {
+  const card = db.reward_requests.find(r => r.reward_id === FREEZE_CARD_ID && r.status === 'fulfilled' && !r.consumed_at)
+  if (!card) throw new Error('没有可用的免断签卡')
+  card.consumed_at = nowISO()
+  audit(actorId, 'reward_request', card.id, 'consume_card', { reward: card.reward_name })
+  return card
+}
+
 export function handleRequest(reqId, approve, actorId) {
   const req = db.reward_requests.find(x => x.id === reqId)
   if (!req || req.status !== 'pending') return

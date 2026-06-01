@@ -1,4 +1,4 @@
-import { db, child, audit } from '../lib/store.js'
+import { db, child, audit, mainTask } from '../lib/store.js'
 import { todayStr, nowISO, uid } from '../lib/util.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
@@ -70,6 +70,25 @@ export function interact(checkinId) {
   if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)
   audit(child().id, 'checkin', c.id, 'interact', { task: task.name, blindbox })
   return { delta, evolved, task, blindbox, boxTier, weeklyGranted }
+}
+
+// 用免断签卡补录某天的英语打卡:消耗 1 张卡 → 补一条该日已确认的英语打卡 → 桥接连续天数。
+// make_up 标记:不发宠物经验、不开宝箱(只是把断掉的连续接上),全程审计留痕。
+export function makeUpMissedDay(date, actorId) {
+  const missed = streakSvc.missedMainDays()
+  if (!missed.includes(date)) throw new Error('这一天不能补卡(只能补本周漏打的英语日)')
+  rewardSvc.consumeFreezeCard(actorId)   // 无卡会抛错,补卡随之中止
+  const cid = child().id
+  const checkin = {
+    id: uid('c_'), task_id: mainTask().id, child_id: cid, checkin_date: date,
+    status: 'confirmed', self_reported_at: nowISO(),
+    verified_by: actorId, verified_at: nowISO(), note: '补卡(免断签卡)',
+    photo_url: null, interacted: true, make_up: true
+  }
+  db.checkins.unshift(checkin)
+  streakSvc.recompute()
+  audit(cid, 'checkin', checkin.id, 'make_up', { date })
+  return checkin
 }
 
 // 宝箱分级:银(刷牙/房间)金(洗澡/洗头)。钻石档暂不分配给任何任务。

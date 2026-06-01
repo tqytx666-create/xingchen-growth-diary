@@ -40,7 +40,8 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
         </div>
         <span style="font-size:12px;font-weight:600" :style="{ color: STATUS[c.status].c }">{{ STATUS[c.status].t }}</span>
       </div>
-      <img v-if="c.photo_url" :src="c.photo_url" alt="打卡照片" loading="lazy"
+      <div v-if="c.make_up" style="font-size:12px;margin-top:8px;color:#ffd86b">🛡️ 免断签卡补卡 · 已自动接上连续天数(无需再核验)</div>
+      <img v-else-if="c.photo_url" :src="c.photo_url" alt="打卡照片" loading="lazy"
            style="width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:zoom-in;background:rgba(255,255,255,.05)"
            @click="lightbox=c.photo_url" />
       <div v-else class="dim" style="font-size:11px;margin-top:8px">📷 本次没有上传照片</div>

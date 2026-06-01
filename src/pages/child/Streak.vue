@@ -1,13 +1,27 @@
 <script setup>
 import { computed } from 'vue'
-import { db, streak, mainTask } from '../../lib/store.js'
-import { weeklyProgress, nextCumulative } from '../../services/streakService.js'
+import { db, streak, mainTask, child } from '../../lib/store.js'
+import { weeklyProgress, nextCumulative, missedMainDays } from '../../services/streakService.js'
+import { ownedFreezeCards } from '../../services/rewardService.js'
+import { makeUpMissedDay } from '../../services/checkinService.js'
 import { todayStr, addDays } from '../../lib/util.js'
 import { REWARDS } from '../../lib/rewardConfig.js'
+import { toast } from '../../lib/toast.js'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
 const ws = computed(() => streak().current_week_start)
+
+// 补卡:本周漏打的英语日 + 持有的免断签卡
+const missed = computed(() => missedMainDays())
+const cards = computed(() => ownedFreezeCards())
+function fmtMd(d) { const p = d.split('-'); return `${+p[1]}月${+p[2]}日` }
+function makeUp(date) {
+  try {
+    makeUpMissedDay(date, child().id)
+    toast('补卡成功!用掉 1 张免断签卡,连续天数接上啦 🛡️')
+  } catch (e) { toast(e.message) }
+}
 
 const weekDays = computed(() => {
   const mt = mainTask()
@@ -41,6 +55,17 @@ const badges = computed(() =>
           <div style="font-size:17px;line-height:1.1;margin-top:1px">{{ d.done ? '🐾' : (d.today ? '⭐' : (d.future ? '·' : '–')) }}</div>
         </div>
       </div>
+    </div>
+
+    <!-- 漏打补卡(用免断签卡) -->
+    <div v-if="missed.length" class="card" style="padding:16px;margin-bottom:16px;border-color:rgba(255,216,107,.35)">
+      <div style="font-weight:600;margin-bottom:4px">🛡️ 漏打补卡</div>
+      <div class="dim" style="font-size:11px;margin-bottom:12px">忘记打英语卡了?用「免断签卡」补上,连续天数不会中断。你现在有 <b style="color:#ffd86b">{{ cards }}</b> 张免断签卡。</div>
+      <div v-for="d in missed" :key="d" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+        <span style="flex:1;font-size:14px">{{ fmtMd(d) }} <span class="dim" style="font-size:12px">· 没打英语卡</span></span>
+        <button class="btn-accent" style="padding:7px 14px;font-size:13px" :disabled="cards<1" :style="cards<1 ? 'opacity:.45' : ''" @click="makeUp(d)">用卡补</button>
+      </div>
+      <div v-if="cards<1" class="dim" style="font-size:11px;margin-top:10px">🈳 没有免断签卡了。本周英语满勤 7 天,可在「🎁 奖励」页申请一张,家长批准后就能用来补卡。</div>
     </div>
 
     <!-- 累积成就徽章 -->

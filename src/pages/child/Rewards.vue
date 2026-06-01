@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 import { db, child, credit, streak } from '../../lib/store.js'
 import { REWARDS, metricValue } from '../../lib/rewardConfig.js'
-import { createRequest, rewardState } from '../../services/rewardService.js'
+import { createRequest, rewardState, ownedFreezeCards } from '../../services/rewardService.js'
 import { levelInfo } from '../../services/creditService.js'
 import { fmtDateTime } from '../../lib/util.js'
 import { toast } from '../../lib/toast.js'
 
 const s = computed(() => streak())
 const trust = computed(() => levelInfo(credit().credit_score))
+const freezeCards = computed(() => ownedFreezeCards())
 const myReqs = computed(() => db.reward_requests.filter(r => r.child_id === child().id).slice(0, 30))
 const STATUS = { pending: '⏳ 等家人处理', rejected: '❌ 未通过', fulfilled: '🎉 已兑换' }
 
@@ -42,6 +43,7 @@ function req(r) {
             <span v-if="r.id==='r_big'" style="font-size:9px;padding:1px 6px;border-radius:999px;background:rgba(255,216,107,.2);color:#ffd86b;margin-left:4px">传说</span>
           </div>
           <div class="dim" style="font-size:12px;margin-top:2px">{{ r.desc }}</div>
+          <div v-if="r.id==='r_card_nostreak' && freezeCards>0" style="font-size:11px;color:#ffd86b;margin-top:3px;font-weight:600">🛡️ 持有 {{ freezeCards }} 张 · 漏打英语时去「🔥 签到」页补卡</div>
           <div v-if="r.unlocked && !r.fulfilled && !r.pending" style="font-size:11px;color:#6bffb0;margin-top:3px;font-weight:600">✨ 可以领取啦!</div>
         </div>
         <!-- 右侧状态 -->

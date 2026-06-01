@@ -80,6 +80,29 @@ export function nextCumulative() {
   return { current: s.current_streak, longest: s.longest_streak, total: s.total_main_checkin_days, next: rule || null }
 }
 
+// 可补卡的"漏打英语日":从 max(本周一, 首次英语打卡日) 到昨天,缺英语打卡的日期。
+// 不含今天(今天可正常打卡),也不offer用户开始用之前的日子。
+export function missedMainDays() {
+  const mt = mainTask()
+  const today = todayStr()
+  const s = streak()
+  const valid = []
+  for (const c of db.checkins) {
+    if (c.task_id === mt.id && c.status !== 'false_reported' && c.status !== 'revoked') valid.push(c.checkin_date)
+  }
+  if (!valid.length) return []
+  const set = new Set(valid)
+  const firstDate = valid.slice().sort()[0]
+  const wkStart = s.current_week_start || weekStart(today)
+  let d = wkStart > firstDate ? wkStart : firstDate
+  const missed = []
+  while (d < today) {
+    if (!set.has(d)) missed.push(d)
+    d = addDays(d, 1)
+  }
+  return missed
+}
+
 // 断签判定:进入新的一天时,如果昨天没有英语打卡 → 触发未完成
 export function checkMissedYesterday() {
   const dates = new Set(validMainDates())

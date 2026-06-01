@@ -22,6 +22,16 @@ const evoStage = ref(null)
 const boxReward = ref(null)     // { tier, minutes, taskName } 开箱动画
 const photoTask = ref(null)     // 正在拍照打卡的任务
 const snd = ref(soundEnabled())
+
+// 属性说明:点首页属性卡弹出"这是什么 + 做哪些任务能涨"
+const ATTR_META = {
+  wisdom:      { icon: '🧠', name: '智慧', color: '#7c6bff', blurb: '越爱学习越聪明。完成下面的任务能提升智慧:' },
+  cleanliness: { icon: '🛁', name: '清洁', color: '#6bd5ff', blurb: '保持干净整洁,清洁值就高。完成下面的任务能提升清洁:' },
+  vitality:    { icon: '⚡', name: '活力', color: '#6bffb0', blurb: '多运动,身体棒棒更有活力。完成下面的任务能提升活力:' },
+  charm:       { icon: '✨', name: '魅力', color: '#ff9ec7', blurb: '由内而外的好状态。完成下面的任务能提升魅力:' }
+}
+const attrInfo = ref(null)      // 当前点开的属性 key
+const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_key === key || t.attribute_key2 === key))
 const actionAnim = ref('')      // 临时播放的动作视频:study/brush/bath/badminton
 let actionTimer = null
 
@@ -202,12 +212,32 @@ onMounted(() => {
 
     <div style="text-align:center;font-size:12px;line-height:1.55;margin:2px 6px 14px" :class="{ dim: !evoHint.warn }" v-html="evoHint.html"></div>
 
-    <!-- 属性 -->
+    <!-- 属性(点开看说明) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
-      <div class="card" style="padding:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧</span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
-      <div class="card" style="padding:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁</span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
-      <div class="card" style="padding:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力</span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
-      <div class="card" style="padding:11px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力</span><span class="dim">{{ a.charm }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(a.charm)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.charm }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(a.charm)}"></i></div></div>
+    </div>
+
+    <!-- 属性说明弹窗 -->
+    <div v-if="attrInfo" class="attr-overlay" @click.self="attrInfo=null">
+      <div class="attr-sheet" :style="{ '--ac': ATTR_META[attrInfo].color }">
+        <div style="font-size:17px;font-weight:700;margin-bottom:6px">{{ ATTR_META[attrInfo].icon }} {{ ATTR_META[attrInfo].name }}
+          <span style="font-size:13px;font-weight:500;color:var(--ac)">· 当前 {{ a[attrInfo] }}</span>
+        </div>
+        <div class="dim" style="font-size:13px;line-height:1.55;margin-bottom:12px">{{ ATTR_META[attrInfo].blurb }}</div>
+        <div v-for="t in attrTasksFor(attrInfo)" :key="t.id" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+          <span style="font-size:20px">{{ t.icon }}</span>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600">{{ t.name }} <span v-if="t.task_type==='main'" style="font-size:10px;color:#ffd86b">主线</span></div>
+            <div class="dim" style="font-size:11px">{{ t.desc || (t.task_type==='main' ? '英语主线' : '支线') }}</div>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--ac)">+{{ (t.attribute_key===attrInfo ? t.base_exp : t.base_exp2) }}</span>
+        </div>
+        <div v-if="!attrTasksFor(attrInfo).length" class="dim" style="font-size:13px;text-align:center;padding:10px 0">暂时没有提升这个属性的任务</div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="attrInfo=null">知道啦</button>
+      </div>
     </div>
 
     <!-- 任务 -->
@@ -239,3 +269,15 @@ onMounted(() => {
     <CheckinPhotoModal v-if="photoTask" :task="photoTask" @done="onPhotoDone" @close="photoTask=null" />
   </div>
 </template>
+
+<style scoped>
+.attr-card { transition: transform .12s ease; }
+.attr-card:active { transform: scale(.97); }
+.attr-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center;
+  background: rgba(6,4,16,.7); backdrop-filter: blur(3px); animation: af .2s ease; }
+.attr-sheet { width: 100%; max-width: 460px; background: #14111f; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px 22px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 30px rgba(0,0,0,.4); animation: sheetup .28s cubic-bezier(.2,1,.4,1); }
+@keyframes af { from { opacity: 0 } to { opacity: 1 } }
+@keyframes sheetup { from { transform: translateY(100%) } to { transform: translateY(0) } }
+</style>
