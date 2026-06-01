@@ -72,7 +72,7 @@ export function interact(checkinId) {
   return { delta, evolved, task, blindbox, boxTier, weeklyGranted }
 }
 
-// 宝箱分级:银(刷牙/房间)金(洗澡)钻(洗头)
-const BOX_TIER = { t_teeth_am: 'silver', t_teeth_pm: 'silver', t_room: 'silver', t_bath: 'gold', t_hair: 'diamond' }
+// 宝箱分级:银(刷牙/房间)金(洗澡/洗头)。钻石档暂不分配给任何任务。
+const BOX_TIER = { t_teeth_am: 'silver', t_teeth_pm: 'silver', t_room: 'silver', t_bath: 'gold', t_hair: 'gold' }
 const BOX_RANGE = { silver: [1, 3], gold: [2, 5], diamond: [5, 10] }
 const BOX_NAME = { silver: '🥈银宝箱', gold: '🥇金宝箱', diamond: '💎钻石宝箱' }

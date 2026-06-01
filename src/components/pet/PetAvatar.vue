@@ -62,6 +62,9 @@ img.dog-media { position: absolute; }
   mask-image: radial-gradient(circle at 50% 48%, #000 60%, rgba(0,0,0,.6) 74%, transparent 86%);
 }
 .action-layer { z-index: 2; }
+/* 状态不佳(低落 / 退阶风险):不换图,直接给原图加灰色蒙板 */
+.dog.low .dog-media,
+.dog.risk .dog-media { filter: grayscale(1) brightness(.7); transition: filter .4s ease; }
 /* 动作层淡入淡出,避免硬切黑闪 */
 .fade-enter-active, .fade-leave-active { transition: opacity .35s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
