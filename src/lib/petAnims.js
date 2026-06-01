@@ -5,8 +5,17 @@ import bath from '../assets/anim/anim_bath.mp4'
 import study from '../assets/anim/anim_study.mp4'
 import badminton from '../assets/anim/anim_badminton.mp4'
 import evolve from '../assets/anim/anim_evolve.mp4'
+import hatch from '../assets/anim/anim_hatch.mp4'
+import boxSilver from '../assets/anim/anim_box_silver.mp4'
+import boxGold from '../assets/anim/anim_box_gold.mp4'
+import god from '../assets/anim/anim_god.mp4'
+import happy from '../assets/anim/anim_happy.mp4'
 
-export const ANIM = { idle, brush, bath, study, badminton, evolve }
+export const ANIM = { idle, brush, bath, study, badminton, evolve, hatch, god, happy }
+// 宝箱开箱视频(按档次)
+export const BOX_ANIM = { silver: boxSilver, gold: boxGold }
+// 各阶段待机视频(stage_idx → 视频);没列的阶段用静态图+CSS
+export const STAGE_IDLE = { 1: idle, 2: idle, 5: god }
 
 // 任务动画类型 → 视频
 export const TASK_ANIM = { study, brush, bath, badminton }

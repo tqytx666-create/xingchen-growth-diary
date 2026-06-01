@@ -1,13 +1,14 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
-import { ANIM } from '../../lib/petAnims.js'
+import { ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 const props = defineProps({ pet: Object, attrs: Object, stage: Object, hatch: Boolean })
 const emit = defineEmits(['close'])
 const src = computed(() => mainImage(props.pet, props.attrs))
-const evolveVideo = ANIM.evolve
+// 孵化播"蛋裂开"视频,普通进化播进化视频
+const playVideo = computed(() => props.hatch ? ANIM.hatch : ANIM.evolve)
 
-const phase = ref('flash')   // flash → playing(进化视频) → reveal(揭晓新形态)
+const phase = ref('flash')   // flash → playing(视频) → reveal(揭晓新形态)
 const bursts = ref([])
 onMounted(() => {
   for (let i = 0; i < 14; i++) {
@@ -15,8 +16,8 @@ onMounted(() => {
     const dist = 80 + Math.random() * 50
     bursts.value.push({ id: i, x: Math.cos(ang) * dist, y: Math.sin(ang) * dist, d: Math.random() * 0.2, e: ['⭐', '✨', '🌟'][i % 3] })
   }
-  if (props.hatch) {
-    // 孵化:白光闪 → 直接揭晓幼犬(不播狗的进化视频)
+  if (!BLEND_VIDEO_OK) {
+    // 微信X5等不支持视频混合:白光闪后直接揭晓,不播黑底视频
     setTimeout(() => { phase.value = 'reveal' }, 650)
   } else {
     setTimeout(() => { phase.value = 'playing' }, 450)   // 白光闪后播视频
@@ -32,7 +33,7 @@ onMounted(() => {
       <div class="evo-dog-wrap">
         <div class="evo-ring"></div>
         <!-- 进化过程:播放发光进化视频 -->
-        <video v-if="phase==='playing'" :src="evolveVideo" autoplay muted playsinline class="evo-video"></video>
+        <video v-if="phase==='playing'" :src="playVideo" autoplay muted playsinline class="evo-video"></video>
         <!-- 揭晓:新形态静态图 + 星爆 -->
         <template v-else-if="phase==='reveal'">
           <img :src="src" alt="星愿犬" class="evo-dog" />

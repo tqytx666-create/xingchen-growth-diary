@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import boxSilver from '../../assets/box/box_silver.png'
 import boxGold from '../../assets/box/box_gold.png'
 import boxDiamond from '../../assets/box/box_diamond.png'
+import { BOX_ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 
 const props = defineProps({
   tier: { type: String, default: 'silver' },   // silver / gold / diamond
@@ -19,11 +20,13 @@ const META = {
 }
 const meta = computed(() => META[props.tier] || META.silver)
 const img = computed(() => IMG[props.tier] || IMG.silver)
+// 有开箱视频且环境支持 → 播视频;否则回落 CSS 开箱(微信X5等)
+const video = computed(() => BLEND_VIDEO_OK ? (BOX_ANIM[props.tier] || null) : null)
 
-const opened = ref(false)   // 是否已开盖揭晓
+const opened = ref(false)   // 是否已开盖揭晓奖励
 onMounted(() => {
-  // 抖动 ~1.1s 后开箱揭晓
-  setTimeout(() => { opened.value = true }, 1100)
+  // 视频:开盖光爆约 ~2.2s 后揭晓;CSS:抖动 ~1.1s 后开
+  setTimeout(() => { opened.value = true }, video.value ? 2200 : 1100)
 })
 function done() { if (opened.value) emit('close') }
 </script>
@@ -32,10 +35,17 @@ function done() { if (opened.value) emit('close') }
   <div class="box-overlay" @click="done">
     <div class="box-stage" :style="{ '--glow': meta.glow }">
       <div class="box-title">{{ meta.emoji }} {{ meta.name }}</div>
-      <div class="box-wrap" :class="opened ? 'is-open' : 'is-shake'">
+
+      <!-- 视频开箱 -->
+      <div v-if="video" class="box-wrap">
+        <video :src="video" autoplay muted playsinline class="box-video blend"></video>
+      </div>
+      <!-- CSS 回落开箱 -->
+      <div v-else class="box-wrap" :class="opened ? 'is-open' : 'is-shake'">
         <div class="box-halo"></div>
         <img :src="img" :alt="meta.name" class="box-img" draggable="false" />
       </div>
+
       <transition name="reveal">
         <div v-if="opened" class="box-reward">
           <div class="box-min">+{{ minutes }} 分钟</div>
@@ -50,12 +60,13 @@ function done() { if (opened.value) emit('close') }
 
 <style scoped>
 .box-overlay{position:fixed;inset:0;z-index:80;display:grid;place-items:center;
-  background:radial-gradient(60% 50% at 50% 45%, rgba(20,16,40,.78), rgba(6,4,16,.92));
+  background:radial-gradient(60% 50% at 50% 45%, rgba(20,16,40,.78), rgba(6,4,16,.94));
   backdrop-filter:blur(3px);animation:fadein .25s ease}
-.box-stage{text-align:center;padding:24px;max-width:320px}
+.box-stage{text-align:center;padding:24px;max-width:340px}
 .box-title{font-size:15px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:14px;
   text-shadow:0 0 12px var(--glow)}
-.box-wrap{position:relative;width:200px;height:200px;margin:0 auto;display:grid;place-items:center}
+.box-wrap{position:relative;width:230px;height:230px;margin:0 auto;display:grid;place-items:center}
+.box-video{width:100%;height:100%;object-fit:contain}
 .box-img{width:170px;height:170px;object-fit:contain;position:relative;z-index:2;
   filter:drop-shadow(0 8px 18px rgba(0,0,0,.5))}
 .box-halo{position:absolute;inset:-10%;border-radius:50%;z-index:1;
@@ -63,11 +74,14 @@ function done() { if (opened.value) emit('close') }
 .is-shake .box-img{animation:boxshake .55s ease-in-out infinite}
 .is-open .box-halo{opacity:.85;animation:halopulse 1.6s ease-out infinite}
 .is-open .box-img{animation:boxpop .6s cubic-bezier(.2,1.4,.4,1) forwards}
-.box-reward{margin-top:16px}
+.blend{mix-blend-mode:screen;
+  -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 62%, rgba(0,0,0,.6) 76%, transparent 88%);
+  mask-image:radial-gradient(circle at 50% 50%, #000 62%, rgba(0,0,0,.6) 76%, transparent 88%)}
+.box-reward{margin-top:12px}
 .box-min{font-size:30px;font-weight:800;color:#fff;text-shadow:0 0 16px var(--glow)}
 .box-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}
 .box-tap{font-size:11px;color:rgba(255,255,255,.45);margin-top:14px}
-.box-hint{font-size:12px;color:rgba(255,255,255,.6);margin-top:16px}
+.box-hint{font-size:12px;color:rgba(255,255,255,.6);margin-top:12px}
 @keyframes boxshake{0%,100%{transform:translateX(0) rotate(0)}
   20%{transform:translateX(-5px) rotate(-4deg)}40%{transform:translateX(5px) rotate(4deg)}
   60%{transform:translateX(-4px) rotate(-3deg)}80%{transform:translateX(4px) rotate(3deg)}}

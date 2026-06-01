@@ -140,6 +140,13 @@ function petDog() {
   sfx.pet()
   const low = isLow(p.value)
   spawnBurst(fx.value, low ? ['💧', '🩵'] : ['💛', '💕', '⭐', '✨', '🐾'], low ? 4 : 6)
+  // 摸基础形态(幼犬/成长期)时播"开心跳"视频(开心跳是基础幼犬动作,进化形态不匹配故只在 1-2 阶段)
+  const si = p.value.stage_idx || 0
+  if (!low && si >= 1 && si <= 2) {
+    actionAnim.value = 'happy'
+    clearTimeout(actionTimer)
+    actionTimer = setTimeout(() => { actionAnim.value = '' }, 2500)
+  }
   // 连续摸头彩蛋
   petCount++
   clearTimeout(petResetTimer)

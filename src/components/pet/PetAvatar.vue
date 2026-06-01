@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
-import { ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
+import { ANIM, BLEND_VIDEO_OK, STAGE_IDLE } from '../../lib/petAnims.js'
 import { isLow, sizeForLevel, animClassForLevel } from '../../lib/petConfig.js'
 
 const props = defineProps({
@@ -22,11 +22,14 @@ const skinDefault = computed(() => !props.pet.skin || props.pet.skin === 'defaul
 const stageIdx = computed(() => props.pet.stage_idx || 0)
 // 蛋阶段(stage 0)只显示静态蛋图,不放任何视频
 const hatched = computed(() => stageIdx.value >= 1)
-// 待机视频目前只有"基础幼犬"一个,所以只给基础形态(幼犬/成长期 stage 1-2)用——视频对得上图;
-// 进化形态(stage>=3)改用各自的静态形态图 + CSS 动效,避免进化后首页还在播基础幼犬。
-const idleVideo = computed(() => stageIdx.value >= 1 && stageIdx.value <= 2 && props.useVideo && BLEND_VIDEO_OK && skinDefault.value && !isLow(props.pet) && props.pet.risk < 2)
+// 按阶段选待机视频:幼犬/成长期(1-2)用基础摇尾、神犬(5)用漂浮;进阶形态(3-4)暂无专属视频→静态图+CSS。
+// 微信X5/非默认皮肤/低落/退阶风险一律回落静态图。
+const idleSrc = computed(() => {
+  if (!props.useVideo || !BLEND_VIDEO_OK || !skinDefault.value || isLow(props.pet) || props.pet.risk >= 2) return null
+  return STAGE_IDLE[stageIdx.value] || null
+})
 // 静态形态图的 CSS 待机动效(幼犬抖动/成长蹦跳/进阶呼吸/精英摆动/神犬漂浮发光),仅在不播待机视频时启用
-const animClass = computed(() => (hatched.value && !idleVideo.value) ? animClassForLevel(props.pet.level) : '')
+const animClass = computed(() => (hatched.value && !idleSrc.value) ? animClassForLevel(props.pet.level) : '')
 // 顶层动作视频(叠加,不替换底层 → 无重建闪烁);蛋阶段/不支持的环境关闭,避免黑框
 const actionSrc = computed(() => (hatched.value && BLEND_VIDEO_OK && props.actionAnim && ANIM[props.actionAnim]) ? ANIM[props.actionAnim] : null)
 
@@ -42,7 +45,7 @@ const stateClass = computed(() => {
   <div class="dog" :class="[stateClass, animClass]" :style="{ width: px + 'px', height: px + 'px' }"
        @click="interactive && emit('pet')">
     <!-- 底层:待机视频 或 静态图(常驻,不随动作切换重建) -->
-    <video v-if="idleVideo" :src="ANIM.idle" autoplay loop muted playsinline class="dog-media blend"></video>
+    <video v-if="idleSrc" :key="idleSrc" :src="idleSrc" autoplay loop muted playsinline class="dog-media blend"></video>
     <img v-else :src="img" alt="星愿犬" draggable="false" class="dog-media" />
 
     <!-- 顶层:动作视频,淡入叠加在待机之上,结束淡出 -->
