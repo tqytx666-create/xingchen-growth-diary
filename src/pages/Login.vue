@@ -9,11 +9,13 @@ const pending = ref(null)
 const err = ref('')
 // 家长密码:外公/外婆/妈妈/爸爸 进家长端都要,挡住孩子冒充家长确认自己的打卡
 const FAMILY_PWD = 'xiaoyu2026'
+const TRUST_KEY = 'xc_parent_trust'   // 本机输过密码就记住,以后家长账号免密
 
 function pick(u) {
   err.value = ''; pwd.value = ''
-  if (u.role === 'child') { enter(u); return }   // 只有星晨自己免密
-  pending.value = u                               // 家长/管理员都要密码
+  if (u.role === 'child') { enter(u); return }                       // 只有星晨自己免密
+  if (localStorage.getItem(TRUST_KEY) === '1') { enter(u); return }  // 本机已信任,免密直接进
+  pending.value = u                                                  // 否则要家长密码
 }
 function enter(u) {
   setUser(u.id)
@@ -21,7 +23,7 @@ function enter(u) {
   else router.push('/family/dashboard')
 }
 function confirmPwd() {
-  if (pwd.value === FAMILY_PWD) { enter(pending.value) }
+  if (pwd.value === FAMILY_PWD) { localStorage.setItem(TRUST_KEY, '1'); enter(pending.value) }
   else err.value = '密码不对哦'
 }
 </script>

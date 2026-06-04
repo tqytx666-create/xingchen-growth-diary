@@ -19,13 +19,21 @@ const trust = computed(() => levelInfo(credit().credit_score))
 const todoTotal = computed(() => unverified.value + pendingReq.value)
 
 function logout() { setUser(null); router.push('/login') }
+// 锁定本机:清掉"免密信任",下次进家长端要重新输密码(把手机给孩子前用)
+function lockDevice() {
+  localStorage.removeItem('xc_parent_trust')
+  setUser(null); router.push('/login')
+}
 </script>
 
 <template>
   <div style="padding:14px 14px 90px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div><div class="dim" style="font-size:13px">家庭端</div><div style="font-weight:700;font-size:18px">{{ me?.avatar }} {{ me?.display_name }}</div></div>
-      <button class="btn-ghost" style="padding:8px 12px;font-size:12px" @click="logout">退出</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" style="padding:8px 11px;font-size:12px" title="清除本机免密,下次需重新输密码" @click="lockDevice">🔒 锁定</button>
+        <button class="btn-ghost" style="padding:8px 12px;font-size:12px" @click="logout">退出</button>
+      </div>
     </div>
 
     <!-- 待办醒目横幅 -->
