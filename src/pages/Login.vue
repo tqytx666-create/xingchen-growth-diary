@@ -7,20 +7,21 @@ const router = useRouter()
 const pwd = ref('')
 const pending = ref(null)
 const err = ref('')
-const ADMIN_PWD = 'xiaoyu2026'
+// 家长密码:外公/外婆/妈妈/爸爸 进家长端都要,挡住孩子冒充家长确认自己的打卡
+const FAMILY_PWD = 'xiaoyu2026'
 
 function pick(u) {
-  err.value = ''
-  if (u.role === 'admin') { pending.value = u; return }
-  enter(u)
+  err.value = ''; pwd.value = ''
+  if (u.role === 'child') { enter(u); return }   // 只有星晨自己免密
+  pending.value = u                               // 家长/管理员都要密码
 }
 function enter(u) {
   setUser(u.id)
   if (u.role === 'child') router.push('/child/today')
   else router.push('/family/dashboard')
 }
-function confirmAdmin() {
-  if (pwd.value === ADMIN_PWD) { enter(pending.value) }
+function confirmPwd() {
+  if (pwd.value === FAMILY_PWD) { enter(pending.value) }
   else err.value = '密码不对哦'
 }
 </script>
@@ -46,11 +47,11 @@ function confirmAdmin() {
 
     <div v-else class="card" style="padding:22px;text-align:center">
       <div style="font-size:34px">🔒</div>
-      <div style="font-weight:700;margin:8px 0 4px">{{ pending.display_name }}(管理员)</div>
-      <p class="dim" style="font-size:13px;margin-bottom:14px">请输入管理密码</p>
-      <input type="password" v-model="pwd" placeholder="密码" style="text-align:center" @keyup.enter="confirmAdmin" />
+      <div style="font-weight:700;margin:8px 0 4px">{{ pending.display_name }}({{ pending.role === 'admin' ? '管理员' : '家长' }})</div>
+      <p class="dim" style="font-size:13px;margin-bottom:14px">请输入家长密码</p>
+      <input type="password" v-model="pwd" placeholder="家长密码" style="text-align:center" @keyup.enter="confirmPwd" />
       <div v-if="err" style="color:#ff7a7a;font-size:13px;margin-top:8px">{{ err }}</div>
-      <button class="btn-accent" style="width:100%;padding:12px;margin-top:14px" @click="confirmAdmin">进入</button>
+      <button class="btn-accent" style="width:100%;padding:12px;margin-top:14px" @click="confirmPwd">进入</button>
       <button class="btn-ghost" style="width:100%;padding:10px;margin-top:8px" @click="pending=null;pwd=''">返回</button>
     </div>
 
