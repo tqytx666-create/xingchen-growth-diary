@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import { coins } from '../../services/coinService.js'
-import { shopCatalog, buy } from '../../services/shopService.js'
+import { shopCatalog, buy, redeemWish } from '../../services/shopService.js'
 import { ownedItems } from '../../services/itemService.js'
+import { WISH } from '../../lib/shop.js'
 import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
 
@@ -15,6 +16,14 @@ function purchase(type, g) {
   if (r.ok) { sfx.levelup(); toast(`购买成功!${g.emoji}「${g.name}」${type === 'item' ? '已放进道具栏' : type === 'skin' ? '去签到页装扮它~' : type === 'room' || type === 'furniture' ? '去首页🏠/🛋️用它~' : ''}`) }
   else { toast(r.msg) }
 }
+
+// 心愿兑换(实物/阅读时间)
+const wishes = WISH
+function redeem(w) {
+  const r = redeemWish(w.key)
+  if (r.ok) { sfx.levelup(); toast(`已下单 ${w.emoji}「${w.name}」!告诉爸爸妈妈,通过后兑现~`) }
+  else { toast(r.msg) }
+}
 </script>
 
 <template>
@@ -25,6 +34,20 @@ function purchase(type, g) {
     </div>
     <div class="card" style="padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
       完成打卡(英语 +10🪙 / 支线 +5🪙)赚星币,在这里购买喜欢的皮肤、房间、家具和道具。星币只能靠打卡赚哦~
+    </div>
+
+    <!-- 心愿兑换:用星币换现实里想要的东西 -->
+    <div style="margin-bottom:22px">
+      <div style="font-weight:700;margin:2px 2px 4px">🌠 心愿兑换</div>
+      <div class="dim" style="font-size:11px;margin-bottom:10px">用星币兑换现实奖励,下单后告诉爸爸妈妈,通过了就兑现给你~</div>
+      <div v-for="w in wishes" :key="w.key" class="card" style="display:flex;align-items:center;gap:12px;padding:12px 13px;margin-bottom:9px">
+        <div style="font-size:26px">{{ w.emoji }}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600">{{ w.name }}</div>
+          <div class="dim" style="font-size:11px;margin-top:1px">{{ w.note }}</div>
+        </div>
+        <button class="shop-buy" style="width:auto;padding:7px 13px" :class="{ poor: bal < w.price }" @click="redeem(w)">🪙 {{ w.price }}</button>
+      </div>
     </div>
 
     <div v-for="sec in catalog" :key="sec.type" style="margin-bottom:20px">

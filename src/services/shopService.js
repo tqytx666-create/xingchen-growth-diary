@@ -1,7 +1,8 @@
 import { db, audit, child } from '../lib/store.js'
+import { nowISO, uid } from '../lib/util.js'
 import { SKIN_TRACK, ROOM_TRACK, FURNITURE } from '../lib/petImages.js'
 import { ITEMS } from '../lib/items.js'
-import { SKIN_PRICE, ROOM_PRICE, FURN_PRICE, ITEM_PRICE } from '../lib/shop.js'
+import { SKIN_PRICE, ROOM_PRICE, FURN_PRICE, ITEM_PRICE, WISH } from '../lib/shop.js'
 import * as coinSvc from './coinService.js'
 import { isSkinOwned } from './skinService.js'
 import { isRoomOwned } from './roomService.js'
@@ -34,7 +35,7 @@ function grant(type, key) {
   else if (type === 'item') { if (!db.items) db.items = {}; db.items[key] = (db.items[key] || 0) + 1 }
 }
 
-// 购买:返回 { ok, msg }
+// 购买数字商品(皮肤/房间/家具/道具):返回 { ok, msg }
 export function buy(type, key) {
   const price = priceOf(type, key)
   if (price == null) return { ok: false, msg: '没有这个商品' }
@@ -43,5 +44,20 @@ export function buy(type, key) {
   coinSvc.spendCoins(price, `购买 ${type}:${key}`)
   grant(type, key)
   audit(child().id, 'shop', `${type}:${key}`, 'buy', { price })
+  return { ok: true }
+}
+
+// 心愿兑换(实物/阅读时间):扣星币 + 生成待家长兑现的申请。返回 { ok, msg }
+export function redeemWish(key) {
+  const w = WISH.find(x => x.key === key)
+  if (!w) return { ok: false, msg: '没有这个心愿' }
+  if (coinSvc.coins() < w.price) return { ok: false, msg: `还差 ${w.price - coinSvc.coins()} 星币,多打卡攒一攒 🪙` }
+  coinSvc.spendCoins(w.price, `心愿:${w.name}`)
+  db.reward_requests.unshift({
+    id: uid('rr_'), child_id: child().id, reward_id: 'wish_' + key, reward_name: `${w.emoji} ${w.name}`,
+    reward_type: 'wish', status: 'pending', requested_at: nowISO(),
+    cost_type: 'coin', coin_cost: w.price, handled_by: null, handled_at: null
+  })
+  audit(child().id, 'shop', 'wish:' + key, 'redeem', { price: w.price })
   return { ok: true }
 }

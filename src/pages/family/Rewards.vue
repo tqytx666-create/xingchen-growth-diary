@@ -23,7 +23,7 @@ function reject(r) { handleRequest(r.id, false, me.value.id); toast('已拒绝')
     <div v-for="r in pending" :key="r.id" class="card" style="padding:13px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between">
         <div><div style="font-size:15px;font-weight:600">{{ r.reward_name }}</div>
-          <div class="dim" style="font-size:11px;margin-top:2px">{{ fmtDateTime(r.requested_at) }} · 成本 {{ r.cost_type==='time_bank' ? r.final_cost + ' 分钟' : '家人审批' }}</div></div>
+          <div class="dim" style="font-size:11px;margin-top:2px">{{ fmtDateTime(r.requested_at) }} · {{ r.cost_type==='coin' ? '已付 ' + r.coin_cost + ' 星币(拒绝会退还)' : r.cost_type==='time_bank' ? '成本 ' + r.final_cost + ' 分钟' : '家人审批' }}</div></div>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn-accent" style="flex:1;padding:9px" @click="approve(r)">通过</button>

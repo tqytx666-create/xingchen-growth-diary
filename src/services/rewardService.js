@@ -2,6 +2,7 @@ import { db, audit, bank } from '../lib/store.js'
 import { nowISO, uid, round2 } from '../lib/util.js'
 import { REWARDS } from '../lib/rewardConfig.js'
 import * as bankSvc from './timeBankService.js'
+import * as coinSvc from './coinService.js'
 import { sideFullDays } from './streakService.js'
 
 // 本周支线全勤短期奖励:按"支线全勤天数"达标即自动发放游戏时间(进时间银行),无需审批
@@ -70,5 +71,7 @@ export function handleRequest(reqId, approve, actorId) {
   if (!req || req.status !== 'pending') return
   req.status = approve ? 'fulfilled' : 'rejected'
   req.handled_by = actorId; req.handled_at = nowISO()
+  // 心愿用星币付的,被拒绝就退星币
+  if (!approve && req.cost_type === 'coin' && req.coin_cost) coinSvc.earnCoins(req.coin_cost, `退款:${req.reward_name}`)
   audit(actorId, 'reward_request', req.id, approve ? 'approve' : 'reject', { reward: req.reward_name })
 }
