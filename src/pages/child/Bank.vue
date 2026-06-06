@@ -1,7 +1,10 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue'
 import { db, bank } from '../../lib/store.js'
-import { fmtDateTime } from '../../lib/util.js'
+import { fmtDateTime, weekStart } from '../../lib/util.js'
+
+// 中国股市习惯:红涨绿跌(增=红,减=绿)
+const UP = '#ff5b5b', DOWN = '#2fcf86'
 
 const b = computed(() => bank())
 const txns = computed(() => db.time_bank_transactions || [])
@@ -49,7 +52,7 @@ const stat = computed(() => {
 const sources = computed(() => {
   const s = stat.value
   const arr = [
-    { key: 'deposit', label: '运动存入', ic: '🏃', val: Math.round(s.dep), color: '#6bffb0' },
+    { key: 'deposit', label: '运动存入', ic: '🏃', val: Math.round(s.dep), color: '#c08bff' },
     { key: 'interest', label: '利息(复利)', ic: '💎', val: Math.round(s.intr), color: '#8be9ff' },
     { key: 'bonus', label: '奖励 / 宝箱', ic: '🎁', val: Math.round(s.bon), color: '#ffd86b' }
   ].filter(x => x.val > 0)
@@ -58,23 +61,39 @@ const sources = computed(() => {
 })
 const inOutMax = computed(() => Math.max(1, stat.value.totalIn, stat.value.totalOut))
 
-// 近 7 天每日净增减(绿涨红跌,像股票)
-const days7 = computed(() => {
-  const map = {}
-  for (const t of txns.value) { const d = (t.created_at || '').slice(0, 10); if (d) map[d] = (map[d] || 0) + (t.screen_minutes || 0) }
-  const arr = [], now = new Date()
-  const wd = ['日', '一', '二', '三', '四', '五', '六']
-  for (let i = 6; i >= 0; i--) {
-    const dt = new Date(now); dt.setDate(now.getDate() - i)
-    const ds = dt.toISOString().slice(0, 10)
-    arr.push({ ds, label: wd[dt.getDay()], today: i === 0, net: Math.round(map[ds] || 0) })
+// ---- 收益分析:日/月/年 切换的涨跌行情图 ----
+const range = ref('day')   // day / week / month
+function pad(n) { return String(n).padStart(2, '0') }
+function bucketDefs(r) {
+  const now = new Date(), res = []
+  if (r === 'day') {
+    for (let i = 9; i >= 0; i--) { const dt = new Date(now); dt.setDate(now.getDate() - i); res.push({ key: `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`, label: `${dt.getMonth() + 1}/${dt.getDate()}` }) }
+  } else if (r === 'week') {
+    for (let i = 7; i >= 0; i--) { const dt = new Date(now); dt.setDate(now.getDate() - i * 7); const ws = weekStart(`${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`); const p = ws.split('-'); res.push({ key: ws, label: `${+p[1]}/${+p[2]}` }) }
+  } else {
+    for (let i = 5; i >= 0; i--) { const dt = new Date(now.getFullYear(), now.getMonth() - i, 1); res.push({ key: `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}`, label: `${dt.getMonth() + 1}月` }) }
   }
-  return arr
+  return res
+}
+function bucketKey(dateStr, r) {
+  if (r === 'day') return dateStr
+  if (r === 'week') return weekStart(dateStr)
+  return dateStr.slice(0, 7)
+}
+const chartData = computed(() => {
+  const defs = bucketDefs(range.value)
+  const sum = {}
+  for (const t of txns.value) { const d = (t.created_at || '').slice(0, 10); if (!d) continue; const k = bucketKey(d, range.value); sum[k] = (sum[k] || 0) + (t.screen_minutes || 0) }
+  return defs.map(x => ({ ...x, net: Math.round(sum[x.key] || 0) }))
 })
-const maxAbs = computed(() => Math.max(1, ...days7.value.map(d => Math.abs(d.net))))
-const todayNet = computed(() => days7.value[6]?.net || 0)
-const weekNet = computed(() => days7.value.reduce((s, d) => s + d.net, 0))
-function barH(net) { return Math.max(2, Math.round(Math.abs(net) / maxAbs.value * 34)) }
+const chartMax = computed(() => Math.max(1, ...chartData.value.map(d => Math.abs(d.net))))
+const rangeTotal = computed(() => chartData.value.reduce((s, d) => s + d.net, 0))
+const rangeLabel = computed(() => ({ day: '近 10 天', week: '近 8 周', month: '近 6 个月' }[range.value]))
+function barH(net) { return Math.max(2, Math.round(Math.abs(net) / chartMax.value * 40)) }
+
+// 今日 / 本周净增减(顶部)
+const todayNet = computed(() => { const k = (new Date()).toISOString().slice(0, 10); let s = 0; for (const t of txns.value) if ((t.created_at || '').slice(0, 10) === k) s += t.screen_minutes || 0; return Math.round(s) })
+const weekNet = computed(() => { const wk = weekStart((new Date()).toISOString().slice(0, 10)); let s = 0; for (const t of txns.value) { const d = (t.created_at || '').slice(0, 10); if (d && weekStart(d) === wk) s += t.screen_minutes || 0 } return Math.round(s) })
 function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
 </script>
 
@@ -87,8 +106,8 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
       <div style="font-size:48px;font-weight:800;color:#ffd86b;line-height:1;font-variant-numeric:tabular-nums">{{ display }}</div>
       <div class="dim" style="font-size:13px;margin-top:4px">分钟 · 约 {{ Math.floor(display/60) }} 小时 {{ display%60 }} 分钟可玩</div>
       <div style="display:flex;justify-content:center;gap:8px;margin-top:12px">
-        <span class="chip" :class="todayNet>=0 ? 'up' : 'down'">今日 {{ fmtNet(todayNet) }}</span>
-        <span class="chip" :class="weekNet>=0 ? 'up' : 'down'">本周 {{ fmtNet(weekNet) }}</span>
+        <span class="chip" :style="{ color: todayNet>=0?UP:DOWN, background: (todayNet>=0?UP:DOWN)+'26' }">今日 {{ fmtNet(todayNet) }}</span>
+        <span class="chip" :style="{ color: weekNet>=0?UP:DOWN, background: (weekNet>=0?UP:DOWN)+'26' }">本周 {{ fmtNet(weekNet) }}</span>
       </div>
     </div>
 
@@ -98,6 +117,28 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
       <div style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.6">
         到现在,利息已经悄悄帮你赚了 <b style="color:#9fe4ff;font-size:18px">{{ stat.intr.toFixed(0) }}</b> 分钟,什么都没做!<br>
         余额每天 <b style="color:#9fe4ff">+1%</b> 自动滚雪球 —— <b>余额越多,利息越多</b>。存着不花,时间会自己变多 ✨
+      </div>
+    </div>
+
+    <!-- 收益分析:日/月/年 行情图 -->
+    <div class="card" style="padding:16px 14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;margin-bottom:4px">
+        <span style="font-weight:700">📈 收益分析</span>
+        <div class="seg">
+          <button :class="{ on: range==='day' }" @click="range='day'">日</button>
+          <button :class="{ on: range==='week' }" @click="range='week'">周</button>
+          <button :class="{ on: range==='month' }" @click="range='month'">月</button>
+        </div>
+      </div>
+      <div class="dim" style="font-size:12px;margin-bottom:12px">{{ rangeLabel }}净收益 <b :style="{ color: rangeTotal>=0?UP:DOWN }">{{ fmtNet(rangeTotal) }}</b> 分钟</div>
+      <div class="chart">
+        <div v-for="d in chartData" :key="d.key" class="col">
+          <div class="bars">
+            <span class="bar" :style="{ height: barH(d.net)+'px', background: d.net>=0?UP:DOWN }"></span>
+          </div>
+          <div class="net" :style="{ color: d.net>0?UP:(d.net<0?DOWN:'rgba(255,255,255,.3)') }">{{ d.net===0 ? '·' : fmtNet(d.net) }}</div>
+          <div class="lb">{{ d.label }}</div>
+        </div>
       </div>
     </div>
 
@@ -112,32 +153,18 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
       </div>
     </div>
 
-    <!-- 收支对比 -->
+    <!-- 收支对比(红收入 / 绿支出) -->
     <div class="card" style="padding:16px;margin-bottom:12px">
       <div style="font-weight:700;margin-bottom:12px">📊 总收入 vs 总支出</div>
       <div style="margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>📥 总赚到</span><span style="color:#6bffb0;font-weight:700">+{{ stat.totalIn.toFixed(0) }} 分</span></div>
-        <div class="track"><i :style="{ width: (stat.totalIn/inOutMax*100)+'%', background:'#6bffb0' }"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>📥 总赚到</span><span style="font-weight:700" :style="{color:UP}">+{{ stat.totalIn.toFixed(0) }} 分</span></div>
+        <div class="track"><i :style="{ width: (stat.totalIn/inOutMax*100)+'%', background:UP }"></i></div>
       </div>
       <div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>🎮 总花掉</span><span style="color:#ff7a7a;font-weight:700">-{{ stat.totalOut.toFixed(0) }} 分</span></div>
-        <div class="track"><i :style="{ width: (stat.totalOut/inOutMax*100)+'%', background:'#ff7a7a' }"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>🎮 总花掉</span><span style="font-weight:700" :style="{color:DOWN}">-{{ stat.totalOut.toFixed(0) }} 分</span></div>
+        <div class="track"><i :style="{ width: (stat.totalOut/inOutMax*100)+'%', background:DOWN }"></i></div>
       </div>
-      <div class="dim" style="font-size:12px;text-align:center;margin-top:12px">净结余 <b :style="{color: stat.net>=0 ? '#6bffb0':'#ff7a7a'}">{{ fmtNet(stat.net.toFixed(0)) }}</b> 分钟</div>
-    </div>
-
-    <!-- 近7天趋势 -->
-    <div class="card" style="padding:16px 14px;margin-bottom:14px">
-      <div style="font-weight:700;margin-bottom:14px">📈 近 7 天每天涨跌</div>
-      <div class="chart7">
-        <div v-for="d in days7" :key="d.ds" class="col">
-          <div class="bars">
-            <span class="bar" :class="d.net>=0 ? 'up' : 'down'" :style="{ height: barH(d.net)+'px' }"></span>
-          </div>
-          <div class="net" :style="{ color: d.net>0 ? '#6bffb0' : (d.net<0 ? '#ff7a7a' : 'rgba(255,255,255,.35)') }">{{ d.net===0 ? '·' : fmtNet(d.net) }}</div>
-          <div class="wd" :class="{ today: d.today }">{{ d.label }}</div>
-        </div>
-      </div>
+      <div class="dim" style="font-size:12px;text-align:center;margin-top:12px">净结余 <b :style="{color: stat.net>=0?UP:DOWN}">{{ fmtNet(stat.net.toFixed(0)) }}</b> 分钟</div>
     </div>
 
     <div class="card" style="padding:12px 13px;margin-bottom:14px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.72)">
@@ -153,25 +180,25 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
         <div style="font-size:14px">{{ (META[t.type]||{}).label }}</div>
         <div class="dim" style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fmtDateTime(t.created_at) }} · {{ t.description }}</div>
       </div>
-      <span style="font-weight:700" :style="t.screen_minutes>=0 ? 'color:#6bffb0' : 'color:#ff7a7a'">{{ t.screen_minutes>=0 ? '+' : '' }}{{ t.screen_minutes }}</span>
+      <span style="font-weight:700" :style="{ color: t.screen_minutes>=0 ? UP : DOWN }">{{ t.screen_minutes>=0 ? '+' : '' }}{{ t.screen_minutes }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .chip { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
-.chip.up { color: #6bffb0; background: rgba(107,255,176,.15); }
-.chip.down { color: #ff7a7a; background: rgba(255,122,122,.15); }
 .hl { border-color: rgba(107,213,255,.4); background: linear-gradient(160deg, rgba(107,213,255,.12), rgba(255,255,255,.04)); }
 .track { height: 9px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
 .track i { display: block; height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.2,1,.4,1); }
-.chart7 { display: flex; gap: 4px; }
-.col { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.bars { height: 38px; width: 100%; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid rgba(255,255,255,.12); }
-.bar { width: 60%; max-width: 22px; border-radius: 4px 4px 0 0; }
-.bar.up { background: linear-gradient(180deg, #6bffb0, #3bd98c); }
-.bar.down { background: linear-gradient(180deg, #ff9a9a, #ff6b6b); }
-.net { font-size: 10px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.wd { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 1px; }
-.wd.today { color: #ffd86b; font-weight: 700; }
+/* 日/周/月 切换 */
+.seg { margin-left: auto; display: flex; background: rgba(255,255,255,.08); border-radius: 999px; padding: 2px; }
+.seg button { border: none; background: transparent; color: rgba(255,255,255,.6); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+.seg button.on { background: linear-gradient(90deg,#ffd86b,#ffb347); color: #1a1426; }
+/* 行情柱状图 */
+.chart { display: flex; gap: 3px; align-items: flex-end; }
+.col { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.bars { height: 44px; width: 100%; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid rgba(255,255,255,.12); }
+.bar { width: 64%; max-width: 20px; border-radius: 4px 4px 0 0; transition: height .4s ease; }
+.net { font-size: 9px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 1px; white-space: nowrap; }
 </style>
