@@ -92,6 +92,14 @@ let actionTimer = null
 const tasks = computed(() => db.tasks.filter(t => t.is_active))
 const pending = computed(() => checkinSvc.pendingInteractions())
 const doneCount = computed(() => tasks.value.filter(t => { const c = checkinSvc.statusOf(t.id); return c && c.interacted }).length)
+// 今日进度 + 把"还能打卡/待互动"的任务排前面,已完成的沉到底,主线优先
+const taskPct = computed(() => tasks.value.length ? Math.round(doneCount.value / tasks.value.length * 100) : 0)
+const allDone = computed(() => tasks.value.length > 0 && doneCount.value >= tasks.value.length)
+const STATE_ORDER = { none: 0, ready: 0, wait: 1, dispute: 2, other: 2, false: 3, done: 4 }
+const tasksSorted = computed(() => [...tasks.value].sort((x, y) => {
+  const so = (STATE_ORDER[taskState(x)] ?? 2) - (STATE_ORDER[taskState(y)] ?? 2)
+  return so || ((x.task_type === 'main' ? 0 : 1) - (y.task_type === 'main' ? 0 : 1))
+}))
 const trust = computed(() => levelInfo(creditRow().credit_score))
 const coinBal = computed(() => coins())
 
@@ -132,6 +140,21 @@ function doTask(t) {
   if (taskState(t) !== 'none') return
   photoTask.value = t      // 先弹拍照打卡窗
 }
+// 打卡成功的全屏彩屑(不依赖宠物 fx 容器,活宠物模式也能放)
+function celebrate() {
+  const wrap = document.createElement('div')
+  wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden'
+  const emojis = ['⭐', '✨', '🌟', '💫', '🎉', '🩷', '🐾']
+  for (let i = 0; i < 20; i++) {
+    const s = document.createElement('div')
+    s.textContent = emojis[i % emojis.length]
+    s.style.cssText = `position:absolute;left:${Math.random() * 100}vw;top:-32px;font-size:${15 + Math.random() * 16}px;will-change:transform,opacity;transition:transform 1.15s cubic-bezier(.2,.6,.3,1),opacity 1.15s ease-in;opacity:1`
+    wrap.appendChild(s)
+    requestAnimationFrame(() => { s.style.transform = `translateY(${72 + Math.random() * 26}vh) rotate(${Math.random() * 540 - 270}deg)`; s.style.opacity = '0' })
+  }
+  document.body.appendChild(wrap)
+  setTimeout(() => wrap.remove(), 1350)
+}
 function onPhotoDone(photoUrl) {
   const t = photoTask.value
   photoTask.value = null
@@ -139,6 +162,7 @@ function onPhotoDone(photoUrl) {
   try {
     const res = checkinSvc.createCheckin(t.id, { photoUrl })
     sfx.checkin()
+    celebrate()
     toast(photoUrl ? `已拍照打卡:${t.name} 📸 等家人确认` : `已打卡:${t.name} ✅ 等家人确认就能陪小愿玩啦`)
     res.weeklyGranted.forEach(r => setTimeout(() => toast(`🎉 本周全勤满 ${r.required_days} 天:${r.reward_name}`), 700))
   } catch (e) { toast(e.message) }
@@ -291,6 +315,37 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 今日任务:每天最高频,放在宠物正下方;未完成的排前面 -->
+    <div style="display:flex;align-items:center;margin:2px 2px 9px">
+      <span style="font-size:16px;font-weight:700">📋 今日任务</span>
+      <span v-if="allDone" style="margin-left:auto;font-size:12px;font-weight:700;color:#9bffcf">🎉 今天全部完成啦!</span>
+      <span v-else class="dim" style="margin-left:auto;font-size:13px;font-weight:600">{{ doneCount }} / {{ tasks.length }}</span>
+    </div>
+    <div class="bar" style="margin:0 2px 14px;height:8px">
+      <i style="background:linear-gradient(90deg,#6bffb0,#7c6bff)" :style="{ width: taskPct + '%' }"></i>
+    </div>
+
+    <div v-for="t in tasksSorted" :key="t.id" class="card task-card"
+         :class="{ tdone: ['done','false'].includes(taskState(t)) }"
+         :style="t.task_type==='main' && taskState(t)==='none' ? 'border-color:rgba(255,216,107,.45);background:linear-gradient(135deg,rgba(255,216,107,.14),rgba(255,255,255,.06))' : ''"
+         style="display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:10px">
+      <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
+        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁开宝箱</span></div>
+        <span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:600"
+              :style="t.task_type==='main' ? 'background:rgba(255,216,107,.2);color:#ffd86b' : 'background:rgba(124,107,255,.25);color:#c3b8ff'">
+          {{ t.task_type==='main' ? '主线' : '支线' }}
+        </span>
+      </div>
+      <button v-if="taskState(t)==='none'" class="btn-accent" style="padding:10px 15px" @click="doTask(t)">打卡</button>
+      <span v-else-if="taskState(t)==='wait'" style="font-size:12px;color:#ffd86b;text-align:center;line-height:1.4">⏳ 等家人<br>确认</span>
+      <span v-else-if="taskState(t)==='ready'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✨ 上去<br>陪小愿</span>
+      <span v-else-if="taskState(t)==='done'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✓ 已完成</span>
+      <span v-else-if="taskState(t)==='false'" style="font-size:12px;color:#ff7a7a;text-align:center;line-height:1.4">⚠️ 虚报</span>
+      <span v-else style="font-size:12px;color:#ff9ec7;text-align:center">争议中</span>
+    </div>
+
     <!-- 道具栏 -->
     <div class="card" style="padding:11px 13px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
@@ -333,30 +388,6 @@ onMounted(() => {
         <div v-if="!attrTasksFor(attrInfo).length" class="dim" style="font-size:13px;text-align:center;padding:10px 0">暂时没有提升这个属性的任务</div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="attrInfo=null">知道啦</button>
       </div>
-    </div>
-
-    <!-- 任务 -->
-    <div style="font-size:15px;font-weight:700;margin:4px 2px 10px;display:flex;align-items:center">
-      📋 今日任务 <span class="dim" style="margin-left:auto;font-size:12px;font-weight:500">{{ doneCount }}/{{ tasks.length }}</span>
-    </div>
-    <div v-for="t in tasks" :key="t.id" class="card"
-         :style="t.task_type==='main' ? 'border-color:rgba(255,216,107,.4);background:linear-gradient(135deg,rgba(255,216,107,.12),rgba(255,255,255,.08))' : ''"
-         style="display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:10px">
-      <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
-        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁开宝箱</span></div>
-        <span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:600"
-              :style="t.task_type==='main' ? 'background:rgba(255,216,107,.2);color:#ffd86b' : 'background:rgba(124,107,255,.25);color:#c3b8ff'">
-          {{ t.task_type==='main' ? '主线' : '支线' }}
-        </span>
-      </div>
-      <button v-if="taskState(t)==='none'" class="btn-accent" style="padding:10px 15px" @click="doTask(t)">打卡</button>
-      <span v-else-if="taskState(t)==='wait'" style="font-size:12px;color:#ffd86b;text-align:center;line-height:1.4">⏳ 等家人<br>确认</span>
-      <span v-else-if="taskState(t)==='ready'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✨ 上去<br>陪小愿</span>
-      <span v-else-if="taskState(t)==='done'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✓ 已完成</span>
-      <span v-else-if="taskState(t)==='false'" style="font-size:12px;color:#ff7a7a;text-align:center;line-height:1.4">⚠️ 虚报</span>
-      <span v-else style="font-size:12px;color:#ff9ec7;text-align:center">争议中</span>
     </div>
 
     <EvolutionModal v-if="evoStage" :pet="p" :attrs="a" :stage="evoStage" :hatch="evoHatch" @close="evoStage=null; evoHatch=false" />
@@ -453,6 +484,10 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
+/* 今日任务:已完成/虚报淡出沉底,未完成的更醒目 */
+.task-card { transition: opacity .25s ease, transform .12s ease; }
+.task-card.tdone { opacity: .5; }
+.task-card:active { transform: scale(.99); }
 .attr-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center;
   background: rgba(6,4,16,.7); backdrop-filter: blur(3px); animation: af .2s ease; }
 .attr-sheet { width: 100%; max-width: 460px; background: #14111f; border: 1px solid rgba(255,255,255,.12);
