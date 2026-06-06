@@ -15,19 +15,28 @@ const STATUS = {
 function task(c) { return db.tasks.find(t => t.id === c.task_id) }
 function actor(id) { return db.users.find(u => u.id === id)?.display_name || '' }
 
+// 外教课确认:用内联弹窗收游戏分钟(window.prompt 在 iOS 独立 PWA 里会被禁,导致无法确认)
+const lessonModal = ref(null)   // 待输入分钟的外教课打卡
+const lessonMin = ref(45)
 function confirm(c) {
   const t = task(c)
-  if (t?.lesson) {
-    const v = window.prompt('确认这节英语外教课。换多少游戏时间(分钟)?', '45')
-    if (v === null) return
-    const m = Math.max(0, Math.round(Number(v) || 0))
-    vs.confirm(c.id, me.value.id, m)
-    toast(m > 0 ? `已确认 ✅ 游戏时间 +${m} 分钟` : '已确认 ✅')
-  } else {
-    vs.confirm(c.id, me.value.id); toast('已确认属实 ✅')
-  }
+  if (t?.lesson) { lessonModal.value = c; lessonMin.value = 45 }
+  else { vs.confirm(c.id, me.value.id); toast('已确认属实 ✅') }
 }
-function markFalse(c) { if (!window.confirm('确定标记为虚报?会扣诚信分并影响宠物。')) return; vs.markFalse(c.id, me.value.id); toast('已标记虚报 ⚠️') }
+function doLessonConfirm() {
+  const c = lessonModal.value; if (!c) return
+  const m = Math.max(0, Math.round(Number(lessonMin.value) || 0))
+  vs.confirm(c.id, me.value.id, m)
+  toast(m > 0 ? `已确认 ✅ 游戏时间 +${m} 分钟` : '已确认 ✅')
+  lessonModal.value = null
+}
+// 标记虚报:同样用内联确认弹窗替代 window.confirm
+const falseModal = ref(null)
+function markFalse(c) { falseModal.value = c }
+function doMarkFalse() {
+  const c = falseModal.value; if (!c) return
+  vs.markFalse(c.id, me.value.id); toast('已标记虚报 ⚠️'); falseModal.value = null
+}
 function dispute(c) { vs.dispute(c.id, me.value.id); toast('已标记争议') }
 function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
 </script>
@@ -71,5 +80,43 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
          style="position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:16px;cursor:zoom-out">
       <img :src="lightbox" alt="打卡照片" style="max-width:100%;max-height:100%;border-radius:12px" />
     </div>
+
+    <!-- 外教课:确认并换游戏时间 -->
+    <div v-if="lessonModal" class="ck-overlay" @click.self="lessonModal=null">
+      <div class="ck-sheet">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">📘 确认英语外教课</div>
+        <div class="dim" style="font-size:12px;margin-bottom:14px">这节课换多少游戏时间?确认后自动存入时间银行。</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px">
+          <button v-for="p in [25,30,45,60]" :key="p" class="ck-chip" :class="{ on: lessonMin==p }" @click="lessonMin=p">{{ p }}</button>
+        </div>
+        <input v-model.number="lessonMin" type="number" min="0" inputmode="numeric"
+               style="text-align:center;font-size:18px;font-weight:700" />
+        <div class="dim" style="font-size:11px;margin-top:6px">分钟</div>
+        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" @click="doLessonConfirm">确认 · 换 {{ Math.max(0, Math.round(Number(lessonMin)||0)) }} 分钟</button>
+        <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="lessonModal=null">取消</button>
+      </div>
+    </div>
+
+    <!-- 标记虚报二次确认 -->
+    <div v-if="falseModal" class="ck-overlay" @click.self="falseModal=null">
+      <div class="ck-sheet">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">⚠️ 标记虚报</div>
+        <div class="dim" style="font-size:13px;line-height:1.6;margin-bottom:16px">确定把「{{ task(falseModal)?.name }}」标记为虚报吗?会扣诚信分并影响宠物状态。</div>
+        <button class="btn-accent" style="width:100%;padding:11px;background:linear-gradient(90deg,#ff7a7a,#ff9ec7);color:#fff" @click="doMarkFalse">确定标记虚报</button>
+        <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="falseModal=null">取消</button>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.ck-overlay { position:fixed; inset:0; z-index:92; display:grid; place-items:center; padding:24px;
+  background:rgba(6,4,16,.78); backdrop-filter:blur(4px); }
+.ck-sheet { width:100%; max-width:320px; background:#14111f; border:1px solid rgba(255,255,255,.12);
+  border-radius:22px; padding:20px; text-align:center; }
+.ck-sheet input { width:100%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06); color:#fff; }
+.ck-chip { padding:7px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.05); color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
+.ck-chip.on { background:linear-gradient(90deg,#ffd86b,#ffb347); color:#1a1426; border-color:transparent; }
+</style>

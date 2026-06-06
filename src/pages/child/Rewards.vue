@@ -53,13 +53,18 @@ const BOX_META = { silver: { img: boxSilver, name: '银宝箱', range: '1~3 分'
 const boxTiers = ['silver', 'gold', 'diamond']
 const hasBox = computed(() => boxTiers.some(t => (boxes.value[t] || 0) > 0))
 const boxReward = ref(null)   // { tier, minutes } 开箱动画
+const opening = ref(false)    // 防连点:一次只开一个
 function openBox(tier) {
+  if (opening.value) return
   if ((boxes.value[tier] || 0) < 1) return
+  opening.value = true
   const r = openOneByTier(tier)
   if (r) {
     sfx.levelup(); boxReward.value = r
     if (r.coins) setTimeout(() => toast(`🪙 开箱还得到 ${r.coins} 星币!`), 2500)
     if (r.item) setTimeout(() => toast(`🎁 还开出了道具 ${r.item.emoji}「${r.item.name}」!去首页用它陪小愿`), r.coins ? 3300 : 2500)
+  } else {
+    opening.value = false   // 没开成,释放锁
   }
 }
 </script>
@@ -123,7 +128,7 @@ function openBox(tier) {
       <span style="font-size:12px">{{ STATUS[r.status] }}</span>
     </div>
 
-    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :coins="boxReward.coins || 0" @close="boxReward=null" />
+    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :coins="boxReward.coins || 0" @close="boxReward=null; opening=false" />
   </div>
 </template>
 

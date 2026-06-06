@@ -8,6 +8,7 @@ import { sideFullDays } from './streakService.js'
 // 本周支线全勤短期奖励:按"支线全勤天数"达标即自动发放游戏时间(进时间银行),无需审批
 export function checkWeeklyRewards(childId) {
   const s = db.streaks[0]
+  if (!s) return []
   const wk = s.current_week_start
   const fullDays = sideFullDays()
   const granted = []
