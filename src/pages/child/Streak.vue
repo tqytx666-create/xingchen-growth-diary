@@ -66,6 +66,7 @@ const badges = computed(() =>
           <div style="font-size:17px;line-height:1.1;margin-top:1px">{{ d.done ? '🐾' : (d.today ? '⭐' : (d.future ? '·' : '–')) }}</div>
         </div>
       </div>
+      <router-link to="/child/calendar" style="display:block;text-align:center;margin-top:12px;font-size:13px;color:#ffd86b;text-decoration:none;padding:8px;border-radius:10px;background:rgba(255,216,107,.1)">📅 看完整日历 · 补卡 ›</router-link>
     </div>
 
     <!-- 皮肤衣柜 -->

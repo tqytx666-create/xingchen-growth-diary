@@ -12,9 +12,7 @@ const childNav = [
   { to: '/child/today', ic: '📋', label: '今日' },
   { to: '/child/pet', ic: '🐾', label: '宠物' },
   { to: '/child/streak', ic: '🔥', label: '签到' },
-  { to: '/child/calendar', ic: '📅', label: '日历' },
   { to: '/child/shop', ic: '🛍️', label: '商城' },
-  { to: '/child/bank', ic: '⏱️', label: '时间' },
   { to: '/child/rewards', ic: '🎁', label: '奖励' }
 ]
 const familyNav = computed(() => {
