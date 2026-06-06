@@ -3,6 +3,8 @@ import { SKIN_TRACK, ROOM_TRACK, FURNITURE } from './petImages.js'
 import { tierFromLevel } from './petConfig.js'
 
 export const SEED_VERSION = 4
+// demo 专用版本:只控制 demo 本地是否重建种子,不参与云端同步门控(改它不影响线上真实数据)
+export const DEMO_SEED_VERSION = 2
 
 // Demo 版(分享给朋友看):全解锁、有基础数据、打卡免确认。基于正式种子覆盖。
 export function buildDemoSeed() {
@@ -14,6 +16,9 @@ export function buildDemoSeed() {
   s.items = { bone: 9, fish: 9, ball: 9, wand: 9 }
   const p = s.pet_profile[0]
   if (p) { p.level = 29; p.exp = 100; p.stage_idx = tierFromLevel(29); p.mood = 'happy' }
+  const pa = s.pet_attributes[0]
+  if (pa) { pa.wisdom = 88; pa.cleanliness = 72; pa.vitality = 65; pa.charm = 30; pa.discipline = 40 }
+  if (s.streaks[0]) { s.streaks[0].current_streak = 12; s.streaks[0].longest_streak = 45; s.streaks[0].total_main_checkin_days = 60 }
   // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
   const day = k => new Date(Date.now() - k * 86400000).toISOString()
   s.time_bank_accounts[0].current_balance_minutes = 480
@@ -34,7 +39,7 @@ export function buildDemoSeed() {
     { id: 'tbd9', type: 'deposit', screen_minutes: 40, description: '羽毛球存入', created_at: day(5) },
     { id: 'tbd10', type: 'interest', screen_minutes: 3, description: '每日利息', created_at: day(6) }
   ]
-  s.meta = { ...s.meta, demo: true }
+  s.meta = { ...s.meta, demo: true, demoSeed: DEMO_SEED_VERSION }
   return s
 }
 
@@ -62,12 +67,15 @@ export function buildSeed() {
     // 英语上课(外教课):有课才打,家长确认时手动输入换多少游戏时间(lesson:true)
     { id: 't_english_class', name: '英语上课(外教)', task_type: 'lesson', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '🎧', anim: 'study', lesson: true, desc: '上完外教课打卡 · 家长确认换游戏时间', is_active: true, created_at: nowISO() },
     // 英语老师布置的每日作业(百词斩 + ABC Reading 合并成一个必做卡;算英语主线)
-    { id: 't_homework', name: '每日作业', task_type: 'side', category: 'english', attribute_key: 'wisdom', base_exp: 8, icon: '📝', anim: 'study', blindbox: true, desc: '百词斩(背5+复习5)· ABC Reading(3本/Level A)', is_active: true, created_at: nowISO() }
+    { id: 't_homework', name: '每日作业', task_type: 'side', category: 'english', attribute_key: 'wisdom', base_exp: 8, icon: '📝', anim: 'study', blindbox: true, desc: '百词斩(背5+复习5)· ABC Reading(3本/Level A)', is_active: true, created_at: nowISO() },
+    // 自律(毅力·耐心):按时睡觉 + 专注不拖延
+    { id: 't_sleep', name: '按时睡觉', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 5, icon: '🌜', anim: '', blindbox: true, desc: '每天 · 自律 +(早睡早起,坚持就是毅力)', is_active: true, created_at: nowISO() },
+    { id: 't_focus', name: '专注不拖延', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 6, icon: '🎯', anim: '', blindbox: true, desc: '该做的事一坐下就专心做完 · 自律 +', is_active: true, created_at: nowISO() }
   ]
 
   // 初始是「初遇蛋」(level 0 / stage 0),坚持打卡攒够 HATCH_EXP 经验才孵化成幼犬
   const pet = { id: 'pet_1', child_id: child.id, name: '小愿', species: '星愿犬', level: 0, exp: 0, stage_idx: 0, mood: 'normal', risk: 0, evolution_seed: uid('seed_'), skin: 'default', room: 'night', created_at: nowISO() }
-  const petAttrs = { id: 'pa_1', pet_id: pet.id, wisdom: 12, cleanliness: 8, vitality: 6, charm: 4, mood_score: 70, trust_bond: 50, updated_at: nowISO() }
+  const petAttrs = { id: 'pa_1', pet_id: pet.id, wisdom: 12, cleanliness: 8, vitality: 6, charm: 4, discipline: 5, mood_score: 70, trust_bond: 50, updated_at: nowISO() }
 
   const streak = {
     id: 'streak_1', child_id: child.id, main_task_id: tEnglish.id,

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
+import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
 import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -39,7 +39,8 @@ const ATTR_META = {
   wisdom:      { icon: '🧠', name: '智慧', color: '#7c6bff', blurb: '越爱学习越聪明。完成下面的任务能提升智慧:' },
   cleanliness: { icon: '🛁', name: '清洁', color: '#6bd5ff', blurb: '保持干净整洁,清洁值就高。完成下面的任务能提升清洁:' },
   vitality:    { icon: '⚡', name: '活力', color: '#6bffb0', blurb: '多运动,身体棒棒更有活力。完成下面的任务能提升活力:' },
-  charm:       { icon: '✨', name: '魅力', color: '#ff9ec7', blurb: '由内而外的好状态。完成下面的任务能提升魅力:' }
+  charm:       { icon: '✨', name: '魅力', color: '#ff9ec7', blurb: '由内而外的好状态。完成下面的任务能提升魅力:' },
+  discipline:  { icon: '🔥', name: '自律', color: '#ff9f5b', blurb: '管得住自己、坚持不放弃、有耐心。完成下面的任务能提升自律:' }
 }
 const attrInfo = ref(null)      // 当前点开的属性 key
 const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_key === key || t.attribute_key2 === key))
@@ -47,7 +48,10 @@ const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_k
 const skinCount = computed(() => (db.owned_skins || []).filter(k => k && k !== 'default').length)
 const dexUnlocked = computed(() => DEX.filter(d => d.cond(p.value, a.value)).length)
 const charmVal = computed(() => charmTotal(a.value.charm, skinCount.value, dexUnlocked.value))
-const attrVal = (key) => key === 'charm' ? charmVal.value : a.value[key]
+// 自律 = 基础 + 历史最长连续签到天数(坚持越久越有毅力,用最长记录当永久勋章不掉)
+const bestStreak = computed(() => (streakRow()?.longest_streak) || 0)
+const disciplineVal = computed(() => Math.round((a.value.discipline || 0) + bestStreak.value))
+const attrVal = (key) => key === 'charm' ? charmVal.value : key === 'discipline' ? disciplineVal.value : a.value[key]
 
 // 诚信分记录(点顶部"信任"徽章打开)
 const creditOpen = ref(false)
@@ -115,6 +119,7 @@ const GROUP_DEF = [
   { key: 'english', emoji: '📚', name: '英语学习', cats: ['english'], main: true },
   { key: 'sport', emoji: '🏃', name: '运动', cats: ['sport'] },
   { key: 'life', emoji: '🧼', name: '生活习惯', cats: ['hygiene', 'chore'] },
+  { key: 'discipline', emoji: '🔥', name: '自律', cats: ['discipline'] },
   { key: 'hobby', emoji: '🎨', name: '兴趣', cats: ['hobby', 'interest'] }
 ]
 const doneish = t => ['wait', 'ready', 'done'].includes(taskState(t))
@@ -385,6 +390,7 @@ onMounted(() => {
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ charmVal }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(charmVal)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer;grid-column:1/-1" @click="attrInfo='discipline'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🔥 自律 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ disciplineVal }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9f5b,#ffce8a)" :style="{width:bar(disciplineVal)}"></i></div></div>
     </div>
 
     <!-- 道具栏(紧跟宠物) -->
@@ -435,6 +441,10 @@ onMounted(() => {
         <div v-if="attrInfo==='charm'" style="font-size:12.5px;line-height:1.6;margin:-4px 0 12px;padding:9px 11px;border-radius:11px;background:rgba(255,158,199,.12)">
           ✨ 还有额外加成:每拥有 <b style="color:var(--ac)">1 款皮肤 +{{ CHARM_PER_SKIN }}</b>、每解锁 <b style="color:var(--ac)">1 个图鉴形态 +{{ CHARM_PER_DEX }}</b>。<br>
           现在:皮肤 {{ skinCount }} 款(+{{ skinCount*CHARM_PER_SKIN }})· 形态 {{ dexUnlocked }} 个(+{{ dexUnlocked*CHARM_PER_DEX }})。越会打扮、收集越多,越有魅力~
+        </div>
+        <div v-if="attrInfo==='discipline'" style="font-size:12.5px;line-height:1.6;margin:-4px 0 12px;padding:9px 11px;border-radius:11px;background:rgba(255,159,91,.13)">
+          🔥 毅力加成:你坚持过的 <b style="color:var(--ac)">最长连续签到 {{ bestStreak }} 天</b> 会一直留在自律里(就算断了也不掉,是你的毅力勋章)。<br>
+          坚持得越久,越自律~
         </div>
         <div v-for="t in attrTasksFor(attrInfo)" :key="t.id" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
           <span style="font-size:20px">{{ t.icon }}</span>

@@ -1,5 +1,5 @@
 import { reactive, watch, ref } from 'vue'
-import { buildSeed, buildDemoSeed, SEED_VERSION } from './seed.js'
+import { buildSeed, buildDemoSeed, SEED_VERSION, DEMO_SEED_VERSION } from './seed.js'
 import { nowISO } from './util.js'
 import { supabase } from './supabase.js'
 
@@ -24,7 +24,7 @@ function loadLocal() {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION && (!IS_DEMO || parsed.meta.demo)) return parsed
+      if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION && (!IS_DEMO || (parsed.meta.demo && parsed.meta.demoSeed === DEMO_SEED_VERSION))) return parsed
     }
   } catch (e) { /* ignore */ }
   return IS_DEMO ? buildDemoSeed() : buildSeed()

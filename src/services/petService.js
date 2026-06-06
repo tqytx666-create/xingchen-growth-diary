@@ -50,10 +50,10 @@ function addExp(amount, sourceId) {
 export function applyTaskExp(task, sourceId) {
   const a = petAttrs(); const p = pet()
   const delta = {}
-  a[task.attribute_key] = clamp(a[task.attribute_key] + task.base_exp)
+  a[task.attribute_key] = clamp((a[task.attribute_key] || 0) + task.base_exp)
   delta[task.attribute_key] = task.base_exp
   if (task.attribute_key2) {
-    a[task.attribute_key2] = clamp(a[task.attribute_key2] + task.base_exp2)
+    a[task.attribute_key2] = clamp((a[task.attribute_key2] || 0) + task.base_exp2)
     delta[task.attribute_key2] = task.base_exp2
   }
   a.mood_score = clamp(a.mood_score + 4)
@@ -86,9 +86,9 @@ export function applyFalseReportPenalty(task, interacted) {
   const delta = {}
   if (interacted) {
     const back = (task.base_exp || 0) + 3
-    a[task.attribute_key] = clamp(a[task.attribute_key] - back)
+    a[task.attribute_key] = clamp((a[task.attribute_key] || 0) - back)
     delta[task.attribute_key] = -back
-    if (task.attribute_key2) { a[task.attribute_key2] = clamp(a[task.attribute_key2] - (task.base_exp2 || 0)); delta[task.attribute_key2] = -(task.base_exp2 || 0) }
+    if (task.attribute_key2) { a[task.attribute_key2] = clamp((a[task.attribute_key2] || 0) - (task.base_exp2 || 0)); delta[task.attribute_key2] = -(task.base_exp2 || 0) }
   }
   a.mood_score = clamp(a.mood_score - 14)
   a.trust_bond = clamp(a.trust_bond - 10)
