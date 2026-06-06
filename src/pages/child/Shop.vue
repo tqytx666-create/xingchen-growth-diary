@@ -7,6 +7,7 @@ import { WISH } from '../../lib/shop.js'
 import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
 import CountUp from '../../components/CountUp.vue'
+import CoinIcon from '../../components/CoinIcon.vue'
 
 const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())
@@ -43,7 +44,7 @@ function redeem(w) {
   <div style="padding:14px 14px 90px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 2px 14px">
       <h2 style="font-size:18px;font-weight:700;border-left:3px solid #ffd86b;padding-left:10px;margin:0">🛍️ 星币商城</h2>
-      <span class="card" style="padding:6px 13px;font-size:15px;font-weight:700;color:#ffd86b">🪙 <CountUp :value="bal" /></span>
+      <span class="card" style="padding:6px 13px;font-size:15px;font-weight:700;color:#ffd86b"><CoinIcon /> <CountUp :value="bal" /></span>
     </div>
     <div class="card" style="padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
       完成打卡(英语 +10🪙 / 支线 +5🪙)赚星币,在这里购买喜欢的皮肤、房间、家具和道具。星币只能靠打卡赚哦~
@@ -59,7 +60,7 @@ function redeem(w) {
           <div style="font-size:14px;font-weight:600">{{ w.name }}</div>
           <div class="dim" style="font-size:11px;margin-top:1px">{{ w.note }}</div>
         </div>
-        <button class="shop-buy" style="width:auto;padding:7px 13px" :class="{ poor: bal < w.price }" @click="redeem(w)">🪙 {{ w.price }}</button>
+        <button class="shop-buy" style="width:auto;padding:7px 13px" :class="{ poor: bal < w.price }" @click="redeem(w)"><CoinIcon /> {{ w.price }}</button>
       </div>
     </div>
 
@@ -74,7 +75,7 @@ function redeem(w) {
           <div v-if="sec.type==='item' && itemCounts[g.key]" class="dim" style="font-size:10px">已有 {{ itemCounts[g.key] }}</div>
           <button v-if="g.owned" class="shop-buy owned" disabled>已拥有</button>
           <button v-else class="shop-buy" :class="{ poor: bal < g.price }" @click="purchase(sec.type, g)">
-            🪙 {{ g.price }}{{ sec.type==='item' ? ' /个' : '' }}
+            <CoinIcon /> {{ g.price }}{{ sec.type==='item' ? ' /个' : '' }}
           </button>
         </div>
       </div>
@@ -88,7 +89,7 @@ function redeem(w) {
         <div class="sd-desc">{{ detail.g.desc }}</div>
         <div v-if="detail.type==='item' && itemCounts[detail.g.key]" class="dim" style="font-size:12px;margin-top:6px">当前持有 {{ itemCounts[detail.g.key] }} 个</div>
         <button v-if="detail.g.owned" class="sd-buy owned" disabled>✅ 已拥有</button>
-        <button v-else class="sd-buy" :class="{ poor: bal < detail.g.price }" @click="buyDetail">🪙 {{ detail.g.price }} 购买{{ detail.type==='item' ? ' 1 个' : '' }}</button>
+        <button v-else class="sd-buy" :class="{ poor: bal < detail.g.price }" @click="buyDetail"><CoinIcon /> {{ detail.g.price }} 购买{{ detail.type==='item' ? ' 1 个' : '' }}</button>
         <button class="sd-close" @click="detail=null">关闭</button>
       </div>
     </div>

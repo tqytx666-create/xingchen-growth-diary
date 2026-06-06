@@ -8,6 +8,7 @@ import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import CountUp from '../../components/CountUp.vue'
 import TaskRow from '../../components/child/TaskRow.vue'
+import CoinIcon from '../../components/CoinIcon.vue'
 import LivingPet from '../../components/pet/LivingPet.vue'
 import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
@@ -296,8 +297,6 @@ onMounted(() => {
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
-        <span ref="timeChipRef" class="card" style="padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" />分</span>
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="router.push('/child/shop')">🪙 <CountUp :value="coinBal" /></span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
       </div>
@@ -306,9 +305,15 @@ onMounted(() => {
     <!-- 宠物舞台 -->
     <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:12px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx ?? 0]?.name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
-        <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
+      <div style="position:relative;z-index:6;display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="min-width:0">
+          <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx ?? 0]?.name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
+          <div class="dim" style="font-size:11px;margin-top:5px;padding-left:2px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <span ref="timeChipRef" class="hud-chip" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /> 分</span>
+          <span class="hud-chip" @click="router.push('/child/shop')"><CoinIcon /> <CountUp :value="coinBal" /></span>
+        </div>
       </div>
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
       <div v-if="livingActive" style="position:relative">
@@ -527,6 +532,11 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
+/* 宠物房间里的 HUD:时间余额 + 星币 */
+.hud-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; color: #ffd86b; cursor: pointer;
+  background: rgba(10,8,22,.55); border: 1px solid rgba(255,216,107,.3); backdrop-filter: blur(4px); }
+.hud-chip:active { transform: scale(.95); }
 /* 英语合并入口 + 分组标题 */
 .eng-head { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 9px; padding: 13px;
   border: 1px solid rgba(255,216,107,.4); border-radius: 16px; cursor: pointer; color: #fff;
