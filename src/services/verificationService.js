@@ -36,7 +36,7 @@ export function markFalse(checkinId, actorId, reason) {
   // 只有已经互动过(长过属性)才回退属性;否则只扣心情/信任/风险
   petSvc.applyFalseReportPenalty(task, wasInteracted)
   creditSvc.applyFalsePenalty(task, checkinId, actorId)
-  if (task.task_type === 'main') streakSvc.recompute()
+  if (streakSvc.isMainStreakTask(task)) streakSvc.recompute()
   audit(actorId, 'checkin', checkinId, 'mark_false', { task: task?.name, reason })
 }
 
@@ -52,6 +52,6 @@ export function revoke(checkinId, actorId) {
   const task = getTask(c)
   c.status = 'revoked'; c.verified_by = actorId; c.verified_at = nowISO()
   log(checkinId, actorId, 'revoke')
-  if (task.task_type === 'main') streakSvc.recompute()
+  if (streakSvc.isMainStreakTask(task)) streakSvc.recompute()
   audit(actorId, 'checkin', checkinId, 'revoke', { task: task?.name })
 }

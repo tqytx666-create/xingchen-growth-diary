@@ -38,7 +38,7 @@ export function createCheckin(taskId, opts = {}) {
   db.checkins.unshift(checkin)
 
   let weeklyGranted = []
-  if (task.task_type === 'main') {
+  if (streakSvc.isMainStreakTask(task)) {   // 英语自学 或 外教课 任一 → 重算连续签到
     streakSvc.recompute()
     weeklyGranted = rewardSvc.checkWeeklyRewards(cid)
   }

@@ -1,12 +1,16 @@
 import { db, streak, mainTask, child } from '../lib/store.js'
 import { todayStr, weekStart, addDays, nowISO } from '../lib/util.js'
 
-// 有效的英语打卡日期(虚报/撤销不算)
+// 算"英语主线"的任务:英语自学(main) 或 英语外教课(lesson)——任一完成当天就算主线有进行,签到续上
+export function isMainStreakTask(t) { return !!t && (t.task_type === 'main' || t.lesson) }
+function mainTaskIds() { return new Set(db.tasks.filter(isMainStreakTask).map(t => t.id)) }
+
+// 有效的英语主线打卡日期(英语自学/外教课任一;虚报/撤销不算)
 function validMainDates() {
-  const mt = mainTask()
+  const ids = mainTaskIds()
   const set = new Set()
   for (const c of db.checkins) {
-    if (c.task_id === mt.id && c.status !== 'false_reported' && c.status !== 'revoked') {
+    if (ids.has(c.task_id) && c.status !== 'false_reported' && c.status !== 'revoked') {
       set.add(c.checkin_date)
     }
   }
@@ -83,12 +87,12 @@ export function nextCumulative() {
 // 可补卡的"漏打英语日":从 max(本周一, 首次英语打卡日) 到昨天,缺英语打卡的日期。
 // 不含今天(今天可正常打卡),也不offer用户开始用之前的日子。
 export function missedMainDays() {
-  const mt = mainTask()
+  const ids = mainTaskIds()
   const today = todayStr()
   const s = streak()
   const valid = []
   for (const c of db.checkins) {
-    if (c.task_id === mt.id && c.status !== 'false_reported' && c.status !== 'revoked') valid.push(c.checkin_date)
+    if (ids.has(c.task_id) && c.status !== 'false_reported' && c.status !== 'revoked') valid.push(c.checkin_date)
   }
   if (!valid.length) return []
   const set = new Set(valid)
