@@ -14,6 +14,22 @@ export function buildDemoSeed() {
   s.items = { bone: 9, fish: 9, ball: 9, wand: 9 }
   const p = s.pet_profile[0]
   if (p) { p.level = 9; p.exp = 15; p.stage_idx = tierFromLevel(9); p.mood = 'happy' }
+  // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
+  const day = k => new Date(Date.now() - k * 86400000).toISOString()
+  s.time_bank_accounts[0].current_balance_minutes = 146
+  s.time_bank_accounts[0].last_interest_date = day(1)
+  s.time_bank_transactions = [
+    { id: 'tbd1', type: 'deposit', screen_minutes: 30, exercise_type: 'badminton', exercise_minutes: 15, description: '羽毛球存入', created_at: day(0) },
+    { id: 'tbd2', type: 'interest', screen_minutes: 5, description: '✨ 收取每日利息', created_at: day(0) },
+    { id: 'tbd3', type: 'withdraw', screen_minutes: -20, description: '玩游戏', created_at: day(0) },
+    { id: 'tbd4', type: 'bonus', screen_minutes: 15, description: '金宝箱', created_at: day(1) },
+    { id: 'tbd5', type: 'deposit', screen_minutes: 20, description: '跳绳存入', created_at: day(2) },
+    { id: 'tbd6', type: 'interest', screen_minutes: 4, description: '每日利息', created_at: day(2) },
+    { id: 'tbd7', type: 'withdraw', screen_minutes: -30, description: '玩游戏', created_at: day(3) },
+    { id: 'tbd8', type: 'bonus', screen_minutes: 50, description: '本周全勤宝箱', created_at: day(4) },
+    { id: 'tbd9', type: 'deposit', screen_minutes: 40, description: '羽毛球存入', created_at: day(5) },
+    { id: 'tbd10', type: 'interest', screen_minutes: 3, description: '每日利息', created_at: day(6) }
+  ]
   s.meta = { ...s.meta, demo: true }
   return s
 }
