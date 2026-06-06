@@ -37,11 +37,11 @@ const grid = computed(() => {
   }
   return cells
 })
-// 热力色:完成越多越亮(0→暗,5+→金绿)
+// 热力色:完成越多越亮(0→暗,5+→金黄,跟周签到的金色呼应)
 function heat(n) {
   if (n <= 0) return 'rgba(255,255,255,.05)'
   const lv = Math.min(n, 5) / 5
-  return `rgba(107,255,176,${0.18 + lv * 0.62})`
+  return `rgba(255,201,64,${0.2 + lv * 0.66})`
 }
 function move(n) { const c = new Date(cursor.value); c.setMonth(c.getMonth() + n); cursor.value = c }
 
@@ -71,11 +71,11 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
         <button v-for="(c,i) in grid" :key="i" class="day"
-                :disabled="!c" :style="c ? { background: heat(c.n), border: c.today ? '1px solid #ffd86b' : '1px solid transparent' } : { background:'transparent' }"
+                :disabled="!c" :style="c ? { background: heat(c.n), border: c.today ? '2px solid #fff' : '1px solid transparent' } : { background:'transparent' }"
                 @click="openDay(c)">
           <template v-if="c">
-            <span :style="c.today ? 'color:#ffd86b;font-weight:700' : (c.n>2 ? 'color:#0a3d28;font-weight:700' : 'color:rgba(255,255,255,.7)')">{{ c.d }}</span>
-            <span v-if="c.n>0" style="font-size:8px;line-height:1" :style="c.n>2 ? 'color:#0a3d28' : 'color:rgba(255,255,255,.6)'">{{ c.n }}项</span>
+            <span :style="c.today ? 'color:#fff;font-weight:700' : (c.n>2 ? 'color:#5a3d00;font-weight:700' : 'color:rgba(255,255,255,.7)')">{{ c.d }}</span>
+            <span v-if="c.n>0" style="font-size:8px;line-height:1" :style="c.n>2 ? 'color:#5a3d00' : 'color:rgba(255,255,255,.6)'">{{ c.n }}项</span>
           </template>
         </button>
       </div>
