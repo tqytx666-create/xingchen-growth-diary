@@ -143,9 +143,11 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
       <div class="dim" style="font-size:12px;margin-bottom:10px">{{ rangeLabel }} · 收入 <b :style="{ color: UP }">+{{ rangeIn }}</b> · 支出 <b :style="{ color: DOWN }">-{{ rangeOut }}</b> 分钟</div>
       <div class="chart">
         <div v-for="d in chartData" :key="d.key" class="col">
-          <div class="up"><span class="bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"><b v-if="d.income" class="vtop" :style="{ color: UP }">{{ d.income }}</b></span></div>
+          <div class="num" :style="{ color: UP }">{{ d.income || '' }}</div>
+          <div class="up"><span class="bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"></span></div>
           <div class="base"></div>
-          <div class="down"><span class="bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"><b v-if="d.expense" class="vbot" :style="{ color: DOWN }">{{ d.expense }}</b></span></div>
+          <div class="down"><span class="bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"></span></div>
+          <div class="num" :style="{ color: DOWN }">{{ d.expense || '' }}</div>
           <div class="lb">{{ d.label }}</div>
         </div>
       </div>
@@ -213,8 +215,7 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
 .up { height: 42px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .base { height: 1px; width: 100%; background: rgba(255,255,255,.2); }
 .down { height: 42px; width: 100%; display: flex; align-items: flex-start; justify-content: center; }
-.bar { position: relative; width: 64%; max-width: 18px; transition: height .4s ease; }
-.vtop { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.vbot { position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 3px; white-space: nowrap; }
+.bar { width: 64%; max-width: 18px; transition: height .4s ease; }
+.num { height: 12px; line-height: 12px; font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px; white-space: nowrap; }
 </style>
