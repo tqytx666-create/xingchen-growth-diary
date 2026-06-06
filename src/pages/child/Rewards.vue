@@ -56,7 +56,8 @@ function openBox(tier) {
   const r = openOneByTier(tier)
   if (r) {
     sfx.levelup(); boxReward.value = r
-    if (r.item) setTimeout(() => toast(`🎁 还开出了道具 ${r.item.emoji}「${r.item.name}」!去首页用它陪小愿`), 2600)
+    if (r.coins) setTimeout(() => toast(`🪙 开箱还得到 ${r.coins} 星币!`), 2500)
+    if (r.item) setTimeout(() => toast(`🎁 还开出了道具 ${r.item.emoji}「${r.item.name}」!去首页用它陪小愿`), r.coins ? 3300 : 2500)
   }
 }
 </script>
@@ -120,7 +121,7 @@ function openBox(tier) {
       <span style="font-size:12px">{{ STATUS[r.status] }}</span>
     </div>
 
-    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" @close="boxReward=null" />
+    <BoxModal v-if="boxReward" :tier="boxReward.tier" :minutes="boxReward.minutes" :coins="boxReward.coins || 0" @close="boxReward=null" />
   </div>
 </template>
 

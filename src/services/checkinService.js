@@ -121,10 +121,15 @@ export function openOneByTier(tier) {
   const minutes = lo + (h % (hi - lo + 1))
   box.opened_at = nowISO(); box.minutes = minutes
   bankSvc.addBonus({ minutes, description: `${BOX_NAME[box.tier]}:${box.source_task || ''}`, createdBy: 'system' })
+  // 开箱随机送星币:银 5~12,金 10~20
+  const [clo, chi] = box.tier === 'gold' ? [10, 20] : [5, 12]
+  const coins = clo + Math.floor(Math.random() * (chi - clo + 1))
+  coinSvc.earnCoins(coins, `${BOX_NAME[box.tier]}开箱`)
+  box.coins = coins
   // 约 45% 概率额外掉落一个道具(金/钻箱概率更高)
   let item = null
   const dropRate = box.tier === 'silver' ? 0.4 : 0.6
   if (Math.random() < dropRate) item = itemSvc.giveRandomItem()
-  audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes, item: item?.key || null })
-  return { tier: box.tier, minutes, item }
+  audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes, coins, item: item?.key || null })
+  return { tier: box.tier, minutes, coins, item }
 }

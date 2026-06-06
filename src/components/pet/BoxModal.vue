@@ -8,6 +8,7 @@ import { BOX_ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 const props = defineProps({
   tier: { type: String, default: 'silver' },   // silver / gold / diamond
   minutes: { type: Number, default: 0 },
+  coins: { type: Number, default: 0 },
   taskName: { type: String, default: '' }
 })
 const emit = defineEmits(['close'])
@@ -48,8 +49,8 @@ function done() { if (opened.value) emit('close') }
 
       <transition name="reveal">
         <div v-if="opened" class="box-reward">
-          <div class="box-min">+{{ minutes }} 分钟</div>
-          <div class="box-sub">游戏时间已存入时间银行</div>
+          <div class="box-min">+{{ minutes }} 分钟<span v-if="coins" style="font-size:18px;color:#ffd86b"> · +{{ coins }}🪙</span></div>
+          <div class="box-sub">游戏时间已存入时间银行{{ coins ? ' · 星币已到账' : '' }}</div>
           <div class="box-tap">轻触关闭</div>
         </div>
       </transition>
