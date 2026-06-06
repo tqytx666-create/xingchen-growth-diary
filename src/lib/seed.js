@@ -58,6 +58,7 @@ export function buildSeed() {
     { id: 't_hair', name: '洗头', task_type: 'side', category: 'hygiene', attribute_key: 'cleanliness', attribute_key2: 'charm', base_exp: 5, base_exp2: 5, icon: '🚿', anim: 'bath', blindbox: true, desc: '3 天内至少一次 · 清洁 + 魅力 +', is_active: true, created_at: nowISO() },
     { id: 't_room', name: '保持房间整洁', task_type: 'side', category: 'chore', attribute_key: 'cleanliness', base_exp: 4, icon: '🧹', anim: '', blindbox: true, desc: '每天 · 清洁 +', is_active: true, created_at: nowISO() },
     { id: 't_badminton', name: '打羽毛球', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 7, icon: '🏸', anim: 'badminton', desc: '支线 · 活力 + 运动时间', is_active: true, created_at: nowISO() },
+    { id: 't_rope', name: '跳绳', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 6, icon: '🪢', anim: 'badminton', desc: '支线 · 活力 + 运动时间(家长确认时录时长)', is_active: true, created_at: nowISO() },
     // 英语上课(外教课):有课才打,家长确认时手动输入换多少游戏时间(lesson:true)
     { id: 't_english_class', name: '英语上课(外教)', task_type: 'lesson', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '🎧', anim: 'study', lesson: true, desc: '上完外教课打卡 · 家长确认换游戏时间', is_active: true, created_at: nowISO() },
     // 英语老师布置的每日作业(百词斩 + ABC Reading 合并成一个必做卡;算英语主线)
