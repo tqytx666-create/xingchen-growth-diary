@@ -47,7 +47,7 @@ function redeem(w) {
       <span class="card" style="padding:6px 13px;font-size:15px;font-weight:700;color:#ffd86b"><CoinIcon /> <CountUp :value="bal" /></span>
     </div>
     <div class="card" style="padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
-      完成打卡(英语 +10🪙 / 支线 +5🪙)赚星币,在这里购买喜欢的皮肤、房间、家具和道具。星币只能靠打卡赚哦~
+      完成打卡赚星币(英语主线 +10<CoinIcon /> · 其它打卡 +5<CoinIcon /> · 开宝箱还会多送),在这里买喜欢的皮肤、房间、家具和道具,星币只能靠努力赚哦~
     </div>
 
     <!-- 心愿兑换:用星币换现实里想要的东西 -->

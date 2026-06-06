@@ -6,6 +6,7 @@ import { STAGES } from '../lib/petConfig.js'
 import BoxModal from '../components/pet/BoxModal.vue'
 import EvolutionModal from '../components/pet/EvolutionModal.vue'
 import CountUp from '../components/CountUp.vue'
+import CoinIcon from '../components/CoinIcon.vue'
 
 // —— 弹窗演示 ——
 const boxDemo = ref(null)
@@ -103,7 +104,7 @@ const bigImg = ref(null)
     <section>
       <h2>🔢 数字跳动</h2>
       <div class="pv-row">
-        <span class="pv-chip">🪙 <CountUp :value="coinDemo" /></span>
+        <span class="pv-chip"><CoinIcon /> <CountUp :value="coinDemo" /></span>
         <button @click="addCoins">+ 赚星币</button>
       </div>
     </section>

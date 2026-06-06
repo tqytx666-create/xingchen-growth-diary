@@ -4,6 +4,7 @@ import boxSilver from '../../assets/box/box_silver.png'
 import boxGold from '../../assets/box/box_gold.png'
 import boxDiamond from '../../assets/box/box_diamond.png'
 import { BOX_ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
+import CoinIcon from '../CoinIcon.vue'
 
 const props = defineProps({
   tier: { type: String, default: 'silver' },   // silver / gold / diamond
@@ -56,7 +57,7 @@ function done() { if (opened.value) emit('close') }
               <span class="prize-unit">分钟<br>游戏时间</span>
             </div>
             <div v-if="coins" class="prize-row coin">
-              <span class="prize-ic">🪙</span>
+              <span class="prize-ic"><CoinIcon /></span>
               <span class="prize-val">+{{ coins }}</span>
               <span class="prize-unit">星币<br>去商城买</span>
             </div>
