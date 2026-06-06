@@ -255,7 +255,6 @@ onMounted(() => {
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
       <div v-if="livingActive" style="position:relative">
         <LivingPet :set="livingSetCur" :action="livingAction" @done="livingAction=''" @tap="petDog" />
-        <img v-for="f in placed" :key="f.key" :src="f.img" :alt="f.name" class="furn" :style="f.slot" />
         <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
         <button class="room-btn decor-btn" title="装饰" @click.stop="decorOpen=true">🛋️</button>
       </div>
@@ -367,7 +366,7 @@ onMounted(() => {
     <div v-if="decorOpen" class="attr-overlay" @click.self="decorOpen=false">
       <div class="attr-sheet" style="--ac:#6bffb0">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">🛋️ 装饰小窝</div>
-        <div class="dim" style="font-size:12px;margin-bottom:12px">在🛍️商城买下家具后,这里点一下摆进窝里 / 收起来。</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">在🛍️商城买下家具后,这里点一下摆进窝里 / 收起来。<br>💡 摆好的家具会显示在「换房间🏠」里的其它房间(森林/海洋/太空…);默认的星空小窝是会动的场景,本身已经布置好啦~</div>
         <div v-for="f in furns" :key="f.key" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
           <div style="width:50px;height:50px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.05)">
             <img :src="f.img" :alt="f.name" :style="f.owned ? '' : 'filter:grayscale(1) brightness(.5)'" style="width:40px;height:40px;object-fit:contain" />
