@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { currentUser, syncState } from './lib/store.js'
+import { currentUser, syncState, IS_DEMO } from './lib/store.js'
 import { toastState } from './lib/toast.js'
 
 const route = useRoute()
@@ -56,8 +56,8 @@ function refresh() { location.reload() }
 
     <!-- 云同步状态小指示 -->
     <transition name="view">
-      <div v-if="showNav && syncState.syncing" class="sync-chip">☁️ 同步中…</div>
-      <div v-else-if="showNav && !syncState.online" class="sync-chip offline">📴 离线(本地保存)</div>
+      <div v-if="!IS_DEMO && showNav && syncState.syncing" class="sync-chip">☁️ 同步中…</div>
+      <div v-else-if="!IS_DEMO && showNav && !syncState.online" class="sync-chip offline">📴 离线(本地保存)</div>
     </transition>
 
     <div class="toast" :class="{ show: toastState.show }">{{ toastState.msg }}</div>

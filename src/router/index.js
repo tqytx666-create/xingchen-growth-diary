@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { session, currentUser } from '../lib/store.js'
+import { session, currentUser, IS_DEMO } from '../lib/store.js'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -33,6 +33,8 @@ const routes = [
 const router = createRouter({ history: createWebHashHistory(), routes })
 
 router.beforeEach((to) => {
+  // Demo:免登录,任何入口都进孩子端
+  if (IS_DEMO) return (to.meta.role && to.meta.role !== 'child') || to.path === '/login' || to.path === '/' ? '/child/today' : true
   const u = currentUser()
   if (to.path === '/login' || to.path === '/preview') return true
   if (!u) return '/login'

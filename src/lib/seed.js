@@ -1,6 +1,22 @@
 import { uid, todayStr, nowISO, weekStart } from './util.js'
+import { SKIN_TRACK, ROOM_TRACK, FURNITURE } from './petImages.js'
+import { tierFromLevel } from './petConfig.js'
 
 export const SEED_VERSION = 4
+
+// Demo 版(分享给朋友看):全解锁、有基础数据、打卡免确认。基于正式种子覆盖。
+export function buildDemoSeed() {
+  const s = buildSeed()
+  s.coins = 9999
+  s.owned_skins = ['default', ...SKIN_TRACK.map(x => x.key)]
+  s.owned_rooms = ['night', ...ROOM_TRACK.map(x => x.key)]
+  s.owned_furniture = FURNITURE.map(x => x.key)
+  s.items = { bone: 9, fish: 9, ball: 9, wand: 9 }
+  const p = s.pet_profile[0]
+  if (p) { p.level = 9; p.exp = 15; p.stage_idx = tierFromLevel(9); p.mood = 'happy' }
+  s.meta = { ...s.meta, demo: true }
+  return s
+}
 
 // 第一版种子数据。对应 DATA_MODEL.md 的默认任务与初始宠物/账户。
 export function buildSeed() {

@@ -1,4 +1,4 @@
-import { db, child, audit, mainTask } from '../lib/store.js'
+import { db, child, audit, mainTask, IS_DEMO } from '../lib/store.js'
 import { todayStr, nowISO, uid } from '../lib/util.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
@@ -29,8 +29,8 @@ export function createCheckin(taskId, opts = {}) {
   const cid = child().id
   const checkin = {
     id: uid('c_'), task_id: taskId, child_id: cid, checkin_date: date,
-    status: 'self_reported', self_reported_at: nowISO(),
-    verified_by: null, verified_at: null, note: opts.note || null,
+    status: IS_DEMO ? 'confirmed' : 'self_reported', self_reported_at: nowISO(),
+    verified_by: IS_DEMO ? 'demo' : null, verified_at: IS_DEMO ? nowISO() : null, note: opts.note || null,
     photo_url: opts.photoUrl || null,
     make_up: !!opts.makeUp,
     interacted: false

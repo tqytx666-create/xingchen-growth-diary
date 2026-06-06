@@ -1,7 +1,10 @@
 import { reactive, watch, ref } from 'vue'
-import { buildSeed, SEED_VERSION } from './seed.js'
+import { buildSeed, buildDemoSeed, SEED_VERSION } from './seed.js'
 import { nowISO } from './util.js'
 import { supabase } from './supabase.js'
+
+// Demo 模式:URL 带 ?demo —— 全解锁、本地独立数据、绝不连真实云端(防污染小鱼数据)
+export const IS_DEMO = (typeof location !== 'undefined') && new URLSearchParams(location.search).has('demo')
 
 /*
   数据层:reactive db 为唯一数据源(所有 service/组件同步读写)。
@@ -12,7 +15,7 @@ import { supabase } from './supabase.js'
   last-write-wins(家庭低并发场景足够)。
 */
 
-const LS_KEY = 'xingchen_growth_db'
+const LS_KEY = IS_DEMO ? 'xingchen_demo_db' : 'xingchen_growth_db'
 const SESSION_KEY = 'xingchen_session'
 const STATE_ID = 1
 
@@ -21,14 +24,16 @@ function loadLocal() {
     const raw = localStorage.getItem(LS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION) return parsed
+      if (parsed && parsed.meta && parsed.meta.version === SEED_VERSION && (!IS_DEMO || parsed.meta.demo)) return parsed
     }
   } catch (e) { /* ignore */ }
-  return buildSeed()
+  return IS_DEMO ? buildDemoSeed() : buildSeed()
 }
 
 export const db = reactive(loadLocal())
 export const session = reactive({ userId: localStorage.getItem(SESSION_KEY) || null })
+// Demo:免登录,自动以星晨(孩子)身份进入
+if (IS_DEMO) { const c = db.users.find(u => u.role === 'child'); if (c) session.userId = c.id }
 export const syncState = reactive({ online: false, syncing: false })
 
 // ---- 同步内部状态 ----
@@ -54,6 +59,7 @@ function applyRemote(obj) {
 }
 
 async function pushNow() {
+  if (IS_DEMO) return        // demo 只存本地,绝不写云端
   if (suppress) return
   const json = serialize()
   if (json === lastSerialized) return
@@ -89,6 +95,7 @@ function onRemote(payload) {
 }
 
 export async function initSync() {
+  if (IS_DEMO) { syncState.online = false; return }   // demo 不连云端,纯本地
   try {
     const { data, error } = await supabase.from('xc_state').select('data').eq('id', STATE_ID).maybeSingle()
     if (error) throw error
