@@ -15,8 +15,7 @@ export const COIN_PER_SIDE = 5    // 支线
 // 心愿兑换:用星币换"现实里想要的东西"(星晨自己的兴趣)。买 = 下单,家长在兑换页通过后线下兑现;拒绝退星币。
 // 价格按"打卡攒星币的节奏"定,可随时调。
 export const WISH = [
-  { key: 'read30', emoji: '📖', name: '看小说 30 分钟', price: 60,  note: '自由阅读时间' },
-  { key: 'card',   emoji: '🃏', name: '小说周边·小卡', price: 350, note: '≤20 元的角色小卡' },
-  { key: 'standee',emoji: '🧍', name: '小说周边·立牌/挂坠', price: 550, note: '≤20 元的立牌或挂坠' },
-  { key: 'book',   emoji: '📚', name: '原耽小说·一套', price: 900, note: '一套实体书(约 70~80 元)' }
+  { key: 'card',   emoji: '🃏', name: '小说周边·小卡', price: 175, note: '≤20 元的角色小卡' },
+  { key: 'standee',emoji: '🧍', name: '小说周边·立牌/挂坠', price: 275, note: '≤20 元的立牌或挂坠' },
+  { key: 'book',   emoji: '📚', name: '原耽小说·一套', price: 450, note: '一套实体书(约 70~80 元)' }
 ]
