@@ -4,12 +4,10 @@ import { db, streak, mainTask, child } from '../../lib/store.js'
 import { weeklyProgress, nextCumulative, missedMainDays, isMainStreakTask } from '../../services/streakService.js'
 import { ownedFreezeCards } from '../../services/rewardService.js'
 import { makeUpMissedDay } from '../../services/checkinService.js'
-import { skinTrackState, equipSkin } from '../../services/skinService.js'
 import { todayStr, addDays } from '../../lib/util.js'
-import { REWARDS } from '../../lib/rewardConfig.js'
 import { toast } from '../../lib/toast.js'
-import { sfx } from '../../lib/sound.js'
 import CountUp from '../../components/CountUp.vue'
+import Calendar from './Calendar.vue'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
@@ -26,15 +24,6 @@ function makeUp(date) {
   } catch (e) { toast(e.message) }
 }
 
-// 皮肤衣柜(拥有的可装扮;未拥有去商城买)
-const skins = computed(() => skinTrackState())
-function equip(s) {
-  if (!s.owned) { toast(`还没拥有 ${s.emoji}${s.name},去🛍️商城用星币买下它`); return }
-  equipSkin(s.equipped ? 'default' : s.key)
-  sfx.pop()
-  toast(s.equipped ? '已脱下装扮,变回原来的样子' : `已给小愿换上「${s.name}」${s.emoji}`)
-}
-
 const weekDays = computed(() => {
   const ids = new Set(db.tasks.filter(isMainStreakTask).map(t => t.id))
   const done = new Set(db.checkins.filter(c => ids.has(c.task_id) && c.status !== 'false_reported' && c.status !== 'revoked').map(c => c.checkin_date))
@@ -42,12 +31,6 @@ const weekDays = computed(() => {
   return labels.map((l, i) => { const d = addDays(ws.value, i); return { l, date: d, done: done.has(d), today: d === todayStr(), future: d > todayStr() } })
 })
 
-// 累积成就徽章:直接复用奖励页同一份配置(按连续签到 streak 的里程碑),保证名称/天数一致
-const badges = computed(() =>
-  REWARDS.filter(r => r.metric === 'streak')
-    .sort((a, b) => a.target - b.target)
-    .map(r => ({ d: r.target, icon: r.icon, name: r.name, got: nc.value.longest >= r.target }))
-)
 </script>
 
 <template>
@@ -82,29 +65,10 @@ const badges = computed(() =>
           <div style="font-size:17px;line-height:1.1;margin-top:1px">{{ d.done ? '🐾' : (d.today ? '⭐' : (d.future ? '·' : '–')) }}</div>
         </div>
       </div>
-      <router-link to="/child/calendar" style="display:block;text-align:center;margin-top:12px;font-size:13px;color:#ffd86b;text-decoration:none;padding:8px;border-radius:10px;background:rgba(255,216,107,.1)">📅 看完整日历 · 补卡 ›</router-link>
     </div>
 
-    <!-- 皮肤衣柜 -->
-    <div class="card skin-card" style="padding:16px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-        <span style="font-weight:700">🎀 皮肤衣柜</span>
-        <router-link to="/child/shop" class="dim" style="font-size:12px;color:#ffd86b;text-decoration:none">🛍️ 去商城 ›</router-link>
-      </div>
-      <div class="dim" style="font-size:11px;margin-bottom:12px">拥有的皮肤点一下就能给小愿换上;没有的去商城用星币购买。</div>
-      <div class="skin-track">
-        <div v-for="s in skins" :key="s.key" class="skin-node" :class="{ locked:!s.owned, equipped:s.equipped }" @click="equip(s)">
-          <div class="skin-pic">
-            <img :src="s.img" :alt="s.name" :style="s.owned ? '' : 'filter:grayscale(1) brightness(.45)'" />
-            <span v-if="!s.owned" class="skin-lock">🔒</span>
-            <span v-if="s.animated" class="skin-anim">✨动</span>
-            <span v-if="s.equipped" class="skin-on">装扮中</span>
-          </div>
-          <div class="skin-nm">{{ s.emoji }} {{ s.name }}</div>
-          <div class="skin-day" :class="{ dim:!s.owned }">{{ s.owned ? (s.equipped ? '点击脱下' : '点击装扮') : '商城购买' }}</div>
-        </div>
-      </div>
-    </div>
+    <!-- 完整月历(直接内嵌,不用再点开) -->
+    <Calendar embed />
 
     <!-- 漏打补卡(用免断签卡) -->
     <div v-if="missed.length" class="card" style="padding:16px;margin-bottom:16px;border-color:rgba(255,216,107,.35)">
@@ -115,20 +79,6 @@ const badges = computed(() =>
         <button class="btn-accent" style="padding:7px 14px;font-size:13px" :disabled="cards<1" :style="cards<1 ? 'opacity:.45' : ''" @click="makeUp(d)">用卡补</button>
       </div>
       <div v-if="cards<1" class="dim" style="font-size:11px;margin-top:10px">🈳 没有免断签卡了。本周英语满勤 7 天,可在「🎁 奖励」页申请一张,家长批准后就能用来补卡。</div>
-    </div>
-
-    <!-- 累积成就徽章 -->
-    <div class="card" style="padding:16px;margin-bottom:16px">
-      <div style="font-weight:600;margin-bottom:4px">🏅 累积成就(长期大奖)</div>
-      <div class="dim" style="font-size:11px;margin-bottom:12px">连续签到达成里程碑 → 到「🎁奖励」页申请,家长确认后兑现</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-        <div v-for="m in badges" :key="m.d" style="text-align:center;padding:10px 4px;border-radius:14px;transition:all .3s"
-             :style="m.got ? 'background:linear-gradient(160deg,rgba(255,216,107,.2),rgba(255,255,255,.06));border:1px solid rgba(255,216,107,.5)' : 'background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08)'">
-          <div style="font-size:30px" :style="m.got ? '' : 'filter:grayscale(1);opacity:.4'">{{ m.icon }}</div>
-          <div style="font-size:11px;margin-top:4px" :style="m.got ? 'color:#ffd86b;font-weight:700' : 'color:rgba(255,255,255,.4)'">{{ m.name }}</div>
-          <div class="dim" style="font-size:10px;margin-top:1px">{{ m.d }} 天{{ m.got ? ' ✓' : '' }}</div>
-        </div>
-      </div>
     </div>
 
     <div class="card" style="padding:16px;margin-bottom:16px">

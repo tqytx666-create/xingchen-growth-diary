@@ -35,7 +35,8 @@ const dexPct = computed(() => dexTotal.value ? Math.round(dexUnlocked.value / de
 
 // 皮肤衣柜(商城购买的皮肤,在这里装扮)
 const wardrobe = computed(() => skinTrackState())
-const ownedSkinCount = computed(() => wardrobe.value.filter(s => s.owned).length)
+const ownedWardrobe = computed(() => wardrobe.value.filter(s => s.owned))
+const ownedSkinCount = computed(() => ownedWardrobe.value.length)
 function equipFromPet(s) {
   if (!s.owned) { toast(`还没拥有 ${s.emoji}${s.name},去 🛍️ 商城用星币买下它`); return }
   equipSkin(s.equipped ? 'default' : s.key)
@@ -92,20 +93,22 @@ function equipFromPet(s) {
 
     <div v-else-if="tab==='skin'">
       <div style="display:flex;align-items:center;margin:0 2px 11px">
-        <span class="dim" style="font-size:12px">拥有的点一下就给小愿穿上,没有的去🛍️商城买</span>
+        <span class="dim" style="font-size:12px">点一下就给小愿穿上 / 脱下</span>
         <span class="dim" style="margin-left:auto;font-size:12px;font-weight:600">已拥有 {{ ownedSkinCount }}/{{ wardrobe.length }}</span>
       </div>
-      <div class="pskin-grid">
-        <div v-for="s in wardrobe" :key="s.key" class="pskin-cell" :class="{ equipped:s.equipped, locked:!s.owned }" @click="equipFromPet(s)">
+      <div v-if="ownedWardrobe.length" class="pskin-grid">
+        <div v-for="s in ownedWardrobe" :key="s.key" class="pskin-cell" :class="{ equipped:s.equipped }" @click="equipFromPet(s)">
           <div class="pskin-pic">
-            <img :src="s.img" :alt="s.name" :style="s.owned ? '' : 'filter:grayscale(1) brightness(.45)'" />
-            <span v-if="!s.owned" class="pskin-lock">🔒</span>
+            <img :src="s.img" :alt="s.name" />
             <span v-if="s.animated" class="pskin-anim">✨动</span>
             <span v-if="s.equipped" class="pskin-on">装扮中</span>
           </div>
           <div class="pskin-nm">{{ s.emoji }} {{ s.name }}</div>
-          <div class="pskin-act" :class="{ dim:!s.owned }">{{ s.owned ? (s.equipped ? '点击脱下' : '点击装扮') : '商城购买' }}</div>
+          <div class="pskin-act">{{ s.equipped ? '点击脱下' : '点击装扮' }}</div>
         </div>
+      </div>
+      <div v-else class="dim" style="text-align:center;padding:30px 14px;font-size:13px;line-height:1.7">
+        还没有皮肤呢~<br>去 🛍️ 商城用打卡攒的星币买喜欢的皮肤,买了就出现在这里 ✨
       </div>
     </div>
 

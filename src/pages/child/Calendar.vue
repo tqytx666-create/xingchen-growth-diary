@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { db } from '../../lib/store.js'
+const props = defineProps({ embed: { type: Boolean, default: false } })
 import { todayStr } from '../../lib/util.js'
 import { requestMakeup } from '../../services/checkinService.js'
 import { toast } from '../../lib/toast.js'
@@ -57,8 +58,8 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
 </script>
 
 <template>
-  <div style="padding:14px 14px 90px">
-    <h2 style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">📅 打卡日历</h2>
+  <div :style="embed ? '' : 'padding:14px 14px 90px'">
+    <h2 v-if="!embed" style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">📅 打卡日历</h2>
     <div class="card" style="padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <button class="btn-ghost" style="padding:6px 12px" @click="move(-1)">‹</button>
