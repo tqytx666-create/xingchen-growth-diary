@@ -27,13 +27,20 @@ function pickSkin(sk) {
   p.value.skin = sk.key; toast(`已换上「${sk.t}」皮肤 🎨`)
 }
 const events = computed(() => db.pet_events.slice(0, 30))
+// 图鉴收集进度
+const dexTotal = computed(() => DEX.length)
+const dexUnlocked = computed(() => DEX.filter(d => d.cond(p.value, a.value)).length)
+const dexPct = computed(() => dexTotal.value ? Math.round(dexUnlocked.value / dexTotal.value * 100) : 0)
 </script>
 
 <template>
   <div style="padding:14px 14px 90px">
     <div class="card" style="border-radius:28px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;
                 background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.3), transparent 60%), rgba(0,0,0,.18)">
-      <PetAvatar :pet="p" :attrs="a" :size="170" :interactive="false" />
+      <div class="pet-hero">
+        <div class="pet-pedestal"></div>
+        <div class="pet-float"><PetAvatar :pet="p" :attrs="a" :size="170" :interactive="false" /></div>
+      </div>
       <div v-if="!editing" style="font-weight:700;margin-top:6px;display:flex;align-items:center;gap:6px;cursor:pointer" @click="startEdit">
         <span>{{ p.name }}</span><span class="dim" style="font-weight:400">· {{ p.species }}</span>
         <span style="font-size:12px;opacity:.7">✏️</span>
@@ -52,7 +59,12 @@ const events = computed(() => db.pet_events.slice(0, 30))
               :style="tab===t[0] ? 'border-color:#ffd86b;color:#ffd86b' : ''" @click="tab=t[0]">{{ t[1] }}</button>
     </div>
 
-    <div v-if="tab==='dex'" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div v-if="tab==='dex'">
+    <div class="dex-prog">
+      <span style="font-size:13px;font-weight:700;white-space:nowrap">🐾 图鉴收集 <b style="color:#ffd86b">{{ dexUnlocked }}</b><span class="dim">/{{ dexTotal }}</span></span>
+      <div class="bar" style="flex:1"><i style="background:linear-gradient(90deg,#ffd86b,#ffb347)" :style="{ width: dexPct + '%' }"></i></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div v-for="d in DEX" :key="d.key" class="card" style="padding:12px;text-align:center;position:relative"
            :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')">
         <div style="height:96px;display:grid;place-items:center">
@@ -65,6 +77,7 @@ const events = computed(() => db.pet_events.slice(0, 30))
         <div v-if="d.key===curForm" style="position:absolute;top:8px;right:8px">📍</div>
         <div v-else-if="!d.cond(p,a)" style="position:absolute;top:8px;right:8px">🔒</div>
       </div>
+    </div>
     </div>
 
     <div v-else-if="tab==='skin'" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -92,3 +105,16 @@ const events = computed(() => db.pet_events.slice(0, 30))
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 宠物主图:轻轻浮动 + 下方光晕台座 */
+.pet-hero { position: relative; display: grid; place-items: center; padding-top: 6px; }
+.pet-pedestal { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  width: 130px; height: 26px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,216,107,.4), transparent 70%); filter: blur(2px); }
+.pet-float { position: relative; animation: petFloat 3.4s ease-in-out infinite; }
+@keyframes petFloat { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-7px) } }
+/* 图鉴收集进度条 */
+.dex-prog { display: flex; align-items: center; gap: 11px; margin: 2px 2px 14px; }
+@media (prefers-reduced-motion: reduce) { .pet-float { animation: none } }
+</style>
