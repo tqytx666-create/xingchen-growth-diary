@@ -51,8 +51,8 @@ function redeem(w) {
 
     <!-- 心愿兑换:用星币换现实里想要的东西 -->
     <div style="margin-bottom:22px">
-      <div style="font-weight:700;margin:2px 2px 4px">🌠 心愿兑换</div>
-      <div class="dim" style="font-size:11px;margin-bottom:10px">用星币兑换现实奖励,下单后告诉爸爸妈妈,通过了就兑现给你~</div>
+      <div class="sec-head wish-head">🌠 心愿兑换</div>
+      <div class="dim" style="font-size:11px;margin:-4px 2px 10px">用星币兑换现实奖励,下单后告诉爸爸妈妈,通过了就兑现给你~</div>
       <div v-for="w in wishes" :key="w.key" class="card" style="display:flex;align-items:center;gap:12px;padding:12px 13px;margin-bottom:9px">
         <div style="font-size:26px">{{ w.emoji }}</div>
         <div style="flex:1;min-width:0">
@@ -64,10 +64,12 @@ function redeem(w) {
     </div>
 
     <div v-for="sec in catalog" :key="sec.type" style="margin-bottom:20px">
-      <div style="font-weight:700;margin:2px 2px 10px">{{ sec.title }}</div>
+      <div class="sec-head">{{ sec.title }}
+        <span v-if="sec.type!=='item'" class="sec-count">已拥有 {{ sec.items.filter(i=>i.owned).length }}/{{ sec.items.length }}</span>
+      </div>
       <div class="shop-grid">
-        <div v-for="g in sec.items" :key="g.key" class="shop-card">
-          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" /><span class="shop-info">ⓘ</span></div>
+        <div v-for="g in sec.items" :key="g.key" class="shop-card" :class="{ 'is-owned': g.owned }">
+          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" /><span class="shop-info">ⓘ</span><span v-if="g.owned" class="owned-rib">✓ 拥有</span></div>
           <div class="shop-nm" style="cursor:pointer" @click="openDetail(sec.type, g)">{{ g.emoji }} {{ g.name }}</div>
           <div v-if="sec.type==='item' && itemCounts[g.key]" class="dim" style="font-size:10px">已有 {{ itemCounts[g.key] }}</div>
           <button v-if="g.owned" class="shop-buy owned" disabled>已拥有</button>
@@ -94,10 +96,19 @@ function redeem(w) {
 </template>
 
 <style scoped>
+/* 分区标题:左侧色条 + 拥有计数 */
+.sec-head { display: flex; align-items: center; font-size: 15px; font-weight: 700; margin: 2px 2px 11px;
+  padding-left: 9px; border-left: 3px solid #7c6bff; }
+.sec-head.wish-head { border-left-color: #ff9ec7; }
+.sec-count { margin-left: auto; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); }
 .shop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .shop-card { border-radius: 16px; padding: 10px 8px; text-align: center;
   background: radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.18), transparent 60%), rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08); }
+  border: 1px solid rgba(255,255,255,.08); transition: transform .12s ease, border-color .2s; }
+.shop-card:active { transform: scale(.96); }
+.shop-card.is-owned { opacity: .72; border-color: rgba(107,255,176,.3); }
+.owned-rib { position: absolute; top: 3px; left: 3px; background: #6bffb0; color: #0a3d28;
+  font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 999px; }
 .shop-pic { width: 100%; aspect-ratio: 1; display: grid; place-items: center; position: relative; }
 .shop-pic img { width: 78%; height: 78%; object-fit: contain; }
 .shop-info { position: absolute; top: 2px; right: 2px; font-size: 11px; color: rgba(255,255,255,.45); }
