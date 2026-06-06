@@ -47,6 +47,7 @@ function move(n) { const c = new Date(cursor.value); c.setMonth(c.getMonth() + n
 // 选中某天看详情 + 补卡
 const sel = ref(null)
 function openDay(c) { if (c) sel.value = c.ds }
+const selFuture = computed(() => !!sel.value && sel.value > today)
 const selTasks = computed(() => activeTasks.value.map(t => ({ ...t, st: statusOn(t.id, sel.value) })))
 function makeUp(t) {
   try { requestMakeup(t.id, sel.value); toast(`已申请补卡:${t.name} 📅 等家长核验`) }
@@ -88,13 +89,14 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
     <div v-if="sel" class="day-overlay" @click.self="sel=null">
       <div class="day-sheet">
         <div style="font-size:17px;font-weight:700;margin-bottom:4px">📅 {{ fmtSel(sel) }}{{ sel===today ? ' · 今天' : '' }}</div>
-        <div class="dim" style="font-size:12px;margin-bottom:12px">没打的任务可以「补卡」,补卡要家长核验才算数。</div>
+        <div class="dim" style="font-size:12px;margin-bottom:12px">{{ selFuture ? '这天还没到,到那天再来打卡呀 ✨' : '没打的任务可以「补卡」,补卡要家长核验才算数。' }}</div>
         <div v-for="t in selTasks" :key="t.id" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)">
           <span style="font-size:20px">{{ t.icon }}</span>
           <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">{{ t.name }}</div></div>
           <span v-if="t.st==='done'" style="font-size:12px;color:#6bffb0">✅ 已完成</span>
           <span v-else-if="t.st==='wait'" style="font-size:12px;color:#ffd86b">⏳ 待核验</span>
           <span v-else-if="t.st==='false'" style="font-size:12px;color:#ff7a7a">⚠️ 虚报</span>
+          <span v-else-if="selFuture" style="font-size:12px;color:rgba(255,255,255,.35)">— 未到</span>
           <button v-else class="btn-ghost" style="padding:6px 12px;font-size:12px;border-color:rgba(124,107,255,.4);color:#c3b8ff" @click="makeUp(t)">补卡</button>
         </div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="sel=null">关闭</button>
