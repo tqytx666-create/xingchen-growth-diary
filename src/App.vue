@@ -28,10 +28,11 @@ const familyNav = computed(() => {
 })
 const nav = computed(() => (role.value === 'child' ? childNav : familyNav.value))
 const showNav = computed(() => route.path !== '/login' && !!user.value)
+function refresh() { location.reload() }
 </script>
 
 <template>
-  <div>
+  <div class="app-root">
     <!-- 全局星空背景:视差星点 + 流星 -->
     <div class="sky-bg" aria-hidden="true">
       <div class="stars-layer stars-far"></div>
@@ -50,6 +51,9 @@ const showNav = computed(() => route.path !== '/login' && !!user.value)
       </router-link>
     </nav>
 
+    <!-- 全局刷新按钮(桌面PWA更新不及时时手动刷新) -->
+    <button v-if="showNav" class="refresh-fab" title="刷新" @click="refresh">🔄</button>
+
     <!-- 云同步状态小指示 -->
     <transition name="view">
       <div v-if="showNav && syncState.syncing" class="sync-chip">☁️ 同步中…</div>
@@ -61,6 +65,18 @@ const showNav = computed(() => route.path !== '/login' && !!user.value)
 </template>
 
 <style scoped>
+/* 顶部安全区:站立式 PWA 从桌面打开时,把内容压到状态栏(时间/刘海)下面 */
+.app-root { padding-top: env(safe-area-inset-top); }
+/* 全局刷新按钮:右下角浮标,在底部导航之上 */
+.refresh-fab {
+  position: fixed; right: 14px; z-index: 65;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(20,16,32,.72); border: 1px solid rgba(255,255,255,.2);
+  color: #fff; font-size: 18px; line-height: 1; cursor: pointer;
+  backdrop-filter: blur(8px); box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.refresh-fab:active { transform: scale(.9); }
 .sync-chip {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 60;
