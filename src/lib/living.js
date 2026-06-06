@@ -35,15 +35,23 @@ import e5_study from '../assets/living/scene_evo5_study.mp4'
 import e5_bath from '../assets/living/scene_evo5_bath.mp4'
 import e5_eat from '../assets/living/scene_evo5_eat.mp4'
 import e5_happy from '../assets/living/scene_evo5_happy.mp4'
+// 星愿神犬(stage6)
+import g_walk from '../assets/living/scene_god_walk.mp4'
+import g_brush from '../assets/living/scene_god_brush.mp4'
+import g_study from '../assets/living/scene_god_study.mp4'
+import g_bath from '../assets/living/scene_god_bath.mp4'
+import g_eat from '../assets/living/scene_god_eat.mp4'
+import g_happy from '../assets/living/scene_god_happy.mp4'
 
 const BASE = { idle: b_walk, brush: b_brush, study: b_study, bath: b_bath, eat: b_eat, happy: b_happy }
 const EVO2 = { idle: e2_walk, brush: e2_brush, study: e2_study, bath: e2_bath, eat: e2_eat, happy: e2_happy }
 const EVO3 = { idle: e3_walk, brush: e3_brush, study: e3_study, bath: e3_bath, eat: e3_eat, happy: e3_happy }
 const EVO4 = { idle: e4_walk, brush: e4_brush, study: e4_study, bath: e4_bath, eat: e4_eat, happy: e4_happy }
 const EVO5 = { idle: e5_walk, brush: e5_brush, study: e5_study, bath: e5_bath, eat: e5_eat, happy: e5_happy }
+const GOD = { idle: g_walk, brush: g_brush, study: g_study, bath: g_bath, eat: g_eat, happy: g_happy }
 
-// 形态(stage_idx)→ 活视频套;神犬(6)暂回落静态,下轮补
-const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5 }
+// 形态(stage_idx)→ 活视频套;6个形态全齐 🎉
+const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 6: GOD }
 // 活皮肤(优先于形态);以后一套套补
 const SKIN_SETS = {}
 
