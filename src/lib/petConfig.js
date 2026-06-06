@@ -11,35 +11,46 @@ export function expForLevel(level) {
 // 初遇蛋:攒够这么多经验(≈5~6 次打卡)才孵化成幼犬 Lv.1
 export const HATCH_EXP = 30
 
-// 视觉阶段(stage_idx 1-6),由等级映射,0 号留给"蛋"。进化门槛前置、更频繁,早期每 2-3 级一变。
-export const STAGES = [
-  { name: '初遇蛋', lv: 0 },
-  { name: '幼犬',   lv: 1 },   // Lv 1-2
-  { name: '星纹犬', lv: 2 },   // Lv 3-4
-  { name: '翼星犬', lv: 3 },   // Lv 5-7
-  { name: '辉光犬', lv: 4 },   // Lv 8-11
-  { name: '御星犬', lv: 5 },   // Lv 12-17
-  { name: '星愿神犬', lv: 6 }  // Lv 18-30
+// 形态总表(单一数据源):每 2 级一形态,一路到 Lv29。stage_idx = 在本数组里的下标(0=蛋)。
+// f6~f14 暂无专属美术,先占位(图/活视频回落御星),逐轮用即梦补齐。
+export const FORMS = [
+  { key: 'egg',  name: '初遇蛋',   lv: 0,  rare: 'n', d: '一切的起点' },
+  { key: 'base', name: '幼犬',     lv: 1,  rare: 'n', d: 'Lv.1 · 奶油白幼犬' },
+  { key: 'evo2', name: '星纹犬',   lv: 3,  rare: 'n', d: 'Lv.3 · 长出金色星纹' },
+  { key: 'evo3', name: '翼星犬',   lv: 5,  rare: 'r', d: 'Lv.5 · 长出星光翅膀' },
+  { key: 'evo4', name: '辉光犬',   lv: 7,  rare: 'r', d: 'Lv.7 · 星光环绕' },
+  { key: 'evo5', name: '御星犬',   lv: 9,  rare: 'e', d: 'Lv.9 · 皇冠星空斗篷' },
+  { key: 'f6',   name: '流光犬',   lv: 11, rare: 'e', d: 'Lv.11 · 流光溢彩' },
+  { key: 'f7',   name: '星河犬',   lv: 13, rare: 'e', d: 'Lv.13 · 星河披风' },
+  { key: 'f8',   name: '月华犬',   lv: 15, rare: 'e', d: 'Lv.15 · 月华加身' },
+  { key: 'f9',   name: '极光犬',   lv: 17, rare: 'l', d: 'Lv.17 · 极光环绕' },
+  { key: 'f10',  name: '苍穹犬',   lv: 19, rare: 'l', d: 'Lv.19 · 苍穹之力' },
+  { key: 'f11',  name: '星陨犬',   lv: 21, rare: 'l', d: 'Lv.21 · 星陨降临' },
+  { key: 'f12',  name: '璀璨犬',   lv: 23, rare: 'l', d: 'Lv.23 · 璀璨星辉' },
+  { key: 'f13',  name: '星皇犬',   lv: 25, rare: 'l', d: 'Lv.25 · 星之皇者' },
+  { key: 'f14',  name: '天河犬',   lv: 27, rare: 'l', d: 'Lv.27 · 天河之主' },
+  { key: 'god',  name: '星愿神犬', lv: 29, rare: 'l', d: 'Lv.29 · 终极形态' }
 ]
+// 视觉阶段(stage_idx),由 FORMS 派生
+export const STAGES = FORMS.map(f => ({ name: f.name, lv: f.lv }))
+// 等级 → stage_idx:孵化后(level≥1)取 lv≤level 的最大形态下标
 export function tierFromLevel(level) {
-  if (level >= 18) return 6
-  if (level >= 12) return 5
-  if (level >= 8) return 4
-  if (level >= 5) return 3
-  if (level >= 3) return 2
-  return 1
+  let idx = 1
+  for (let i = 1; i < FORMS.length; i++) { if (level >= FORMS[i].lv) idx = i; else break }
+  return idx
 }
 // 每个阶段的起始等级(用于"距离下一形态还有几级")
-export const TIER_START = [0, 1, 3, 5, 8, 12, 18]
+export const TIER_START = FORMS.map(f => f.lv)
 
 // 体型随等级从小到大
 export function sizeForLevel(level, max = 200) {
   const t = Math.min(1, (level - 1) / (MAX_LEVEL - 1))
   return Math.round(130 + t * (max - 130))
 }
-// 每个阶段不同的待机动作
+// 每个阶段不同的待机动作(超出已定义形态用最后一个)
 export function animClassForLevel(level) {
-  return [null, 'anim-pup', 'anim-grow', 'anim-form', 'anim-form', 'anim-elite', 'anim-god'][tierFromLevel(level)]
+  const a = [null, 'anim-pup', 'anim-grow', 'anim-form', 'anim-form', 'anim-elite', 'anim-god']
+  return a[Math.min(tierFromLevel(level), a.length - 1)]
 }
 
 export function dominant(a) {
@@ -66,14 +77,10 @@ export const SKINS = [
   { key: 'god', t: '星愿神犬', d: '传说级,星空光环', rare: 'l', o: { halo: true, wings: true }, unlock: (a, pet) => pet.level >= 30, why: '升到 Lv.30' }
 ]
 
-export const DEX = [
-  { key: 'egg',  t: '初遇蛋', d: '一切的起点', rare: 'n', cond: p => (p.stage_idx || 0) >= 0 },
-  { key: 'base', t: '幼犬',   d: 'Lv.1 · 奶油白幼犬', rare: 'n', cond: p => p.stage_idx >= 1 },
-  { key: 'evo2', t: '星纹犬', d: 'Lv.3 · 长出金色星纹', rare: 'n', cond: p => p.stage_idx >= 2 },
-  { key: 'evo3', t: '翼星犬', d: 'Lv.5 · 长出星光翅膀', rare: 'r', cond: p => p.stage_idx >= 3 },
-  { key: 'evo4', t: '辉光犬', d: 'Lv.8 · 星光环绕', rare: 'r', cond: p => p.stage_idx >= 4 },
-  { key: 'evo5', t: '御星犬', d: 'Lv.12 · 皇冠星空斗篷', rare: 'e', cond: p => p.stage_idx >= 5 },
-  { key: 'god',  t: '星愿神犬', d: 'Lv.18 · 最强形态', rare: 'l', cond: p => p.stage_idx >= 6 }
-]
+// 图鉴:由 FORMS 派生(蛋常显;其余按 stage_idx 解锁)
+export const DEX = FORMS.map((f, i) => ({
+  key: f.key, t: f.name, d: f.d, rare: f.rare,
+  cond: i === 0 ? (p => (p.stage_idx || 0) >= 0) : (p => (p.stage_idx || 0) >= i)
+}))
 
 export const RARE_TXT = { n: '普通', r: '稀有', e: '史诗', l: '传说' }

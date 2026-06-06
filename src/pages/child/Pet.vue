@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { db, pet, petAttrs } from '../../lib/store.js'
-import { DEX, SKINS, RARE_TXT, STAGES } from '../../lib/petConfig.js'
+import { DEX, SKINS, RARE_TXT, STAGES, FORMS } from '../../lib/petConfig.js'
 import { formImage, skinImage } from '../../lib/petImages.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import { fmtDateTime } from '../../lib/util.js'
@@ -22,7 +22,7 @@ function saveName() {
   editing.value = false
 }
 
-const curForm = computed(() => ['egg', 'base', 'evo2', 'evo3', 'evo4', 'evo5', 'god'][Math.min(p.value.stage_idx || 0, 6)])
+const curForm = computed(() => FORMS[Math.min(p.value.stage_idx || 0, FORMS.length - 1)].key)
 function pickSkin(sk) {
   if (!sk.unlock(a.value, p.value)) { toast('未解锁:需' + sk.why); return }
   p.value.skin = sk.key; toast(`已换上「${sk.t}」皮肤 🎨`)

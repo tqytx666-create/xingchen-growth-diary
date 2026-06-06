@@ -50,8 +50,8 @@ const EVO4 = { idle: e4_walk, brush: e4_brush, study: e4_study, bath: e4_bath, e
 const EVO5 = { idle: e5_walk, brush: e5_brush, study: e5_study, bath: e5_bath, eat: e5_eat, happy: e5_happy }
 const GOD = { idle: g_walk, brush: g_brush, study: g_study, bath: g_bath, eat: g_eat, happy: g_happy }
 
-// 形态(stage_idx)→ 活视频套;6个形态全齐 🎉
-const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 6: GOD }
+// 形态(stage_idx)→ 活视频套。新编号:1幼犬…5御星,15神犬;中间新形态(6-14)暂回落御星活视频
+const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 15: GOD }
 // 活皮肤(优先于形态);以后一套套补。只做2段:idle溜达 + 摸摸反应(其余动作复用摸摸)
 // eslint-disable-next-line no-unused-vars
 function skinSet(walk, happy) { return { idle: walk, happy, brush: happy, study: happy, bath: happy, eat: happy } }
@@ -62,7 +62,10 @@ export function livingSet(pet) {
   if (!pet) return null
   const skin = pet.skin
   if (skin && skin !== 'default') return SKIN_SETS[skin] || null
-  return FORM_SETS[pet.stage_idx || 0] || null
+  const idx = pet.stage_idx || 0
+  if (FORM_SETS[idx]) return FORM_SETS[idx]
+  if (idx >= 6 && idx <= 14) return EVO5   // 中间新形态暂用御星活视频
+  return null
 }
 
 // 任务/互动 anim → 活宠物动作 key

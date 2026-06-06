@@ -32,7 +32,10 @@ import skBunny from '../assets/skin/skin_bunny.png'
 import skUnicorn from '../assets/skin/skin_unicorn.png'
 import skMermaid from '../assets/skin/skin_mermaid.png'
 
+import { FORMS } from './petConfig.js'
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
+// 各形态 key→图(f6~f14 暂无专属图,回落御星 evo5)
+const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, god }
 
 // 宠物窝房间主题(按累计签到天数解锁;深色调保证宠物视频不穿帮)
 import roomNight from '../assets/room/room_night.jpg'
@@ -68,8 +71,8 @@ export const FURNITURE = [
   { key: 'lamp',   name: '星星灯', emoji: '💡', days: 100, img: furnLamp,  slot: { right: '4%', bottom: '46%', width: '40px' } },
   { key: 'plush',  name: '小熊玩偶', emoji: '🧸', days: 120, img: furnPlush, slot: { right: '30%', bottom: '9%', width: '44px' } }
 ]
-// 各阶段(stage_idx 0-6)对应形态图
-export const STAGE_IMG = [egg, base, evo2, evo3, evo4, evo5, god]
+// 各阶段(stage_idx)对应形态图,由 FORMS 派生;缺图回落御星
+export const STAGE_IMG = FORMS.map(f => FORM_IMG_MAP[f.key] || evo5)
 
 // 签到皮肤跑道:按"累计英语签到天数"解锁,在签到页像每日登录奖励一样展示
 export const SKIN_TRACK = [
@@ -99,13 +102,11 @@ export const SKIN_TRACK = [
 export function mainImage(pet, attrs) {
   if ((pet.stage_idx || 0) <= 0) return IMG.egg
   if (pet.skin && pet.skin !== 'default') return skinImage(pet.skin)
-  return STAGE_IMG[Math.min(pet.stage_idx, 6)] || IMG.base
+  return STAGE_IMG[pet.stage_idx] || IMG.base
 }
 
-// 图鉴每个形态对应的图(对齐 petConfig.DEX 的 key)
-export const FORM_IMAGE = {
-  egg, base, evo2, evo3, evo4, evo5, god
-}
+// 图鉴每个形态对应的图(对齐 petConfig.FORMS 的 key;新形态回落御星)
+export const FORM_IMAGE = Object.fromEntries(FORMS.map(f => [f.key, FORM_IMG_MAP[f.key] || evo5]))
 
 // 皮肤对应的图(含属性皮肤 + 签到皮肤)
 export const SKIN_IMAGE = {
