@@ -11,6 +11,7 @@ import evo2 from '../assets/pet/pet_evo2.png'
 import evo3 from '../assets/pet/pet_evo3.png'
 import evo4 from '../assets/pet/pet_evo4.png'
 import evo5 from '../assets/pet/pet_evo5.png'
+import f6 from '../assets/pet/pet_f6.png'
 // 签到皮肤(装扮,基于基础形态加装扮)
 import skBow from '../assets/skin/skin_bow.png'
 import skScarf from '../assets/skin/skin_scarf.png'
@@ -35,7 +36,7 @@ import skMermaid from '../assets/skin/skin_mermaid.png'
 import { FORMS } from './petConfig.js'
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
 // 各形态 key→图(f6~f14 暂无专属图,回落御星 evo5)
-const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, god }
+const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, f6, god }
 
 // 宠物窝房间主题(按累计签到天数解锁;深色调保证宠物视频不穿帮)
 import roomNight from '../assets/room/room_night.jpg'
