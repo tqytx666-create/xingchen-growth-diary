@@ -49,7 +49,9 @@ function req(r) {
 
 // ---- 宝箱库存 ----
 const boxes = computed(() => ownedBoxes())
-const BOX_META = { silver: { img: boxSilver, name: '银宝箱', range: '1~3 分' }, gold: { img: boxGold, name: '金宝箱', range: '2~5 分' } }
+const BOX_META = { silver: { img: boxSilver, name: '银宝箱', range: '1~3 分' }, gold: { img: boxGold, name: '金宝箱', range: '2~5 分' }, diamond: { img: boxGold, name: '钻石宝箱', range: '5~10 分' } }
+const boxTiers = ['silver', 'gold', 'diamond']
+const hasBox = computed(() => boxTiers.some(t => (boxes.value[t] || 0) > 0))
 const boxReward = ref(null)   // { tier, minutes } 开箱动画
 function openBox(tier) {
   if ((boxes.value[tier] || 0) < 1) return
@@ -74,8 +76,8 @@ function openBox(tier) {
     <div class="card" style="padding:16px;margin-bottom:18px">
       <div style="font-weight:700;margin-bottom:3px">🧰 我的宝箱</div>
       <div class="dim" style="font-size:11px;margin-bottom:12px">完成支线任务获得宝箱,点击打开抽游戏时间(自动到时间银行)</div>
-      <div v-if="boxes.silver + boxes.gold > 0" style="display:flex;gap:14px">
-        <button v-for="t in ['silver','gold']" :key="t" v-show="boxes[t] > 0" class="box-stack" @click="openBox(t)">
+      <div v-if="hasBox" style="display:flex;gap:14px;flex-wrap:wrap">
+        <button v-for="t in boxTiers" :key="t" v-show="boxes[t] > 0" class="box-stack" @click="openBox(t)">
           <div class="box-thumb"><img :src="BOX_META[t].img" :alt="BOX_META[t].name" /><span class="box-badge">×{{ boxes[t] }}</span></div>
           <div style="font-size:12px;font-weight:600;margin-top:4px">{{ BOX_META[t].name }}</div>
           <div class="dim" style="font-size:10px">{{ BOX_META[t].range }} · 点击打开</div>

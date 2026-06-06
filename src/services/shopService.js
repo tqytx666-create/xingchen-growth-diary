@@ -53,6 +53,7 @@ export function redeemWish(key) {
   if (!w) return { ok: false, msg: '没有这个心愿' }
   if (coinSvc.coins() < w.price) return { ok: false, msg: `还差 ${w.price - coinSvc.coins()} 星币,多打卡攒一攒 🪙` }
   coinSvc.spendCoins(w.price, `心愿:${w.name}`)
+  if (!db.reward_requests) db.reward_requests = []
   db.reward_requests.unshift({
     id: uid('rr_'), child_id: child().id, reward_id: 'wish_' + key, reward_name: `${w.emoji} ${w.name}`,
     reward_type: 'wish', status: 'pending', requested_at: nowISO(),

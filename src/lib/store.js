@@ -44,6 +44,10 @@ function applyRemote(obj) {
   suppress = true
   Object.keys(db).forEach(k => { if (!(k in obj)) delete db[k] })
   Object.assign(db, obj)
+  // 兜底:远端快照若缺某些(新加的)顶层字段(coins/owned_*/items/boxes/reward_requests 等),
+  // 用种子默认补上,避免后续 .unshift/.find/.includes 在 undefined 上崩溃。
+  const fresh = buildSeed()
+  for (const k in fresh) if (db[k] === undefined) db[k] = fresh[k]
   lastSerialized = JSON.stringify(stripVolatile(db))
   localStorage.setItem(LS_KEY, lastSerialized)
   setTimeout(() => { suppress = false }, 0)

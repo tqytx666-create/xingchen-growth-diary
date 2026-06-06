@@ -11,7 +11,11 @@ const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())
 const itemCounts = computed(() => { const o = {}; ownedItems().forEach(i => (o[i.key] = i.count)); return o })
 
+const buying = ref(false)
 function purchase(type, g) {
+  if (buying.value) return            // 防连点重复扣币(尤其道具是消耗品)
+  buying.value = true
+  setTimeout(() => { buying.value = false }, 350)
   const r = buy(type, g.key)
   if (r.ok) { sfx.levelup(); toast(`购买成功!${g.emoji}「${g.name}」${type === 'item' ? '已放进道具栏' : type === 'skin' ? '去签到页装扮它~' : type === 'room' || type === 'furniture' ? '去首页🏠/🛋️用它~' : ''}`) }
   else { toast(r.msg) }
@@ -25,6 +29,9 @@ function buyDetail() { if (!detail.value) return; const d = detail.value; detail
 // 心愿兑换(实物/阅读时间)
 const wishes = WISH
 function redeem(w) {
+  if (buying.value) return
+  buying.value = true
+  setTimeout(() => { buying.value = false }, 350)
   const r = redeemWish(w.key)
   if (r.ok) { sfx.levelup(); toast(`已下单 ${w.emoji}「${w.name}」!告诉爸爸妈妈,通过后兑现~`) }
   else { toast(r.msg) }

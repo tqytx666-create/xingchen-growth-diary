@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
 import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP } from '../../lib/petConfig.js'
@@ -50,6 +50,8 @@ const livingSetCur = computed(() => livingSet(p.value))
 const livingActive = computed(() => BLEND_VIDEO_OK && !!livingSetCur.value && (p.value.room || 'night') === 'night'
   && !isLow(p.value) && p.value.risk < 2)
 const livingAction = ref('')
+// 触发活宠物动作:先清空再设,确保连续同一个动作也能重播(watch 同值不触发)
+function playLiving(a) { livingAction.value = ''; nextTick(() => { livingAction.value = a }) }
 
 // 宠物窝房间
 const roomBg = computed(() => currentRoomImg())
@@ -75,7 +77,7 @@ function useItemOn(it) {
   if (it.count < 1) { toast(`没有${it.name}啦,开宝箱有机会获得 🎁`); return }
   const res = useItem(it.key)
   if (!res) return
-  livingAction.value = res.item.kind === 'feed' ? 'eat' : 'happy'   // 活宠物:喂食→吃,玩耍→开心
+  playLiving(res.item.kind === 'feed' ? 'eat' : 'happy')   // 活宠物:喂食→吃,玩耍→开心
   sfx.pop()
   happy.value = true; setTimeout(() => (happy.value = false), 800)
   spawnBurst(fx.value, res.item.burst, 9)
@@ -151,7 +153,7 @@ function runLevelFx(res) {
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
   if (!res) return
-  livingAction.value = actionForAnim(res.task.anim)   // 活宠物:丝滑切到对应动作视频
+  playLiving(actionForAnim(res.task.anim))   // 活宠物:丝滑切到对应动作视频
   const kind = res.task.anim || ''   // 静态模式:有专属动作才播视频;无(如整理房间)用通用星光,别错播读书
   if (kind) {
     playTaskAnim(fx.value, kind, dogRef.value?.$el)
@@ -187,7 +189,7 @@ let petCount = 0
 let petResetTimer = null
 function petDog() {
   happy.value = !isLow(p.value); setTimeout(() => (happy.value = false), 600)
-  if (!isLow(p.value)) livingAction.value = 'happy'   // 活宠物:摸头→开心动作
+  if (!isLow(p.value)) playLiving('happy')   // 活宠物:摸头→开心动作
   sfx.pet()
   const low = isLow(p.value)
   spawnBurst(fx.value, low ? ['💧', '🩵'] : ['💛', '💕', '⭐', '✨', '🐾'], low ? 4 : 6)

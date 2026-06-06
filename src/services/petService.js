@@ -43,7 +43,7 @@ function addExp(amount, sourceId) {
     tierUp = STAGES[newTier]
     event('evolution', sourceId, 'evolution', {}, `进化成了 ${STAGES[newTier].name}!`)
   }
-  return { leveledUp, newLevel: p.level, tierUp }
+  return { leveledUp, newLevel: p.level, tierUp, hatched: false }
 }
 
 // 任务完成加属性 + 经验
