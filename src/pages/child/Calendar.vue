@@ -23,6 +23,11 @@ function statusOn(taskId, date) {
 function doneCount(date) {
   return activeTasks.value.filter(t => ['done', 'wait'].includes(statusOn(t.id, date))).length
 }
+// 当天是否有"英语主线"打卡(主线 or 外教课)——有则给金边,跟周签到呼应
+const mainTaskIds = computed(() => new Set(db.tasks.filter(t => t.task_type === 'main' || t.lesson).map(t => t.id)))
+function mainDoneOn(date) {
+  return [...mainTaskIds.value].some(id => ['done', 'wait'].includes(statusOn(id, date)))
+}
 
 const grid = computed(() => {
   const { y, m } = ym.value
@@ -33,7 +38,7 @@ const grid = computed(() => {
   for (let i = 0; i < lead; i++) cells.push(null)
   for (let d = 1; d <= days; d++) {
     const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    cells.push({ d, ds, n: doneCount(ds), today: ds === today, future: ds > today })
+    cells.push({ d, ds, n: doneCount(ds), main: mainDoneOn(ds), today: ds === today, future: ds > today })
   }
   return cells
 })
@@ -71,7 +76,7 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
         <button v-for="(c,i) in grid" :key="i" class="day"
-                :disabled="!c" :style="c ? { background: heat(c.n), border: c.today ? '2px solid #fff' : '1px solid transparent' } : { background:'transparent' }"
+                :disabled="!c" :style="c ? { background: heat(c.n), border: c.today ? '2px solid #fff' : (c.main ? '2px solid #ffd86b' : '1px solid transparent'), boxShadow: (c.main && !c.today) ? '0 0 7px -1px rgba(255,216,107,.8)' : 'none' } : { background:'transparent' }"
                 @click="openDay(c)">
           <template v-if="c">
             <span :style="c.today ? 'color:#fff;font-weight:700' : (c.n>2 ? 'color:#5a3d00;font-weight:700' : 'color:rgba(255,255,255,.7)')">{{ c.d }}</span>
@@ -82,7 +87,10 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
       <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;font-size:11px;color:rgba(255,255,255,.5)">
         <span>少</span>
         <span v-for="n in [0,1,2,3,5]" :key="n" style="width:14px;height:14px;border-radius:4px" :style="{ background: heat(n) }"></span>
-        <span>多 · 点某天可补卡</span>
+        <span>多</span>
+      </div>
+      <div style="text-align:center;margin-top:7px;font-size:11px;color:rgba(255,255,255,.5)">
+        <span style="display:inline-block;width:11px;height:11px;border-radius:3px;border:2px solid #ffd86b;vertical-align:-1px;margin-right:3px"></span>金边=当天打了英语主线 · 点某天可补卡
       </div>
     </div>
 
