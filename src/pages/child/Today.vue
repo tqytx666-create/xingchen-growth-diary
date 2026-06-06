@@ -253,7 +253,11 @@ onMounted(() => {
         <span class="dim" style="font-size:12px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</span>
       </div>
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
-      <LivingPet v-if="livingActive" :set="livingSetCur" :action="livingAction" @done="livingAction=''" @tap="petDog" />
+      <div v-if="livingActive" style="position:relative">
+        <LivingPet :set="livingSetCur" :action="livingAction" @done="livingAction=''" @tap="petDog" />
+        <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
+        <button class="room-btn decor-btn" title="装饰" @click.stop="decorOpen=true">🛋️</button>
+      </div>
       <!-- 静态:蛋/低落/换了房间或皮肤/微信 时回落 -->
       <div v-else class="pet-room" :style="{ backgroundImage: 'url(' + roomBg + ')' }">
         <div class="pet-room-glow"></div>
