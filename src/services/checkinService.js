@@ -32,6 +32,7 @@ export function createCheckin(taskId, opts = {}) {
     status: 'self_reported', self_reported_at: nowISO(),
     verified_by: null, verified_at: null, note: opts.note || null,
     photo_url: opts.photoUrl || null,
+    make_up: !!opts.makeUp,
     interacted: false
   }
   db.checkins.unshift(checkin)
@@ -43,6 +44,12 @@ export function createCheckin(taskId, opts = {}) {
   }
   audit(cid, 'checkin', checkin.id, 'self_report', { task: task.name, date })
   return { checkin, weeklyGranted, task }
+}
+
+// 日历补卡:给某个过去的日子补一条打卡(自报,需家长核验)。已打过/未来日期会被拦。
+export function requestMakeup(taskId, date) {
+  if (date > todayStr()) throw new Error('不能补未来的卡')
+  return createCheckin(taskId, { date, makeUp: true, note: '补卡' })
 }
 
 // 已确认、还没互动过的打卡 → 宠物页可点的道具

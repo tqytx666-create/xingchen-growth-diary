@@ -15,7 +15,18 @@ const STATUS = {
 function task(c) { return db.tasks.find(t => t.id === c.task_id) }
 function actor(id) { return db.users.find(u => u.id === id)?.display_name || '' }
 
-function confirm(c) { vs.confirm(c.id, me.value.id); toast('已确认属实 ✅') }
+function confirm(c) {
+  const t = task(c)
+  if (t?.lesson) {
+    const v = window.prompt('确认这节英语外教课。换多少游戏时间(分钟)?', '45')
+    if (v === null) return
+    const m = Math.max(0, Math.round(Number(v) || 0))
+    vs.confirm(c.id, me.value.id, m)
+    toast(m > 0 ? `已确认 ✅ 游戏时间 +${m} 分钟` : '已确认 ✅')
+  } else {
+    vs.confirm(c.id, me.value.id); toast('已确认属实 ✅')
+  }
+}
 function markFalse(c) { if (!window.confirm('确定标记为虚报?会扣诚信分并影响宠物。')) return; vs.markFalse(c.id, me.value.id); toast('已标记虚报 ⚠️') }
 function dispute(c) { vs.dispute(c.id, me.value.id); toast('已标记争议') }
 function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
@@ -35,6 +46,8 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
         <div style="flex:1">
           <div style="font-size:15px;font-weight:600">{{ task(c)?.name }}
             <span v-if="task(c)?.task_type==='main'" style="font-size:10px;color:#ffd86b">主线</span>
+            <span v-if="task(c)?.lesson" style="font-size:10px;color:#8be9ff">外教课</span>
+            <span v-if="c.make_up" style="font-size:10px;color:#c79bff">📅补卡</span>
           </div>
           <div class="dim" style="font-size:11px">{{ c.checkin_date }} · 自报 {{ fmtDateTime(c.self_reported_at) }}</div>
         </div>

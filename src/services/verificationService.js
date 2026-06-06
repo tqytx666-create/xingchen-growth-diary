@@ -3,6 +3,7 @@ import { nowISO, uid } from '../lib/util.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
 import * as creditSvc from './creditService.js'
+import * as bankSvc from './timeBankService.js'
 
 function log(checkinId, actorId, action, reason) {
   db.verification_logs.unshift({
@@ -11,13 +12,19 @@ function log(checkinId, actorId, action, reason) {
 }
 function getTask(checkin) { return db.tasks.find(t => t.id === checkin.task_id) }
 
-// 确认属实:解锁宠物互动(道具出现在宠物页),加诚信分
-export function confirm(checkinId, actorId) {
+// 确认属实:解锁宠物互动(道具出现在宠物页),加诚信分。
+// 英语上课(lesson)可传 gameMinutes:确认时把这节课换成的游戏时间存进时间银行。
+export function confirm(checkinId, actorId, gameMinutes) {
   const c = db.checkins.find(x => x.id === checkinId); if (!c) return
+  const task = getTask(c)
   c.status = 'confirmed'; c.verified_by = actorId; c.verified_at = nowISO()
   log(checkinId, actorId, 'confirm')
   creditSvc.applyConfirm(checkinId, actorId)
-  audit(actorId, 'checkin', checkinId, 'confirm', { task: getTask(c)?.name })
+  if (task?.lesson && gameMinutes > 0) {
+    bankSvc.addBonus({ minutes: gameMinutes, description: `英语外教课:${task.name}`, createdBy: actorId })
+    c.game_minutes = gameMinutes
+  }
+  audit(actorId, 'checkin', checkinId, 'confirm', { task: task?.name, gameMinutes: gameMinutes || 0 })
 }
 
 export function markFalse(checkinId, actorId, reason) {
