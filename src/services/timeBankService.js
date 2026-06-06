@@ -58,7 +58,28 @@ export function penalty({ minutes, description, createdBy }) {
   txn('penalty', { screen_minutes: -m, description: description || '扣减', created_by: createdBy })
 }
 
-// 每日 1% 利息(逐天累加),由管理员开关
+// 待收利息(累计未领,不自动入账):余额 × 日利率 × 天数(最多累计 30 天)
+export function pendingInterest() {
+  const b = bank()
+  if (!b || !b.interest_enabled) return 0
+  const days = Math.min(30, daysBetween(b.last_interest_date || todayStr(), todayStr()))
+  if (days <= 0) return 0
+  return Math.max(0, Math.round((b.current_balance_minutes || 0) * (b.daily_interest_rate || 0.01) * days))
+}
+// 孩子在宠物页手动收取利息:入账 + 重置计息日 + 返回收取的分钟数
+export function collectInterest() {
+  const amt = pendingInterest()
+  const b = bank()
+  b.last_interest_date = todayStr()
+  if (amt > 0) {
+    b.current_balance_minutes = round2(b.current_balance_minutes + amt)
+    b.updated_at = nowISO()
+    txn('interest', { screen_minutes: amt, description: '✨ 收取每日利息' })
+  }
+  return amt
+}
+
+// (旧)每日 1% 利息自动逐天累加——已改为手动收取,保留函数不再调用
 export function settleInterest() {
   const b = bank()
   if (!b.interest_enabled) return 0

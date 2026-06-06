@@ -12,7 +12,8 @@ import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 import EvolutionModal from '../../components/pet/EvolutionModal.vue'
 import CheckinPhotoModal from '../../components/CheckinPhotoModal.vue'
-import { playTaskAnim, spawnFloaty, spawnBurst } from '../../lib/petFx.js'
+import { playTaskAnim, spawnFloaty, spawnBurst, magicCollect } from '../../lib/petFx.js'
+import { pendingInterest, collectInterest } from '../../services/timeBankService.js'
 import { fmtDateTime } from '../../lib/util.js'
 import { currentRoomImg, roomTrackState, equipRoom } from '../../services/roomService.js'
 import { ownedItems, useItem } from '../../services/itemService.js'
@@ -103,6 +104,16 @@ const tasksSorted = computed(() => [...tasks.value].sort((x, y) => {
 }))
 const trust = computed(() => levelInfo(creditRow().credit_score))
 const coinBal = computed(() => coins())
+// 每日利息:累计待收,孩子手动收取(魔法棒动效汇入时间余额)
+const timeChipRef = ref(null)
+const pendingItr = computed(() => pendingInterest())
+function doCollectInterest(ev) {
+  if (pendingItr.value <= 0) return
+  magicCollect(ev.currentTarget, timeChipRef.value, () => {
+    const got = collectInterest()
+    if (got > 0) { sfx.pop && sfx.pop(); toast(`✨ 收取每日利息 +${got} 分钟游戏时间!`) }
+  })
+}
 
 // 蛋阶段
 const isEgg = computed(() => (p.value.stage_idx || 0) <= 0)
@@ -263,7 +274,7 @@ onMounted(() => {
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" />分</span>
+        <span ref="timeChipRef" class="card" style="padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" />分</span>
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="router.push('/child/shop')">🪙 <CountUp :value="coinBal" /></span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
@@ -315,6 +326,13 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 每日利息:攒着待收,点一下魔法棒星星汇入时间余额 -->
+    <button v-if="pendingItr > 0" class="itr-collect" @click="doCollectInterest">
+      <span class="itr-spark">✨</span>
+      <span style="flex:1;text-align:left">小愿帮你攒了 <b>{{ pendingItr }}</b> 分钟利息</span>
+      <span class="itr-go">点我收取 →</span>
+    </button>
 
     <!-- 今日任务:每天最高频,放在宠物正下方;未完成的排前面 -->
     <div style="display:flex;align-items:center;margin:2px 2px 9px">
@@ -485,6 +503,17 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
+/* 每日利息收取条 */
+.itr-collect { width: 100%; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 11px 14px;
+  border: 1px solid rgba(255,216,107,.4); border-radius: 14px; cursor: pointer; color: #fff; font-size: 13px;
+  background: linear-gradient(100deg, rgba(255,216,107,.18), rgba(139,233,255,.1));
+  box-shadow: 0 0 16px -5px rgba(255,216,107,.7); animation: itrPulse 2s ease-in-out infinite; }
+.itr-collect:active { transform: scale(.98); }
+.itr-collect b { color: #ffd86b; font-size: 15px; }
+.itr-spark { font-size: 18px; }
+.itr-go { font-size: 12px; font-weight: 700; color: #ffd86b; white-space: nowrap; }
+@keyframes itrPulse { 0%,100%{ box-shadow: 0 0 14px -6px rgba(255,216,107,.6) } 50%{ box-shadow: 0 0 20px -3px rgba(255,216,107,.85) } }
+@media (prefers-reduced-motion: reduce){ .itr-collect{ animation: none } }
 /* 今日任务:已完成/虚报淡出沉底,未完成的更醒目 */
 .task-card { transition: opacity .25s ease, transform .12s ease; }
 .task-card.tdone { opacity: .5; }

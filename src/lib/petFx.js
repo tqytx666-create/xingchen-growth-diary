@@ -49,3 +49,37 @@ export function spawnBurst(fx, emojis, n = 6) {
     }, i * 70)
   }
 }
+
+// 魔法棒式收集:一群发光小星星从起点喷出 → 拖尾绕一圈 → 俯冲汇入目标元素。onArrive 在汇入时回调
+export function magicCollect(fromEl, toEl, onArrive) {
+  if (!fromEl || !toEl) { onArrive && onArrive(); return }
+  const b = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect()
+  const sx = b.left + b.width / 2, sy = b.top + b.height / 2
+  const tx = t.left + t.width / 2, ty = t.top + t.height / 2
+  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.4
+  const layer = document.createElement('div')
+  layer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:90'
+  const ICON = ['⭐', '✨', '🌟', '💫', '⏱️']
+  const N = 26
+  for (let i = 0; i < N; i++) {
+    const s = document.createElement('div')
+    s.textContent = ICON[i % ICON.length]
+    s.style.cssText = 'position:fixed;left:' + sx + 'px;top:' + sy + 'px;font-size:' + (12 + Math.random() * 14) + 'px;transform:translate(-50%,-50%);opacity:0;will-change:transform,opacity;filter:drop-shadow(0 0 6px rgba(255,216,107,.95)) drop-shadow(0 0 12px rgba(255,201,64,.6))'
+    layer.appendChild(s)
+    const ang = (Math.PI * 2 * i) / N + Math.random() * 0.5
+    const R = 120 + Math.random() * 95
+    const mx = cx + Math.cos(ang) * R, my = cy + Math.sin(ang) * R
+    const a2 = ang + 1.5, R2 = R * 0.66
+    const wx = cx + Math.cos(a2) * R2, wy = cy + Math.sin(a2) * R2
+    s.animate([
+      { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.4) rotate(0deg)', opacity: 0, offset: 0 },
+      { opacity: 1, offset: 0.12 },
+      { transform: 'translate(-50%,-50%) translate(' + (mx - sx) + 'px,' + (my - sy) + 'px) scale(1.3) rotate(170deg)', opacity: 1, offset: 0.4 },
+      { transform: 'translate(-50%,-50%) translate(' + (wx - sx) + 'px,' + (wy - sy) + 'px) scale(1) rotate(310deg)', opacity: 1, offset: 0.66 },
+      { transform: 'translate(-50%,-50%) translate(' + (tx - sx) + 'px,' + (ty - sy) + 'px) scale(.22) rotate(540deg)', opacity: 0, offset: 1 }
+    ], { duration: 1300 + Math.random() * 250, delay: i * 22, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' })
+  }
+  document.body.appendChild(layer)
+  setTimeout(() => onArrive && onArrive(), 1080)
+  setTimeout(() => layer.remove(), 1800)
+}
