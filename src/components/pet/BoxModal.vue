@@ -49,8 +49,19 @@ function done() { if (opened.value) emit('close') }
 
       <transition name="reveal">
         <div v-if="opened" class="box-reward">
-          <div class="box-min">+{{ minutes }} 分钟<span v-if="coins" style="font-size:18px;color:#ffd86b"> · +{{ coins }}🪙</span></div>
-          <div class="box-sub">游戏时间已存入时间银行{{ coins ? ' · 星币已到账' : '' }}</div>
+          <div class="prize-list">
+            <div class="prize-row">
+              <span class="prize-ic">⏱️</span>
+              <span class="prize-val">+{{ minutes }}</span>
+              <span class="prize-unit">分钟<br>游戏时间</span>
+            </div>
+            <div v-if="coins" class="prize-row coin">
+              <span class="prize-ic">🪙</span>
+              <span class="prize-val">+{{ coins }}</span>
+              <span class="prize-unit">星币<br>去商城买</span>
+            </div>
+          </div>
+          <div class="box-sub">游戏时间已存银行{{ coins ? ',星币已到账,可去🛍️商城花' : '' }}</div>
           <div class="box-tap">轻触关闭</div>
         </div>
       </transition>
@@ -79,8 +90,15 @@ function done() { if (opened.value) emit('close') }
   -webkit-mask-image:radial-gradient(circle at 50% 50%, #000 62%, rgba(0,0,0,.6) 76%, transparent 88%);
   mask-image:radial-gradient(circle at 50% 50%, #000 62%, rgba(0,0,0,.6) 76%, transparent 88%)}
 .box-reward{margin-top:12px}
-.box-min{font-size:30px;font-weight:800;color:#fff;text-shadow:0 0 16px var(--glow)}
-.box-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}
+.prize-list{display:flex;justify-content:center;gap:12px}
+.prize-row{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 16px;border-radius:16px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-width:96px}
+.prize-row.coin{background:rgba(255,216,107,.12);border-color:rgba(255,216,107,.35)}
+.prize-ic{font-size:26px;line-height:1}
+.prize-val{font-size:28px;font-weight:800;color:#fff;text-shadow:0 0 14px var(--glow);line-height:1.1}
+.prize-row.coin .prize-val{color:#ffd86b;text-shadow:0 0 14px rgba(255,216,107,.6)}
+.prize-unit{font-size:11px;color:rgba(255,255,255,.65);line-height:1.25}
+.box-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:10px}
 .box-tap{font-size:11px;color:rgba(255,255,255,.45);margin-top:14px}
 .box-hint{font-size:12px;color:rgba(255,255,255,.6);margin-top:12px}
 @keyframes boxshake{0%,100%{transform:translateX(0) rotate(0)}
