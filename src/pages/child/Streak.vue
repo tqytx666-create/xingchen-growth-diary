@@ -9,6 +9,7 @@ import { todayStr, addDays } from '../../lib/util.js'
 import { REWARDS } from '../../lib/rewardConfig.js'
 import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
+import CountUp from '../../components/CountUp.vue'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
@@ -53,12 +54,27 @@ const badges = computed(() =>
   <div style="padding:14px 14px 90px">
     <h2 style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">🔥 英语主线签到</h2>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
-        <span style="font-weight:600">本周完成</span>
-        <span style="font-size:24px;font-weight:800;color:#ffd86b">{{ wp.count }}<span class="dim" style="font-size:14px">/7 天</span></span>
+    <!-- 连续签到 Hero:页面最重要的情绪指标,放最前最醒目 -->
+    <div class="card streak-hero" style="margin-bottom:16px">
+      <div class="hero-row">
+        <div class="flame">🔥</div>
+        <div style="flex:1;min-width:0">
+          <div class="hero-num"><CountUp :value="nc.current" /> <span class="hero-unit">天</span></div>
+          <div class="hero-cur">当前连续英语签到</div>
+        </div>
+        <div class="hero-side">
+          <div>🏆 最长 <b>{{ nc.longest }}</b></div>
+          <div>📚 累积 <b>{{ nc.total }}</b></div>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px">
+
+      <div v-if="nc.next" class="hero-next">距离「{{ nc.next.reward_name }}」还差 <b>{{ nc.next.streak - nc.current }}</b> 天 · 加油 ✨</div>
+
+      <div class="hero-weekhead">
+        <span style="font-weight:600">本周完成</span>
+        <span><b style="color:#ffd86b;font-size:19px">{{ wp.count }}</b><span class="dim" style="font-size:13px"> /7 天</span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:9px">
         <div v-for="d in weekDays" :key="d.date" class="day-cell" :class="{ today: d.today && !d.done }"
              style="aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;transition:all .3s"
              :style="d.done ? 'background:linear-gradient(160deg,rgba(255,216,107,.3),rgba(255,179,71,.15));border:1px solid #ffd86b;color:#ffd86b;font-weight:700' : (d.future ? 'background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.35)' : 'background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5)')">
@@ -125,18 +141,6 @@ const badges = computed(() =>
       </div>
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:16px">
-      <div style="font-weight:600;margin-bottom:10px">累积签到</div>
-      <div style="display:flex;justify-content:space-around;text-align:center">
-        <div><div style="font-size:26px;font-weight:800;color:#ffd86b">{{ nc.current }}</div><div class="dim" style="font-size:11px">当前连续</div></div>
-        <div><div style="font-size:26px;font-weight:800">{{ nc.longest }}</div><div class="dim" style="font-size:11px">历史最长</div></div>
-        <div><div style="font-size:26px;font-weight:800">{{ nc.total }}</div><div class="dim" style="font-size:11px">累积天数</div></div>
-      </div>
-      <div v-if="nc.next" class="dim" style="font-size:13px;text-align:center;margin-top:12px">
-        距离「{{ nc.next.reward_name }}」还差 <b style="color:#ffd86b">{{ nc.next.streak - nc.current }}</b> 天
-      </div>
-    </div>
-
     <div class="card" style="padding:14px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.7)">
       📵 家庭规则:如果英语某天没完成,系统会记录「手机收回三天」提醒。是否执行由家人决定,断签不会让宠物死亡,只会低落和影响进化。
     </div>
@@ -144,6 +148,22 @@ const badges = computed(() =>
 </template>
 
 <style scoped>
+/* 连续签到 Hero */
+.streak-hero { padding: 18px 16px;
+  background: radial-gradient(120% 95% at 25% 0%, rgba(255,140,60,.22), transparent 58%), linear-gradient(160deg, rgba(255,216,107,.12), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,216,107,.32); }
+.hero-row { display: flex; align-items: center; gap: 14px; }
+.flame { font-size: 50px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(255,140,60,.55)); animation: flamebob 2s ease-in-out infinite; }
+@keyframes flamebob { 0%,100%{ transform: translateY(0) scale(1) } 50%{ transform: translateY(-3px) scale(1.06) } }
+.hero-num { font-size: 40px; font-weight: 800; color: #ffd86b; line-height: 1; text-shadow: 0 0 18px rgba(255,216,107,.45); }
+.hero-unit { font-size: 17px; font-weight: 700; color: rgba(255,255,255,.7); }
+.hero-cur { font-size: 13px; color: rgba(255,255,255,.72); margin-top: 4px; }
+.hero-side { text-align: right; font-size: 12px; color: rgba(255,255,255,.6); line-height: 1.7; }
+.hero-side b { color: #fff; font-size: 15px; }
+.hero-next { margin-top: 13px; padding: 8px 12px; border-radius: 11px; font-size: 12px; text-align: center;
+  background: rgba(255,216,107,.1); color: rgba(255,255,255,.8); }
+.hero-next b { color: #ffd86b; font-size: 14px; }
+.hero-weekhead { display: flex; justify-content: space-between; align-items: baseline; margin-top: 16px; }
 .day-cell.today { animation: todayPulse 1.6s ease-in-out infinite; }
 @keyframes todayPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,216,107,.4);} 50%{box-shadow:0 0 0 4px rgba(255,216,107,.12);} }
 
