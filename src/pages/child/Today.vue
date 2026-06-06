@@ -255,6 +255,7 @@ onMounted(() => {
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
       <div v-if="livingActive" style="position:relative">
         <LivingPet :set="livingSetCur" :action="livingAction" @done="livingAction=''" @tap="petDog" />
+        <img v-for="f in placed" :key="f.key" :src="f.img" :alt="f.name" class="furn" :style="f.slot" />
         <button class="room-btn" title="换房间" @click.stop="roomOpen=true">🏠</button>
         <button class="room-btn decor-btn" title="装饰" @click.stop="decorOpen=true">🛋️</button>
       </div>
