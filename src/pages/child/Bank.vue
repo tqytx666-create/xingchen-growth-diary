@@ -143,9 +143,15 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
       <div class="dim" style="font-size:12px;margin-bottom:10px">{{ rangeLabel }} · 收入 <b :style="{ color: UP }">+{{ rangeIn }}</b> · 支出 <b :style="{ color: DOWN }">-{{ rangeOut }}</b> 分钟</div>
       <div class="chart">
         <div v-for="d in chartData" :key="d.key" class="col">
-          <div class="up"><span class="bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"><b v-if="d.income" class="vtop" :style="{ color: UP }">+{{ d.income }}</b></span></div>
+          <div class="up">
+            <b v-if="d.income" class="vnum" :style="{ color: UP }">+{{ d.income }}</b>
+            <span class="bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"></span>
+          </div>
           <div class="base"></div>
-          <div class="down"><span class="bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"><b v-if="d.expense" class="vbot" :style="{ color: DOWN }">-{{ d.expense }}</b></span></div>
+          <div class="down">
+            <span class="bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"></span>
+            <b v-if="d.expense" class="vnum" :style="{ color: DOWN }">-{{ d.expense }}</b>
+          </div>
           <div class="lb">{{ d.label }}</div>
         </div>
       </div>
@@ -210,11 +216,11 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
 /* 对称双向行情柱:上半红收入、下半绿支出 */
 .chart { display: flex; gap: 3px; }
 .col { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.up { height: 56px; padding-top: 14px; box-sizing: border-box; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.up { height: 60px; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 .base { height: 1px; width: 100%; background: rgba(255,255,255,.2); }
-.down { height: 56px; padding-bottom: 14px; box-sizing: border-box; width: 100%; display: flex; align-items: flex-start; justify-content: center; }
-.bar { position: relative; width: 64%; max-width: 18px; transition: height .4s ease; }
-.vtop { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 2px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
-.vbot { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.down { height: 60px; box-sizing: border-box; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.bar { width: 64%; max-width: 18px; flex: none; transition: height .4s ease; }
+/* 数字紧贴柱子顶/底:柱子多高数字就被顶多高(正常流,一定显示) */
+.vnum { font-size: 11px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px; white-space: nowrap; }
 </style>
