@@ -7,6 +7,7 @@ import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import CountUp from '../../components/CountUp.vue'
+import TaskRow from '../../components/child/TaskRow.vue'
 import LivingPet from '../../components/pet/LivingPet.vue'
 import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
@@ -102,6 +103,27 @@ const tasksSorted = computed(() => [...tasks.value].sort((x, y) => {
   const so = (STATE_ORDER[taskState(x)] ?? 2) - (STATE_ORDER[taskState(y)] ?? 2)
   return so || ((x.task_type === 'main' ? 0 : 1) - (y.task_type === 'main' ? 0 : 1))
 }))
+// 今日任务按类别分板块;英语合并成一个可展开入口(任一完成即主线)
+function sortByState(arr) { return [...arr].sort((x, y) => (STATE_ORDER[taskState(x)] ?? 2) - (STATE_ORDER[taskState(y)] ?? 2)) }
+const GROUP_DEF = [
+  { key: 'english', label: '📚 英语学习', cats: ['english'], merged: true },
+  { key: 'sport', label: '🏃 运动', cats: ['sport'] },
+  { key: 'life', label: '🧼 生活习惯', cats: ['hygiene', 'chore'] },
+  { key: 'hobby', label: '🎨 兴趣', cats: ['hobby', 'interest'] }
+]
+const taskGroups = computed(() => {
+  const used = new Set()
+  const groups = GROUP_DEF.map(g => {
+    const items = sortByState(tasks.value.filter(t => g.cats.includes(t.category)))
+    items.forEach(t => used.add(t.id))
+    return { ...g, items }
+  }).filter(g => g.items.length)
+  const rest = sortByState(tasks.value.filter(t => !used.has(t.id)))
+  if (rest.length) groups.push({ key: 'other', label: '📋 其他', cats: [], items: rest })
+  return groups
+})
+const engDone = computed(() => tasks.value.some(t => t.category === 'english' && ['wait', 'ready', 'done'].includes(taskState(t))))
+const engOpen = ref(false)
 const trust = computed(() => levelInfo(creditRow().credit_score))
 const coinBal = computed(() => coins())
 // 每日利息:累计待收,孩子手动收取(魔法棒动效汇入时间余额)
@@ -344,26 +366,28 @@ onMounted(() => {
       <i style="background:linear-gradient(90deg,#6bffb0,#7c6bff)" :style="{ width: taskPct + '%' }"></i>
     </div>
 
-    <div v-for="t in tasksSorted" :key="t.id" class="card task-card"
-         :class="{ tdone: ['done','false'].includes(taskState(t)) }"
-         :style="t.task_type==='main' && taskState(t)==='none' ? 'border-color:rgba(255,216,107,.45);background:linear-gradient(135deg,rgba(255,216,107,.14),rgba(255,255,255,.06))' : ''"
-         style="display:flex;align-items:center;gap:12px;padding:13px;margin-bottom:10px">
-      <div style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:rgba(124,107,255,.18)">{{ t.icon }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:600">{{ t.name }}</div>
-        <div class="dim" style="font-size:12px;margin-top:2px">{{ t.task_type==='main' ? '主线 · 智慧 + 连续签到' : (t.desc || '支线') }}<span v-if="t.blindbox" style="color:#ffd86b"> · 🎁开宝箱</span></div>
-        <span style="display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;margin-top:5px;font-weight:600"
-              :style="t.task_type==='main' ? 'background:rgba(255,216,107,.2);color:#ffd86b' : 'background:rgba(124,107,255,.25);color:#c3b8ff'">
-          {{ t.task_type==='main' ? '主线' : '支线' }}
-        </span>
-      </div>
-      <button v-if="taskState(t)==='none'" class="btn-accent" style="padding:10px 15px" @click="doTask(t)">打卡</button>
-      <span v-else-if="taskState(t)==='wait'" style="font-size:12px;color:#ffd86b;text-align:center;line-height:1.4">⏳ 等家人<br>确认</span>
-      <span v-else-if="taskState(t)==='ready'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✨ 上去<br>陪小愿</span>
-      <span v-else-if="taskState(t)==='done'" style="font-size:12px;color:#6bffb0;text-align:center;line-height:1.4">✓ 已完成</span>
-      <span v-else-if="taskState(t)==='false'" style="font-size:12px;color:#ff7a7a;text-align:center;line-height:1.4">⚠️ 虚报</span>
-      <span v-else style="font-size:12px;color:#ff9ec7;text-align:center">争议中</span>
-    </div>
+    <template v-for="g in taskGroups" :key="g.key">
+      <!-- 英语:合并成一个入口,点开再分别打卡 -->
+      <template v-if="g.merged">
+        <button class="eng-head" :class="{ done: engDone }" @click="engOpen = !engOpen">
+          <span style="font-size:22px">📚</span>
+          <div style="flex:1;text-align:left;min-width:0">
+            <div style="font-size:15px;font-weight:700">英语学习</div>
+            <div class="dim" style="font-size:11px;margin-top:1px">任意完成一个就算今日英语主线 ✓</div>
+          </div>
+          <span v-if="engDone" style="font-size:12px;color:#6bffb0;font-weight:700;margin-right:6px">今日已完成</span>
+          <span class="dim" style="font-size:16px">{{ engOpen ? '收起 ▾' : '展开 ▸' }}</span>
+        </button>
+        <div v-show="engOpen" style="margin-bottom:4px">
+          <TaskRow v-for="t in g.items" :key="t.id" :task="t" :state="taskState(t)" @do="doTask" />
+        </div>
+      </template>
+      <!-- 其他类别:板块标题 + 打卡行 -->
+      <template v-else>
+        <div class="grp-label">{{ g.label }}</div>
+        <TaskRow v-for="t in g.items" :key="t.id" :task="t" :state="taskState(t)" @do="doTask" />
+      </template>
+    </template>
 
     <!-- 道具栏 -->
     <div class="card" style="padding:11px 13px;margin-bottom:12px">
@@ -503,6 +527,13 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
+/* 英语合并入口 + 分组标题 */
+.eng-head { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 9px; padding: 13px;
+  border: 1px solid rgba(255,216,107,.4); border-radius: 16px; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, rgba(255,216,107,.14), rgba(124,200,255,.08)); }
+.eng-head.done { border-color: rgba(107,255,176,.4); background: linear-gradient(135deg, rgba(107,255,176,.12), rgba(255,255,255,.04)); }
+.eng-head:active { transform: scale(.99); }
+.grp-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.8); margin: 14px 2px 9px; }
 /* 每日利息收取条 */
 .itr-collect { width: 100%; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 11px 14px;
   border: 1px solid rgba(255,216,107,.4); border-radius: 14px; cursor: pointer; color: #fff; font-size: 13px;

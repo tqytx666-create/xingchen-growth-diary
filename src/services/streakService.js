@@ -2,7 +2,8 @@ import { db, streak, mainTask, child } from '../lib/store.js'
 import { todayStr, weekStart, addDays, nowISO } from '../lib/util.js'
 
 // 算"英语主线"的任务:英语自学(main) 或 英语外教课(lesson)——任一完成当天就算主线有进行,签到续上
-export function isMainStreakTask(t) { return !!t && (t.task_type === 'main' || t.lesson) }
+// 英语主线:英语自学 / 外教课 / 百词斩 / ABC Reading 等任一(category==='english')完成即续签
+export function isMainStreakTask(t) { return !!t && (t.task_type === 'main' || t.lesson || t.category === 'english') }
 function mainTaskIds() { return new Set(db.tasks.filter(isMainStreakTask).map(t => t.id)) }
 
 // 有效的英语主线打卡日期(英语自学/外教课任一;虚报/撤销不算)

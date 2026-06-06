@@ -39,7 +39,10 @@ export function buildSeed() {
     { id: 't_room', name: '保持房间整洁', task_type: 'side', category: 'chore', attribute_key: 'cleanliness', base_exp: 4, icon: '🧹', anim: '', blindbox: true, desc: '每天 · 清洁 +', is_active: true, created_at: nowISO() },
     { id: 't_badminton', name: '打羽毛球', task_type: 'side', category: 'sport', attribute_key: 'vitality', base_exp: 7, icon: '🏸', anim: 'badminton', desc: '支线 · 活力 + 运动时间', is_active: true, created_at: nowISO() },
     // 英语上课(外教课):有课才打,家长确认时手动输入换多少游戏时间(lesson:true)
-    { id: 't_english_class', name: '英语上课(外教)', task_type: 'lesson', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '🎧', anim: 'study', lesson: true, desc: '上完外教课打卡 · 家长确认换游戏时间', is_active: true, created_at: nowISO() }
+    { id: 't_english_class', name: '英语上课(外教)', task_type: 'lesson', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '🎧', anim: 'study', lesson: true, desc: '上完外教课打卡 · 家长确认换游戏时间', is_active: true, created_at: nowISO() },
+    // 英语老师布置的每日作业(都算英语主线,任一完成即续签)
+    { id: 't_baci', name: '百词斩', task_type: 'side', category: 'english', attribute_key: 'wisdom', base_exp: 7, icon: '📖', anim: 'study', blindbox: true, desc: '每天背 5 个 + 复习 5 个单词', is_active: true, created_at: nowISO() },
+    { id: 't_abc_reading', name: 'ABC Reading', task_type: 'side', category: 'english', attribute_key: 'wisdom', base_exp: 7, icon: '📕', anim: 'study', blindbox: true, desc: '每天读 3 本 · 从 Level A 开始', is_active: true, created_at: nowISO() }
   ]
 
   // 初始是「初遇蛋」(level 0 / stage 0),坚持打卡攒够 HATCH_EXP 经验才孵化成幼犬

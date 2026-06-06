@@ -34,6 +34,14 @@ export const db = reactive(loadLocal())
 export const session = reactive({ userId: localStorage.getItem(SESSION_KEY) || null })
 // Demo:免登录,自动以星晨(孩子)身份进入
 if (IS_DEMO) { const c = db.users.find(u => u.role === 'child'); if (c) session.userId = c.id }
+
+// 任务迁移:确保 seed 里新增的任务(按 id)补进现有数据(不丢进度、不重激活被禁用的)
+function ensureTasks() {
+  if (!Array.isArray(db.tasks)) return
+  const have = new Set(db.tasks.map(t => t.id))
+  for (const t of buildSeed().tasks) if (!have.has(t.id)) db.tasks.push({ ...t })
+}
+ensureTasks()
 export const syncState = reactive({ online: false, syncing: false })
 
 // ---- 同步内部状态 ----
@@ -53,6 +61,7 @@ function applyRemote(obj) {
   // 用种子默认补上,避免后续 .unshift/.find/.includes 在 undefined 上崩溃。
   const fresh = buildSeed()
   for (const k in fresh) if (db[k] === undefined) db[k] = fresh[k]
+  ensureTasks()   // 远端数据可能没有新任务,本地补齐
   lastSerialized = JSON.stringify(stripVolatile(db))
   localStorage.setItem(LS_KEY, lastSerialized)
   setTimeout(() => { suppress = false }, 0)
