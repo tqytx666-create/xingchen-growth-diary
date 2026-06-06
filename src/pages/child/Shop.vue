@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { coins } from '../../services/coinService.js'
 import { shopCatalog, buy, redeemWish } from '../../services/shopService.js'
 import { ownedItems } from '../../services/itemService.js'
@@ -16,6 +16,11 @@ function purchase(type, g) {
   if (r.ok) { sfx.levelup(); toast(`购买成功!${g.emoji}「${g.name}」${type === 'item' ? '已放进道具栏' : type === 'skin' ? '去签到页装扮它~' : type === 'room' || type === 'furniture' ? '去首页🏠/🛋️用它~' : ''}`) }
   else { toast(r.msg) }
 }
+
+// 商品详情弹窗
+const detail = ref(null)   // { type, g }
+function openDetail(type, g) { detail.value = { type, g } }
+function buyDetail() { if (!detail.value) return; const d = detail.value; detail.value = null; purchase(d.type, d.g) }
 
 // 心愿兑换(实物/阅读时间)
 const wishes = WISH
@@ -54,14 +59,27 @@ function redeem(w) {
       <div style="font-weight:700;margin:2px 2px 10px">{{ sec.title }}</div>
       <div class="shop-grid">
         <div v-for="g in sec.items" :key="g.key" class="shop-card">
-          <div class="shop-pic"><img :src="g.img" :alt="g.name" /></div>
-          <div class="shop-nm">{{ g.emoji }} {{ g.name }}</div>
+          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" /><span class="shop-info">ⓘ</span></div>
+          <div class="shop-nm" style="cursor:pointer" @click="openDetail(sec.type, g)">{{ g.emoji }} {{ g.name }}</div>
           <div v-if="sec.type==='item' && itemCounts[g.key]" class="dim" style="font-size:10px">已有 {{ itemCounts[g.key] }}</div>
           <button v-if="g.owned" class="shop-buy owned" disabled>已拥有</button>
           <button v-else class="shop-buy" :class="{ poor: bal < g.price }" @click="purchase(sec.type, g)">
             🪙 {{ g.price }}{{ sec.type==='item' ? ' /个' : '' }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- 商品详情 -->
+    <div v-if="detail" class="sd-overlay" @click.self="detail=null">
+      <div class="sd-card">
+        <div class="sd-pic"><img :src="detail.g.img" :alt="detail.g.name" /></div>
+        <div class="sd-name">{{ detail.g.emoji }} {{ detail.g.name }}</div>
+        <div class="sd-desc">{{ detail.g.desc }}</div>
+        <div v-if="detail.type==='item' && itemCounts[detail.g.key]" class="dim" style="font-size:12px;margin-top:6px">当前持有 {{ itemCounts[detail.g.key] }} 个</div>
+        <button v-if="detail.g.owned" class="sd-buy owned" disabled>✅ 已拥有</button>
+        <button v-else class="sd-buy" :class="{ poor: bal < detail.g.price }" @click="buyDetail">🪙 {{ detail.g.price }} 购买{{ detail.type==='item' ? ' 1 个' : '' }}</button>
+        <button class="sd-close" @click="detail=null">关闭</button>
       </div>
     </div>
   </div>
@@ -72,8 +90,26 @@ function redeem(w) {
 .shop-card { border-radius: 16px; padding: 10px 8px; text-align: center;
   background: radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.18), transparent 60%), rgba(255,255,255,.04);
   border: 1px solid rgba(255,255,255,.08); }
-.shop-pic { width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
+.shop-pic { width: 100%; aspect-ratio: 1; display: grid; place-items: center; position: relative; }
 .shop-pic img { width: 78%; height: 78%; object-fit: contain; }
+.shop-info { position: absolute; top: 2px; right: 2px; font-size: 11px; color: rgba(255,255,255,.45); }
+/* 商品详情弹窗 */
+.sd-overlay { position: fixed; inset: 0; z-index: 75; display: grid; place-items: center; padding: 24px;
+  background: rgba(6,4,16,.78); backdrop-filter: blur(4px); animation: sdf .2s ease; }
+.sd-card { width: 100%; max-width: 320px; background: #14111f; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px; padding: 20px; text-align: center; }
+.sd-pic { width: 100%; aspect-ratio: 1; display: grid; place-items: center;
+  background: radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.25), transparent 62%); border-radius: 16px; }
+.sd-pic img { width: 80%; height: 80%; object-fit: contain; }
+.sd-name { font-size: 17px; font-weight: 700; margin: 12px 0 6px; }
+.sd-desc { font-size: 13px; color: rgba(255,255,255,.7); line-height: 1.6; }
+.sd-buy { width: 100%; margin-top: 16px; padding: 12px; border: none; border-radius: 13px; font-size: 15px;
+  font-weight: 700; color: #1a1426; background: linear-gradient(90deg, #ffd86b, #ffb347); cursor: pointer; }
+.sd-buy.poor { background: rgba(255,255,255,.12); color: rgba(255,255,255,.55); }
+.sd-buy.owned { background: rgba(107,255,176,.15); color: #9bffcf; cursor: default; }
+.sd-close { width: 100%; margin-top: 8px; padding: 9px; border: none; border-radius: 11px; background: transparent;
+  color: rgba(255,255,255,.5); font-size: 13px; cursor: pointer; }
+@keyframes sdf { from { opacity: 0 } to { opacity: 1 } }
 .shop-nm { font-size: 12px; font-weight: 600; margin: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .shop-buy { width: 100%; padding: 6px; border: none; border-radius: 9px; font-size: 12px; font-weight: 700;
   color: #1a1426; background: linear-gradient(90deg, #ffd86b, #ffb347); cursor: pointer; }
