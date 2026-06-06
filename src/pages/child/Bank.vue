@@ -82,14 +82,21 @@ function bucketKey(dateStr, r) {
 }
 const chartData = computed(() => {
   const defs = bucketDefs(range.value)
-  const sum = {}
-  for (const t of txns.value) { const d = (t.created_at || '').slice(0, 10); if (!d) continue; const k = bucketKey(d, range.value); sum[k] = (sum[k] || 0) + (t.screen_minutes || 0) }
-  return defs.map(x => ({ ...x, net: Math.round(sum[x.key] || 0) }))
+  const inc = {}, exp = {}
+  for (const t of txns.value) {
+    const d = (t.created_at || '').slice(0, 10); if (!d) continue
+    const k = bucketKey(d, range.value), m = t.screen_minutes || 0
+    if (m >= 0) inc[k] = (inc[k] || 0) + m; else exp[k] = (exp[k] || 0) + (-m)
+  }
+  return defs.map(x => ({ ...x, income: Math.round(inc[x.key] || 0), expense: Math.round(exp[x.key] || 0) }))
 })
-const chartMax = computed(() => Math.max(1, ...chartData.value.map(d => Math.abs(d.net))))
-const rangeTotal = computed(() => chartData.value.reduce((s, d) => s + d.net, 0))
+const chartMax = computed(() => Math.max(1, ...chartData.value.flatMap(d => [d.income, d.expense])))
+const rangeIn = computed(() => chartData.value.reduce((s, d) => s + d.income, 0))
+const rangeOut = computed(() => chartData.value.reduce((s, d) => s + d.expense, 0))
 const rangeLabel = computed(() => ({ day: '近 10 天', week: '近 8 周', month: '近 6 个月' }[range.value]))
-function barH(net) { return Math.max(2, Math.round(Math.abs(net) / chartMax.value * 40)) }
+function barH(v) { return Math.round(v / chartMax.value * 40) }
+// 按现在余额,每天能自动滚出多少利息
+const dailyInterest = computed(() => Math.round((b.value.current_balance_minutes || 0) * (b.value.daily_interest_rate || 0.01)))
 
 // 今日 / 本周净增减(顶部)
 const todayNet = computed(() => { const k = (new Date()).toISOString().slice(0, 10); let s = 0; for (const t of txns.value) if ((t.created_at || '').slice(0, 10) === k) s += t.screen_minutes || 0; return Math.round(s) })
@@ -118,6 +125,9 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
         到现在,利息已经悄悄帮你赚了 <b style="color:#9fe4ff;font-size:18px">{{ stat.intr.toFixed(0) }}</b> 分钟,什么都没做!<br>
         余额每天 <b style="color:#9fe4ff">+1%</b> 自动滚雪球 —— <b>余额越多,利息越多</b>。存着不花,时间会自己变多 ✨
       </div>
+      <div style="margin-top:11px;padding:9px 12px;border-radius:11px;background:rgba(107,213,255,.12);font-size:13px">
+        按现在的余额,明天利息自动 <b style="color:#9fe4ff;font-size:16px">+{{ dailyInterest }}</b> 分钟 💎
+      </div>
     </div>
 
     <!-- 收益分析:日/月/年 行情图 -->
@@ -130,15 +140,18 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
           <button :class="{ on: range==='month' }" @click="range='month'">月</button>
         </div>
       </div>
-      <div class="dim" style="font-size:12px;margin-bottom:12px">{{ rangeLabel }}净收益 <b :style="{ color: rangeTotal>=0?UP:DOWN }">{{ fmtNet(rangeTotal) }}</b> 分钟</div>
+      <div class="dim" style="font-size:12px;margin-bottom:10px">{{ rangeLabel }} · 收入 <b :style="{ color: UP }">+{{ rangeIn }}</b> · 支出 <b :style="{ color: DOWN }">-{{ rangeOut }}</b> 分钟</div>
       <div class="chart">
         <div v-for="d in chartData" :key="d.key" class="col">
-          <div class="bars">
-            <span class="bar" :style="{ height: barH(d.net)+'px', background: d.net>=0?UP:DOWN }"></span>
-          </div>
-          <div class="net" :style="{ color: d.net>0?UP:(d.net<0?DOWN:'rgba(255,255,255,.3)') }">{{ d.net===0 ? '·' : fmtNet(d.net) }}</div>
+          <div class="up"><span class="bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"></span></div>
+          <div class="base"></div>
+          <div class="down"><span class="bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"></span></div>
           <div class="lb">{{ d.label }}</div>
         </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:11px">
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#ff5b5b;vertical-align:0"></i> 收入</span>
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#2fcf86;vertical-align:0"></i> 支出</span>
       </div>
     </div>
 
@@ -194,11 +207,12 @@ function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
 .seg { margin-left: auto; display: flex; background: rgba(255,255,255,.08); border-radius: 999px; padding: 2px; }
 .seg button { border: none; background: transparent; color: rgba(255,255,255,.6); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
 .seg button.on { background: linear-gradient(90deg,#ffd86b,#ffb347); color: #1a1426; }
-/* 行情柱状图 */
-.chart { display: flex; gap: 3px; align-items: flex-end; }
+/* 对称双向行情柱:上半红收入、下半绿支出 */
+.chart { display: flex; gap: 3px; }
 .col { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-.bars { height: 44px; width: 100%; display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid rgba(255,255,255,.12); }
-.bar { width: 64%; max-width: 20px; border-radius: 4px 4px 0 0; transition: height .4s ease; }
-.net { font-size: 9px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 1px; white-space: nowrap; }
+.up { height: 42px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.base { height: 1px; width: 100%; background: rgba(255,255,255,.2); }
+.down { height: 42px; width: 100%; display: flex; align-items: flex-start; justify-content: center; }
+.bar { width: 64%; max-width: 18px; transition: height .4s ease; }
+.lb { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 3px; white-space: nowrap; }
 </style>
