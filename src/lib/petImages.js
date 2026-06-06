@@ -30,6 +30,7 @@ import skHanfu from '../assets/skin/skin_hanfu.png'
 import skJk from '../assets/skin/skin_jk.png'
 import skBunny from '../assets/skin/skin_bunny.png'
 import skUnicorn from '../assets/skin/skin_unicorn.png'
+import skMermaid from '../assets/skin/skin_mermaid.png'
 
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
 
@@ -87,7 +88,8 @@ export const SKIN_TRACK = [
   { key: 'hanfu',    name: '小汉服',   emoji: '🏮', days: 220, img: skHanfu },
   { key: 'jk',       name: 'JK校服',   emoji: '🎒', days: 240, img: skJk },
   { key: 'bunny',    name: '兔子睡衣', emoji: '🐰', days: 260, img: skBunny },
-  { key: 'unicorn',  name: '独角兽装', emoji: '🦄', days: 280, img: skUnicorn }
+  { key: 'unicorn',  name: '独角兽装', emoji: '🦄', days: 280, img: skUnicorn },
+  { key: 'mermaid',  name: '小美人鱼', emoji: '🧜‍♀️', days: 300, img: skMermaid }
 ]
 
 // 主头像:蛋→看进化阶段;装扮了皮肤则显示皮肤。
@@ -109,7 +111,7 @@ export const SKIN_IMAGE = {
   bow: skBow, scarf: skScarf, rain: skRain, sleep: skSleep, wings: skWings, wizard: skWizard,
   berry: skBerry, dino: skDino, princess: skPrincess, astro: skAstro,
   chef: skChef, pirate: skPirate, flower: skFlower, angel: skAngel,
-  hanfu: skHanfu, jk: skJk, bunny: skBunny, unicorn: skUnicorn
+  hanfu: skHanfu, jk: skJk, bunny: skBunny, unicorn: skUnicorn, mermaid: skMermaid
 }
 
 export function skinImage(key) { return SKIN_IMAGE[key] || base }
