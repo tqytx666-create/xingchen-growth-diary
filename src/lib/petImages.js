@@ -54,10 +54,16 @@ export function roomImg(key) { return (ROOM_TRACK.find(r => r.key === key) || RO
 import furnBowl from '../assets/furniture/furn_bowl.png'
 import furnToybox from '../assets/furniture/furn_toybox.png'
 import furnPlant from '../assets/furniture/furn_plant.png'
+import furnShelf from '../assets/furniture/furn_shelf.png'
+import furnLamp from '../assets/furniture/furn_lamp.png'
+import furnPlush from '../assets/furniture/furn_plush.png'
 export const FURNITURE = [
   { key: 'bowl',   name: '零食碗', emoji: '🍖', days: 10, img: furnBowl,   slot: { left: '15%', bottom: '11%', width: '58px' } },
   { key: 'plant',  name: '小绿植', emoji: '🪴', days: 35, img: furnPlant,  slot: { left: '4%',  bottom: '26%', width: '46px' } },
-  { key: 'toybox', name: '玩具箱', emoji: '🧸', days: 60, img: furnToybox, slot: { right: '11%', bottom: '11%', width: '64px' } }
+  { key: 'toybox', name: '玩具箱', emoji: '🧸', days: 60, img: furnToybox, slot: { right: '11%', bottom: '11%', width: '64px' } },
+  { key: 'shelf',  name: '小书架', emoji: '📚', days: 80, img: furnShelf,  slot: { left: '4%',  bottom: '46%', width: '56px' } },
+  { key: 'lamp',   name: '星星灯', emoji: '💡', days: 100, img: furnLamp,  slot: { right: '4%', bottom: '46%', width: '40px' } },
+  { key: 'plush',  name: '小熊玩偶', emoji: '🧸', days: 120, img: furnPlush, slot: { right: '30%', bottom: '9%', width: '44px' } }
 ]
 // 各阶段(stage_idx 0-6)对应形态图
 export const STAGE_IMG = [egg, base, evo2, evo3, evo4, evo5, god]
