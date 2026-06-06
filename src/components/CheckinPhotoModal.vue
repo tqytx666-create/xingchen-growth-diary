@@ -11,12 +11,14 @@ const props = defineProps({ task: { type: Object, required: true } })
 const emit = defineEmits(['done', 'close'])
 
 const hint = computed(() => photoHint(props.task.id))
-const fileInput = ref(null)
+const fileInput = ref(null)      // 相机(capture)
+const galleryInput = ref(null)   // 相册/文件(无 capture,可上传已有照片/笔记)
 const previewUrl = ref('')
 let picked = null
 const uploading = ref(false)
 
-function pick() { fileInput.value?.click() }
+function pickCamera() { fileInput.value?.click() }
+function pickGallery() { galleryInput.value?.click() }
 function onFile(e) {
   const f = e.target.files && e.target.files[0]
   if (!f) return
@@ -62,15 +64,19 @@ function skip() { if (!uploading.value) emit('done', null) }
         <div class="dim" style="font-size:12px">完成后点下面打卡,等家人确认就能陪小愿玩啦</div>
       </div>
 
-      <button class="cp-shot" :class="{ filled: previewUrl }" @click="pick">
+      <button class="cp-shot" :class="{ filled: previewUrl }" @click="pickCamera">
         <img v-if="previewUrl" :src="previewUrl" alt="预览" />
         <template v-else>
           <span style="font-size:30px">📷</span>
-          <span style="font-size:13px;margin-top:4px">点这里拍照</span>
+          <span style="font-size:13px;margin-top:4px">拍照,或从相册上传</span>
         </template>
       </button>
-      <div v-if="previewUrl" class="cp-retake" @click="pick">🔄 重拍</div>
+      <div class="cp-pick-row">
+        <button class="cp-pick" @click="pickCamera">📷 拍照</button>
+        <button class="cp-pick" @click="pickGallery">🖼️ 从相册上传</button>
+      </div>
       <input ref="fileInput" type="file" accept="image/*" capture="environment" style="display:none" @change="onFile" />
+      <input ref="galleryInput" type="file" accept="image/*" style="display:none" @change="onFile" />
 
       <button class="cp-go" :disabled="uploading" @click="confirm">
         {{ uploading ? '照片上传中…' : (previewUrl ? '确认打卡 ✅' : '打卡 ✅') }}
@@ -94,7 +100,10 @@ function skip() { if (!uploading.value) emit('done', null) }
   justify-content:center;cursor:pointer;overflow:hidden;padding:0}
 .cp-shot.filled{border-style:solid;border-color:rgba(107,255,176,.5)}
 .cp-shot img{width:100%;height:100%;object-fit:cover}
-.cp-retake{text-align:center;font-size:12px;color:#9bffcf;margin-top:8px;cursor:pointer}
+.cp-pick-row{display:flex;gap:8px;margin-top:10px}
+.cp-pick{flex:1;padding:9px;border:1px solid rgba(255,255,255,.18);border-radius:11px;background:rgba(255,255,255,.05);
+  color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.cp-pick:active{transform:scale(.97)}
 .cp-go{width:100%;margin-top:16px;padding:13px;border:none;border-radius:14px;font-size:15px;
   font-weight:700;color:#0a1f3d;background:linear-gradient(90deg,#ffd86b,#ffb347);cursor:pointer}
 .cp-go:disabled{opacity:.6;cursor:default}
