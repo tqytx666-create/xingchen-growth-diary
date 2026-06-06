@@ -13,7 +13,7 @@ export function buildDemoSeed() {
   s.owned_furniture = FURNITURE.map(x => x.key)
   s.items = { bone: 9, fish: 9, ball: 9, wand: 9 }
   const p = s.pet_profile[0]
-  if (p) { p.level = 19; p.exp = 70; p.stage_idx = tierFromLevel(19); p.mood = 'happy' }
+  if (p) { p.level = 21; p.exp = 80; p.stage_idx = tierFromLevel(21); p.mood = 'happy' }
   // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
   const day = k => new Date(Date.now() - k * 86400000).toISOString()
   s.time_bank_accounts[0].current_balance_minutes = 480
