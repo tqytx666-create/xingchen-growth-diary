@@ -4,6 +4,7 @@ import { session, currentUser } from '../lib/store.js'
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: () => import('../pages/Login.vue') },
+  { path: '/preview', component: () => import('../pages/Preview.vue') },   // 效果预览(免登录,不碰真实数据)
 
   { path: '/child/today', component: () => import('../pages/child/Today.vue'), meta: { role: 'child' } },
   { path: '/child/pet', component: () => import('../pages/child/Pet.vue'), meta: { role: 'child' } },
@@ -33,7 +34,7 @@ const router = createRouter({ history: createWebHashHistory(), routes })
 
 router.beforeEach((to) => {
   const u = currentUser()
-  if (to.path === '/login') return true
+  if (to.path === '/login' || to.path === '/preview') return true
   if (!u) return '/login'
   // 角色门:admin 可进 family + admin;family 进 family;child 进 child
   const need = to.meta.role
