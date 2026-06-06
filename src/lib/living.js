@@ -1,6 +1,7 @@
 // 活宠物:全场景视频(狗+默认房间烘焙在一起),按动作切换。
 // 每个"形态"一套(idle溜达 + 各动作),做一个形态补一套,加到 FORM_SETS 即可。
 // 幼犬(stage1)
+import { effectiveStage } from './petConfig.js'
 import b_walk from '../assets/living/scene_walk.mp4'
 import b_brush from '../assets/living/scene_brush.mp4'
 import b_study from '../assets/living/scene_study.mp4'
@@ -62,7 +63,7 @@ export function livingSet(pet) {
   if (!pet) return null
   const skin = pet.skin
   if (skin && skin !== 'default') return SKIN_SETS[skin] || null
-  const idx = pet.stage_idx || 0
+  const idx = effectiveStage(pet)
   if (FORM_SETS[idx]) return FORM_SETS[idx]
   if (idx >= 6 && idx <= 14) return EVO5   // 中间新形态暂用御星活视频
   return null

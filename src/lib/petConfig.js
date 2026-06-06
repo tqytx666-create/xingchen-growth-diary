@@ -41,6 +41,12 @@ export function tierFromLevel(level) {
 }
 // 每个阶段的起始等级(用于"距离下一形态还有几级")
 export const TIER_START = FORMS.map(f => f.lv)
+// 实际显示的形态下标:玩家在图鉴选了某个已解锁形态(displayForm)就用它,否则用当前等级形态
+export function effectiveStage(pet) {
+  const s = pet.stage_idx || 0
+  const d = pet.displayForm
+  return (d != null && d >= 1 && d <= s) ? d : s
+}
 
 // 体型随等级从小到大
 export function sizeForLevel(level, max = 200) {

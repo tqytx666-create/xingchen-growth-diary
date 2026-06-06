@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { db, pet, petAttrs } from '../../lib/store.js'
-import { DEX, SKINS, RARE_TXT, STAGES, FORMS } from '../../lib/petConfig.js'
+import { DEX, SKINS, RARE_TXT, STAGES, FORMS, effectiveStage } from '../../lib/petConfig.js'
 import { formImage, skinImage } from '../../lib/petImages.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import { fmtDateTime } from '../../lib/util.js'
@@ -22,10 +22,18 @@ function saveName() {
   editing.value = false
 }
 
-const curForm = computed(() => FORMS[Math.min(p.value.stage_idx || 0, FORMS.length - 1)].key)
+// 当前显示中的形态(玩家可在图鉴里切换已解锁形态)
+const curForm = computed(() => FORMS[effectiveStage(p.value)].key)
 function pickSkin(sk) {
   if (!sk.unlock(a.value, p.value)) { toast('未解锁:需' + sk.why); return }
   p.value.skin = sk.key; toast(`已换上「${sk.t}」皮肤 🎨`)
+}
+// 图鉴点击已解锁形态 → 切换显示形象(点当前等级形态则恢复默认跟随等级)
+function pickForm(i, d) {
+  if (i === 0) return                                  // 蛋不可选
+  if (!d.cond(p.value, a.value)) { toast('这个形态还没解锁哦,继续升级解锁 ✨'); return }
+  p.value.displayForm = (i === (p.value.stage_idx || 0)) ? null : i
+  toast(`已把小愿的形象切换成「${d.t}」`)
 }
 const events = computed(() => db.pet_events.slice(0, 30))
 // 图鉴收集进度
@@ -61,7 +69,7 @@ function equipFromPet(s) {
                @keyup.enter="saveName" @blur="saveName" />
         <button class="btn-accent" style="padding:6px 12px;font-size:13px" @click="saveName">保存</button>
       </div>
-      <div class="dim" style="font-size:12px">{{ STAGES[p.stage_idx ?? 0]?.name }}{{ (p.stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + p.level }}</div>
+      <div class="dim" style="font-size:12px">{{ STAGES[effectiveStage(p)]?.name }}{{ (p.stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + p.level }}</div>
     </div>
 
     <div style="display:flex;gap:8px;margin-bottom:14px">
@@ -75,9 +83,10 @@ function equipFromPet(s) {
       <span style="font-size:13px;font-weight:700;white-space:nowrap">🐾 图鉴收集 <b style="color:#ffd86b">{{ dexUnlocked }}</b><span class="dim">/{{ dexTotal }}</span></span>
       <div class="bar" style="flex:1"><i style="background:linear-gradient(90deg,#ffd86b,#ffb347)" :style="{ width: dexPct + '%' }"></i></div>
     </div>
+    <div class="dim" style="font-size:11px;margin:0 2px 10px">点已解锁的形态,就能把小愿换成那个样子(脱掉皮肤才看得到形态哦)~</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div v-for="d in DEX" :key="d.key" class="card" style="padding:12px;text-align:center;position:relative"
-           :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')">
+      <div v-for="(d,i) in DEX" :key="d.key" class="card form-cell" :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')"
+           :class="{ pickable: d.cond(p,a) && i>0 }" @click="pickForm(i,d)">
         <div style="height:96px;display:grid;place-items:center">
           <img v-if="d.cond(p,a)" :src="formImage(d.key)" style="height:96px;object-fit:contain" />
           <span v-else style="font-size:40px">❔</span>
@@ -85,8 +94,9 @@ function equipFromPet(s) {
         <h3 style="font-size:13px;margin:6px 0 2px">{{ d.cond(p,a) ? d.t : '???' }}</h3>
         <p class="dim" style="font-size:11px">{{ d.d }}</p>
         <span style="display:inline-block;font-size:9px;padding:2px 7px;border-radius:999px;margin-top:6px;font-weight:700;background:rgba(255,255,255,.12)">{{ RARE_TXT[d.rare] }}</span>
-        <div v-if="d.key===curForm" style="position:absolute;top:8px;right:8px">📍</div>
+        <div v-if="d.key===curForm" style="position:absolute;top:8px;right:8px;font-size:10px;color:#1a1426;background:#ffd86b;border-radius:999px;padding:1px 7px;font-weight:700">显示中</div>
         <div v-else-if="!d.cond(p,a)" style="position:absolute;top:8px;right:8px">🔒</div>
+        <div v-else style="position:absolute;top:8px;right:8px;font-size:10px;color:#ffd86b">点我换</div>
       </div>
     </div>
     </div>
@@ -123,6 +133,10 @@ function equipFromPet(s) {
 </template>
 
 <style scoped>
+/* 图鉴形态卡:已解锁的可点切换 */
+.form-cell { padding: 12px; text-align: center; position: relative; transition: transform .12s ease; }
+.form-cell.pickable { cursor: pointer; }
+.form-cell.pickable:active { transform: scale(.96); }
 /* 宠物主图:轻轻浮动 + 下方光晕台座 */
 .pet-hero { position: relative; display: grid; place-items: center; padding-top: 6px; }
 .pet-pedestal { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);

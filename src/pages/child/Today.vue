@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -316,7 +316,7 @@ onMounted(() => {
             <span class="pet-id-name">{{ p.name }}</span>
             <span class="pet-id-lv">{{ isEgg ? '待孵化' : 'Lv.' + p.level }}</span>
           </div>
-          <div class="pet-id-sub">{{ STAGES[p.stage_idx ?? 0]?.name }} · {{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
+          <div class="pet-id-sub">{{ STAGES[effectiveStage(p)]?.name }} · {{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
         </div>
         <div style="display:flex;gap:7px;flex-shrink:0">
           <span ref="timeChipRef" class="hud-chip" @click="router.push('/child/bank')">⏱️<CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /><i>分</i></span>

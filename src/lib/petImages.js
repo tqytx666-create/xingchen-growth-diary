@@ -38,7 +38,7 @@ import skBunny from '../assets/skin/skin_bunny.png'
 import skUnicorn from '../assets/skin/skin_unicorn.png'
 import skMermaid from '../assets/skin/skin_mermaid.png'
 
-import { FORMS } from './petConfig.js'
+import { FORMS, effectiveStage } from './petConfig.js'
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
 // 各形态 key→图(f6~f14 暂无专属图,回落御星 evo5)
 const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, f6, f7, f8, f9, f10, f11, god }
@@ -108,7 +108,7 @@ export const SKIN_TRACK = [
 export function mainImage(pet, attrs) {
   if ((pet.stage_idx || 0) <= 0) return IMG.egg
   if (pet.skin && pet.skin !== 'default') return skinImage(pet.skin)
-  return STAGE_IMG[pet.stage_idx] || IMG.base
+  return STAGE_IMG[effectiveStage(pet)] || IMG.base
 }
 
 // 图鉴每个形态对应的图(对齐 petConfig.FORMS 的 key;新形态回落御星)
