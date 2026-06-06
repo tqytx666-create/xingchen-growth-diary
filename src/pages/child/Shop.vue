@@ -6,6 +6,7 @@ import { ownedItems } from '../../services/itemService.js'
 import { WISH } from '../../lib/shop.js'
 import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
+import CountUp from '../../components/CountUp.vue'
 
 const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())
@@ -42,7 +43,7 @@ function redeem(w) {
   <div style="padding:14px 14px 90px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 2px 14px">
       <h2 style="font-size:18px;font-weight:700;border-left:3px solid #ffd86b;padding-left:10px;margin:0">🛍️ 星币商城</h2>
-      <span class="card" style="padding:6px 13px;font-size:15px;font-weight:700;color:#ffd86b">🪙 {{ bal }}</span>
+      <span class="card" style="padding:6px 13px;font-size:15px;font-weight:700;color:#ffd86b">🪙 <CountUp :value="bal" /></span>
     </div>
     <div class="card" style="padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
       完成打卡(英语 +10🪙 / 支线 +5🪙)赚星币,在这里购买喜欢的皮肤、房间、家具和道具。星币只能靠打卡赚哦~

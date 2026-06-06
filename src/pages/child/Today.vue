@@ -6,6 +6,7 @@ import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
+import CountUp from '../../components/CountUp.vue'
 import LivingPet from '../../components/pet/LivingPet.vue'
 import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
@@ -262,8 +263,8 @@ onMounted(() => {
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
       <div style="display:flex;gap:8px;align-items:center">
         <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer" @click="router.push('/child/bank')">⏱️ {{ Math.floor(bankRow().current_balance_minutes || 0) }}分</span>
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="router.push('/child/shop')">🪙 {{ coinBal }}</span>
+        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;cursor:pointer" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" />分</span>
+        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="router.push('/child/shop')">🪙 <CountUp :value="coinBal" /></span>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
         <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
       </div>
