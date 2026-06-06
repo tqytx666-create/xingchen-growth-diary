@@ -38,11 +38,15 @@ import roomNight from '../assets/room/room_night.jpg'
 import roomForest from '../assets/room/room_forest.jpg'
 import roomOcean from '../assets/room/room_ocean.jpg'
 import roomSpace from '../assets/room/room_space.jpg'
+import roomSakura from '../assets/room/room_sakura.jpg'
+import roomCastle from '../assets/room/room_castle.jpg'
 export const ROOM_TRACK = [
   { key: 'night',  name: '星空小窝', emoji: '🌙', days: 0,  img: roomNight },
   { key: 'forest', name: '森林树屋', emoji: '🌳', days: 20, img: roomForest },
   { key: 'ocean',  name: '海洋之家', emoji: '🐚', days: 40, img: roomOcean },
-  { key: 'space',  name: '太空舱',   emoji: '🚀', days: 70, img: roomSpace }
+  { key: 'space',  name: '太空舱',   emoji: '🚀', days: 70, img: roomSpace },
+  { key: 'sakura', name: '樱花夜',   emoji: '🌸', days: 90, img: roomSakura },
+  { key: 'castle', name: '魔法城堡', emoji: '🏰', days: 110, img: roomCastle }
 ]
 export function roomImg(key) { return (ROOM_TRACK.find(r => r.key === key) || ROOM_TRACK[0]).img }
 

@@ -4,7 +4,7 @@ export const SKIN_PRICE = {
   berry: 230, dino: 270, princess: 320, astro: 380, flower: 300, chef: 360, pirate: 440, angel: 520,
   hanfu: 480, jk: 420, bunny: 360, unicorn: 560
 }
-export const ROOM_PRICE = { forest: 200, ocean: 350, space: 550 }   // night 免费默认拥有
+export const ROOM_PRICE = { forest: 200, ocean: 350, space: 550, sakura: 400, castle: 650 }   // night 免费默认拥有
 export const FURN_PRICE = { bowl: 80, plant: 160, toybox: 280 }
 export const ITEM_PRICE = { bone: 15, fish: 20, ball: 25, wand: 45 }
 
