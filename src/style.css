@@ -20,8 +20,10 @@ button { font: inherit; cursor: pointer; }
 .btn-ghost { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: #fff; border-radius: 12px; transition: transform .12s; }
 .btn-ghost:active { transform: scale(.94); }
 
-.view-enter-active { transition: all .3s ease; }
-.view-enter-from { opacity: 0; transform: translateY(6px); }
+.view-enter-active { transition: opacity .28s ease, transform .28s ease; }
+.view-enter-from { opacity: 0; transform: translateY(8px); }
+.view-leave-active { transition: opacity .16s ease, transform .16s ease; }
+.view-leave-to { opacity: 0; transform: translateY(-5px); }
 
 /* dog */
 .dog { position: relative; cursor: pointer; transform-origin: 50% 90%; transition: width .5s ease, height .5s ease; }
@@ -93,9 +95,18 @@ button { font: inherit; cursor: pointer; }
 .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; display: flex;
   justify-content: space-around; background: rgba(26,21,53,.93); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,.15);
   padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); z-index: 50; }
-.nav a { flex: 1; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); text-decoration: none; padding: 4px; }
-.nav a.active { color: #ffd86b; }
-.nav a .ic { font-size: 20px; display: block; margin-bottom: 2px; }
+.nav a { flex: 1; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); text-decoration: none; padding: 4px;
+  position: relative; transition: color .2s ease; }
+.nav a.active { color: #ffd86b; font-weight: 700; }
+/* 顶部金色指示条:标出当前 tab */
+.nav a.active::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 3px; border-radius: 999px; background: #ffd86b; box-shadow: 0 0 8px #ffd86b; }
+.nav a .ic { font-size: 20px; display: block; margin-bottom: 2px;
+  transition: transform .25s cubic-bezier(.2,1.4,.4,1), filter .2s ease; }
+/* 当前 tab 图标上浮放大发光 */
+.nav a.active .ic { transform: translateY(-3px) scale(1.2); filter: drop-shadow(0 3px 8px rgba(255,216,107,.55)); }
+/* 点按反馈 */
+.nav a:active .ic { transform: scale(.85); }
 
 input, textarea, select {
   width: 100%; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: #fff;
