@@ -19,7 +19,14 @@ const routes = [
   { path: '/family/logs', component: () => import('../pages/family/Logs.vue'), meta: { role: 'family' } },
   { path: '/family/rewards', component: () => import('../pages/family/Rewards.vue'), meta: { role: 'family' } },
 
-  { path: '/admin', component: () => import('../pages/admin/Config.vue'), meta: { role: 'admin' } }
+  { path: '/admin', component: () => import('../pages/admin/Config.vue'), meta: { role: 'admin' } },
+
+  // 兜底:未知路由(旧书签 / 拼错 / PWA 缓存失效链接)不留空白页,按角色回到对应首页
+  { path: '/:pathMatch(.*)*', redirect: () => {
+    const u = currentUser()
+    if (!u) return '/login'
+    return u.role === 'child' ? '/child/today' : '/family/dashboard'
+  } }
 ]
 
 const router = createRouter({ history: createWebHashHistory(), routes })
