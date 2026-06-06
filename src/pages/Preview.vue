@@ -38,34 +38,46 @@ const balance = ref(126)
 const interest = ref(8)
 const balRef = ref(null)
 const collecting = ref(false)
+const balBump = ref(false)
+// 利息收集:一群发光小星星喷出 → 拖尾绕一圈 → 俯冲汇入余额 → 余额数字向上推动(魔法棒粒子感)
 function collectInterest(ev) {
   if (interest.value <= 0 || collecting.value) return
   collecting.value = true
   const amt = interest.value
   const btn = ev.currentTarget.getBoundingClientRect()
   const tgt = balRef.value.getBoundingClientRect()
-  const bx = btn.left + btn.width / 2, by = btn.top + btn.height / 2
+  const sx = btn.left + btn.width / 2, sy = btn.top + btn.height / 2
   const tx = tgt.left + tgt.width / 2, ty = tgt.top + tgt.height / 2
+  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.4   // 绕圈中心
   const layer = document.createElement('div')
   layer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:90'
-  const ICON = ['⭐', '✨', '⏱️', '🌟', '💫']
-  for (let i = 0; i < 16; i++) {
+  const ICON = ['⭐', '✨', '🌟', '💫', '⏱️']
+  const N = 26
+  for (let i = 0; i < N; i++) {
     const s = document.createElement('div')
     s.textContent = ICON[i % ICON.length]
-    const sx = bx + (Math.random() * 80 - 40), sy = by + (Math.random() * 30 - 15)
-    s.style.cssText = `position:fixed;left:${sx}px;top:${sy}px;font-size:${14 + Math.random() * 12}px;
-      transform:translate(-50%,-50%) scale(1);opacity:0;
-      transition:transform .75s cubic-bezier(.5,0,.2,1),opacity .75s ease;will-change:transform,opacity`
+    s.style.cssText = `position:fixed;left:${sx}px;top:${sy}px;font-size:${12 + Math.random() * 14}px;
+      transform:translate(-50%,-50%);opacity:0;will-change:transform,opacity;
+      filter:drop-shadow(0 0 6px rgba(255,216,107,.95)) drop-shadow(0 0 12px rgba(255,201,64,.6))`
     layer.appendChild(s)
-    const delay = i * 35
-    setTimeout(() => { s.style.opacity = '1' }, delay)
-    setTimeout(() => { s.style.transform = `translate(${tx - sx - 0}px,${ty - sy}px) translate(-50%,-50%) scale(.4)`; s.style.opacity = '0' }, delay + 30)
+    const ang = (Math.PI * 2 * i) / N + Math.random() * 0.5
+    const R = 120 + Math.random() * 95
+    const mx = cx + Math.cos(ang) * R, my = cy + Math.sin(ang) * R           // 喷散到外圈
+    const a2 = ang + 1.5, R2 = R * 0.66
+    const wx = cx + Math.cos(a2) * R2, wy = cy + Math.sin(a2) * R2           // 绕行一段
+    s.animate([
+      { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.4) rotate(0deg)', opacity: 0, offset: 0 },
+      { opacity: 1, offset: 0.12 },
+      { transform: `translate(-50%,-50%) translate(${mx - sx}px,${my - sy}px) scale(1.3) rotate(170deg)`, opacity: 1, offset: 0.4 },
+      { transform: `translate(-50%,-50%) translate(${wx - sx}px,${wy - sy}px) scale(1) rotate(310deg)`, opacity: 1, offset: 0.66 },
+      { transform: `translate(-50%,-50%) translate(${tx - sx}px,${ty - sy}px) scale(.22) rotate(540deg)`, opacity: 0, offset: 1 }
+    ], { duration: 1300 + Math.random() * 250, delay: i * 22, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' })
   }
   document.body.appendChild(layer)
-  setTimeout(() => { balance.value += amt }, 560)   // 星星抵达时余额翻动
-  setTimeout(() => { layer.remove() }, 1400)
-  setTimeout(() => { interest.value = 0; collecting.value = false }, 700)
-  setTimeout(() => { interest.value = 8 }, 3200)     // demo:过会儿又攒出利息,可反复点
+  setTimeout(() => { balance.value += amt; balBump.value = true; setTimeout(() => (balBump.value = false), 430) }, 1080) // 星星汇入时余额向上推动
+  setTimeout(() => { layer.remove() }, 1800)
+  setTimeout(() => { interest.value = 0; collecting.value = false }, 1150)
+  setTimeout(() => { interest.value = 8 }, 3800)     // demo:过会儿又攒出利息,可反复点
 }
 
 // —— 皮肤大图 ——
@@ -101,7 +113,7 @@ const bigImg = ref(null)
       <h2>⏱️ 时间银行 · 利息手动收集</h2>
       <div class="bank-card">
         <div class="bank-label">游戏时间余额</div>
-        <div class="bank-bal" ref="balRef"><CountUp :value="balance" :dur="800" /><span class="bank-unit">分钟</span></div>
+        <div class="bank-bal" :class="{ bump: balBump }" ref="balRef"><CountUp :value="balance" :dur="800" /><span class="bank-unit">分钟</span></div>
         <button class="bank-collect" :class="{ off: interest <= 0 }" @click="collectInterest">
           <template v-if="interest > 0">✨ 收取利息 +{{ interest }} 分钟</template>
           <template v-else>已收取 · 利息攒着中…</template>
@@ -162,6 +174,8 @@ section h2 { font-size: 15px; font-weight: 700; margin: 0 2px 11px; padding-left
   border: 1px solid rgba(255,216,107,.3); }
 .bank-label { font-size: 13px; color: rgba(255,255,255,.7); }
 .bank-bal { font-size: 46px; font-weight: 800; color: #ffd86b; line-height: 1.1; text-shadow: 0 0 22px rgba(255,216,107,.5); margin: 4px 0 14px; }
+.bank-bal.bump { animation: balPush .43s cubic-bezier(.2,1.7,.4,1); }
+@keyframes balPush { 0%{ transform: translateY(12px) scale(1) } 45%{ transform: translateY(-7px) scale(1.14) } 100%{ transform: translateY(0) scale(1) } }
 .bank-unit { font-size: 17px; font-weight: 700; color: rgba(255,255,255,.65); margin-left: 4px; }
 .bank-collect { padding: 11px 20px; border: none; border-radius: 999px; font-size: 14px; font-weight: 700; color: #1a1426;
   background: linear-gradient(90deg, #6bffb0, #8be9ff); cursor: pointer; box-shadow: 0 0 18px -4px #6bffb0; animation: bcPulse 1.8s ease-in-out infinite; }
