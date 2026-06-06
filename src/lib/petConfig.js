@@ -64,6 +64,14 @@ export function dominant(a) {
   return Object.keys(m).reduce((x, y) => (m[y] > m[x] ? y : x))
 }
 
+// 魅力 = 基础魅力 + 收集加成:越会打扮、收集的形态越多越有魅力 ✨
+// 每拥有 1 款皮肤 +3,每解锁 1 个图鉴形态 +2(纯展示派生,不改存储值)
+export const CHARM_PER_SKIN = 3
+export const CHARM_PER_DEX = 2
+export function charmTotal(baseCharm, skinCount, dexUnlocked) {
+  return Math.round((baseCharm || 0) + (skinCount || 0) * CHARM_PER_SKIN + (dexUnlocked || 0) * CHARM_PER_DEX)
+}
+
 export const FORM_LABEL = {
   wisdom: '会发光的学者犬 📚',
   cleanliness: '闪亮的香香犬 🛁',

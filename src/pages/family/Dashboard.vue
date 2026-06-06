@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank, mainTask } from '../../lib/store.js'
 import { todayStr } from '../../lib/util.js'
 import { levelInfo } from '../../services/creditService.js'
-import { STAGES } from '../../lib/petConfig.js'
+import { STAGES, DEX, charmTotal } from '../../lib/petConfig.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 
 const router = useRouter()
@@ -89,7 +89,7 @@ function lockDevice() {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx ?? 0]?.name }}{{ (pet().stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + pet().level }}</div>
-        <div class="dim" style="font-size:12px;margin-top:2px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ petAttrs().charm }}</div>
+        <div class="dim" style="font-size:12px;margin-top:2px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ charmTotal(petAttrs().charm, (db.owned_skins||[]).filter(k=>k&&k!=='default').length, DEX.filter(d=>d.cond(pet(),petAttrs())).length) }}</div>
         <div v-if="(pet().stage_idx||0)<=0" class="dim" style="font-size:11px;margin-top:2px;color:#ffd86b">🥚 孵化进度 {{ pet().exp||0 }}/30</div>
       </div>
       <span v-if="pet().risk>=2" style="font-size:11px;color:#ff7a7a">退阶风险</span>

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX } from '../../lib/petConfig.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -43,6 +43,11 @@ const ATTR_META = {
 }
 const attrInfo = ref(null)      // 当前点开的属性 key
 const attrTasksFor = (key) => db.tasks.filter(t => t.is_active && (t.attribute_key === key || t.attribute_key2 === key))
+// 魅力额外加成:拥有皮肤数 + 已解锁图鉴形态数
+const skinCount = computed(() => (db.owned_skins || []).filter(k => k && k !== 'default').length)
+const dexUnlocked = computed(() => DEX.filter(d => d.cond(p.value, a.value)).length)
+const charmVal = computed(() => charmTotal(a.value.charm, skinCount.value, dexUnlocked.value))
+const attrVal = (key) => key === 'charm' ? charmVal.value : a.value[key]
 
 // 诚信分记录(点顶部"信任"徽章打开)
 const creditOpen = ref(false)
@@ -318,9 +323,18 @@ onMounted(() => {
           </div>
           <div class="pet-id-sub">{{ STAGES[effectiveStage(p)]?.name }} · {{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
         </div>
-        <div style="display:flex;gap:7px;flex-shrink:0">
-          <span ref="timeChipRef" class="hud-chip" @click="router.push('/child/bank')">⏱️<CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /><i>分</i></span>
-          <span class="hud-chip" @click="router.push('/child/shop')"><CoinIcon /><CountUp :value="coinBal" /></span>
+        <div class="bal-card">
+          <div ref="timeChipRef" class="bal-row" @click="router.push('/child/bank')">
+            <span class="bal-ic">⏱️</span>
+            <span class="bal-num" style="color:#8be9ff"><CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /></span>
+            <span class="bal-lb">分 · 时间银行</span>
+          </div>
+          <div class="bal-div"></div>
+          <div class="bal-row" @click="router.push('/child/shop')">
+            <CoinIcon class="bal-ic" />
+            <span class="bal-num" style="color:#ffd86b"><CountUp :value="coinBal" /></span>
+            <span class="bal-lb">星币 · 去商城</span>
+          </div>
         </div>
       </div>
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
@@ -370,7 +384,7 @@ onMounted(() => {
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.charm }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(a.charm)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ charmVal }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(charmVal)}"></i></div></div>
     </div>
 
     <!-- 道具栏(紧跟宠物) -->
@@ -415,9 +429,13 @@ onMounted(() => {
     <div v-if="attrInfo" class="attr-overlay" @click.self="attrInfo=null">
       <div class="attr-sheet" :style="{ '--ac': ATTR_META[attrInfo].color }">
         <div style="font-size:17px;font-weight:700;margin-bottom:6px">{{ ATTR_META[attrInfo].icon }} {{ ATTR_META[attrInfo].name }}
-          <span style="font-size:13px;font-weight:500;color:var(--ac)">· 当前 {{ a[attrInfo] }}</span>
+          <span style="font-size:13px;font-weight:500;color:var(--ac)">· 当前 {{ attrVal(attrInfo) }}</span>
         </div>
         <div class="dim" style="font-size:13px;line-height:1.55;margin-bottom:12px">{{ ATTR_META[attrInfo].blurb }}</div>
+        <div v-if="attrInfo==='charm'" style="font-size:12.5px;line-height:1.6;margin:-4px 0 12px;padding:9px 11px;border-radius:11px;background:rgba(255,158,199,.12)">
+          ✨ 还有额外加成:每拥有 <b style="color:var(--ac)">1 款皮肤 +{{ CHARM_PER_SKIN }}</b>、每解锁 <b style="color:var(--ac)">1 个图鉴形态 +{{ CHARM_PER_DEX }}</b>。<br>
+          现在:皮肤 {{ skinCount }} 款(+{{ skinCount*CHARM_PER_SKIN }})· 形态 {{ dexUnlocked }} 个(+{{ dexUnlocked*CHARM_PER_DEX }})。越会打扮、收集越多,越有魅力~
+        </div>
         <div v-for="t in attrTasksFor(attrInfo)" :key="t.id" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">
           <span style="font-size:20px">{{ t.icon }}</span>
           <div style="flex:1">
@@ -543,11 +561,15 @@ onMounted(() => {
 .pet-id-name { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pet-id-lv { font-size: 11px; font-weight: 800; color: #1a1426; background: linear-gradient(90deg,#ffd86b,#ffb347); border-radius: 999px; padding: 1px 8px; flex-shrink: 0; }
 .pet-id-sub { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 3px; white-space: nowrap; }
-.hud-chip { display: inline-flex; align-items: center; gap: 3px; padding: 6px 11px; border-radius: 13px;
-  font-size: 14px; font-weight: 800; color: #ffd86b; cursor: pointer; line-height: 1;
-  background: rgba(10,8,22,.5); border: 1px solid rgba(255,216,107,.32); backdrop-filter: blur(6px); }
-.hud-chip i { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.6); font-style: normal; margin-left: 1px; }
-.hud-chip:active { transform: scale(.95); }
+/* 余额名片:跟宠物名片同款两行卡片(上行=时间银行,下行=星币) */
+.bal-card { flex-shrink: 0; min-width: 116px; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(6px); border-radius: 14px; padding: 6px 12px; }
+.bal-row { display: flex; align-items: center; gap: 5px; cursor: pointer; transition: transform .12s ease; padding: 1px 0; }
+.bal-row:active { transform: scale(.95); }
+.bal-ic { font-size: 15px; line-height: 1; display: inline-flex; align-items: center; }
+.bal-num { font-size: 19px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.bal-lb { font-size: 10px; color: rgba(255,255,255,.55); white-space: nowrap; margin-left: 1px; }
+.bal-div { height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
 /* 今日任务分类卡(像商城小卡)+ 二级打卡弹窗 */
 .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
 .cat-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 16px 10px; border-radius: 16px; cursor: pointer;
