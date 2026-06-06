@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, setUser } from '../lib/store.js'
 
@@ -7,6 +7,7 @@ const router = useRouter()
 const pwd = ref('')
 const pending = ref(null)
 const err = ref('')
+const pwdInput = ref(null)
 // 家长密码:外公/外婆/妈妈/爸爸 进家长端都要,挡住孩子冒充家长确认自己的打卡
 const FAMILY_PWD = 'xiaoyu2026'
 const TRUST_KEY = 'xc_parent_trust'   // 本机输过密码就记住,以后家长账号免密
@@ -16,6 +17,7 @@ function pick(u) {
   if (u.role === 'child') { enter(u); return }                       // 只有星晨自己免密
   if (localStorage.getItem(TRUST_KEY) === '1') { enter(u); return }  // 本机已信任,免密直接进
   pending.value = u                                                  // 否则要家长密码
+  nextTick(() => pwdInput.value?.focus())                            // 自动聚焦,直接打字/弹键盘
 }
 function enter(u) {
   setUser(u.id)
@@ -51,7 +53,7 @@ function confirmPwd() {
       <div style="font-size:34px">🔒</div>
       <div style="font-weight:700;margin:8px 0 4px">{{ pending.display_name }}({{ pending.role === 'admin' ? '管理员' : '家长' }})</div>
       <p class="dim" style="font-size:13px;margin-bottom:14px">请输入家长密码</p>
-      <input type="password" v-model="pwd" placeholder="家长密码" style="text-align:center" @keyup.enter="confirmPwd" />
+      <input ref="pwdInput" type="password" v-model="pwd" placeholder="家长密码" style="text-align:center" @keyup.enter="confirmPwd" />
       <div v-if="err" style="color:#ff7a7a;font-size:13px;margin-top:8px">{{ err }}</div>
       <button class="btn-accent" style="width:100%;padding:12px;margin-top:14px" @click="confirmPwd">进入</button>
       <button class="btn-ghost" style="width:100%;padding:10px;margin-top:8px" @click="pending=null;pwd=''">返回</button>
