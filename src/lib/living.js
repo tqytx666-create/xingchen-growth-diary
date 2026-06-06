@@ -21,13 +21,21 @@ import e3_study from '../assets/living/scene_evo3_study.mp4'
 import e3_bath from '../assets/living/scene_evo3_bath.mp4'
 import e3_eat from '../assets/living/scene_evo3_eat.mp4'
 import e3_happy from '../assets/living/scene_evo3_happy.mp4'
+// 辉光犬(stage4)
+import e4_walk from '../assets/living/scene_evo4_walk.mp4'
+import e4_brush from '../assets/living/scene_evo4_brush.mp4'
+import e4_study from '../assets/living/scene_evo4_study.mp4'
+import e4_bath from '../assets/living/scene_evo4_bath.mp4'
+import e4_eat from '../assets/living/scene_evo4_eat.mp4'
+import e4_happy from '../assets/living/scene_evo4_happy.mp4'
 
 const BASE = { idle: b_walk, brush: b_brush, study: b_study, bath: b_bath, eat: b_eat, happy: b_happy }
 const EVO2 = { idle: e2_walk, brush: e2_brush, study: e2_study, bath: e2_bath, eat: e2_eat, happy: e2_happy }
 const EVO3 = { idle: e3_walk, brush: e3_brush, study: e3_study, bath: e3_bath, eat: e3_eat, happy: e3_happy }
+const EVO4 = { idle: e4_walk, brush: e4_brush, study: e4_study, bath: e4_bath, eat: e4_eat, happy: e4_happy }
 
-// 形态(stage_idx)→ 活视频套;没列的形态(辉光/御星/神犬)暂回落静态,以后补
-const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3 }
+// 形态(stage_idx)→ 活视频套;没列的形态(御星/神犬)暂回落静态,以后补
+const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4 }
 // 活皮肤(优先于形态);以后一套套补
 const SKIN_SETS = {}
 
