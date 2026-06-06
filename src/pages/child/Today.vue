@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, setUser } from '../../lib/store.js'
 import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP } from '../../lib/petConfig.js'
@@ -128,6 +128,8 @@ const taskGroups = computed(() => {
   return groups
 })
 const openGroup = ref(null)   // 点开的二级打卡页
+// 弹窗打开时锁住背景滚动,避免滑动穿透到主页
+watch(openGroup, v => { document.body.style.overflow = v ? 'hidden' : '' })
 const trust = computed(() => levelInfo(creditRow().credit_score))
 const coinBal = computed(() => coins())
 // 每日利息:累计待收,孩子手动收取(魔法棒动效汇入时间余额)
@@ -308,14 +310,17 @@ onMounted(() => {
     <!-- 宠物舞台 -->
     <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:12px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
-      <div style="position:relative;z-index:6;display:flex;justify-content:space-between;align-items:flex-start">
-        <div style="min-width:0">
-          <span class="card" style="padding:5px 10px;border-radius:999px;font-size:12px;color:#ffd86b">{{ STAGES[p.stage_idx ?? 0]?.name }}{{ isEgg ? ' · 待孵化' : ' · Lv.' + p.level }}</span>
-          <div class="dim" style="font-size:11px;margin-top:5px;padding-left:2px">{{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
+      <div style="position:relative;z-index:6;display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div class="pet-id">
+          <div class="pet-id-top">
+            <span class="pet-id-name">{{ p.name }}</span>
+            <span class="pet-id-lv">{{ isEgg ? '待孵化' : 'Lv.' + p.level }}</span>
+          </div>
+          <div class="pet-id-sub">{{ STAGES[p.stage_idx ?? 0]?.name }} · {{ { normal:'心情不错 😊', happy:'超级开心 🥰', low:'有点低落 😔', disappointed:'有点失望 😞' }[p.mood] }}</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-          <span ref="timeChipRef" class="hud-chip" @click="router.push('/child/bank')">⏱️ <CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /> 分</span>
-          <span class="hud-chip" @click="router.push('/child/shop')"><CoinIcon /> <CountUp :value="coinBal" /></span>
+        <div style="display:flex;gap:7px;flex-shrink:0">
+          <span ref="timeChipRef" class="hud-chip" @click="router.push('/child/bank')">⏱️<CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /><i>分</i></span>
+          <span class="hud-chip" @click="router.push('/child/shop')"><CoinIcon /><CountUp :value="coinBal" /></span>
         </div>
       </div>
       <!-- 活宠物:在房间里溜达,互动时丝滑切到对应动作视频 -->
@@ -531,10 +536,17 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
-/* 宠物房间里的 HUD:时间余额 + 星币 */
-.hud-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 999px;
-  font-size: 13px; font-weight: 700; color: #ffd86b; cursor: pointer;
-  background: rgba(10,8,22,.55); border: 1px solid rgba(255,216,107,.3); backdrop-filter: blur(4px); }
+/* 宠物名片 + 房间 HUD(时间/星币) */
+.pet-id { min-width: 0; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px);
+  border-radius: 14px; padding: 7px 12px; }
+.pet-id-top { display: flex; align-items: baseline; gap: 7px; }
+.pet-id-name { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pet-id-lv { font-size: 11px; font-weight: 800; color: #1a1426; background: linear-gradient(90deg,#ffd86b,#ffb347); border-radius: 999px; padding: 1px 8px; flex-shrink: 0; }
+.pet-id-sub { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 3px; white-space: nowrap; }
+.hud-chip { display: inline-flex; align-items: center; gap: 3px; padding: 6px 11px; border-radius: 13px;
+  font-size: 14px; font-weight: 800; color: #ffd86b; cursor: pointer; line-height: 1;
+  background: rgba(10,8,22,.5); border: 1px solid rgba(255,216,107,.32); backdrop-filter: blur(6px); }
+.hud-chip i { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.6); font-style: normal; margin-left: 1px; }
 .hud-chip:active { transform: scale(.95); }
 /* 今日任务分类卡(像商城小卡)+ 二级打卡弹窗 */
 .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }

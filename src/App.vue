@@ -32,7 +32,14 @@ function refresh() { location.reload() }
 </script>
 
 <template>
-  <div class="app-root">
+  <div class="app-root" :class="{ 'demo-pad': IS_DEMO && showNav }">
+    <!-- Demo 专用顶部标签栏(底部导航点不到时可用) -->
+    <nav v-if="IS_DEMO && showNav" class="demo-topnav">
+      <span class="demo-tag">DEMO</span>
+      <router-link v-for="n in nav" :key="n.to" :to="n.to" :class="{ active: route.path === n.to }">
+        <span>{{ n.ic }}</span>{{ n.label }}
+      </router-link>
+    </nav>
     <!-- 全局星空背景:视差星点 + 流星 -->
     <div class="sky-bg" aria-hidden="true">
       <div class="stars-layer stars-far"></div>
@@ -67,6 +74,15 @@ function refresh() { location.reload() }
 <style scoped>
 /* 顶部安全区:站立式 PWA 从桌面打开时,把内容压到状态栏(时间/刘海)下面 */
 .app-root { padding-top: env(safe-area-inset-top); }
+.app-root.demo-pad { padding-top: calc(env(safe-area-inset-top) + 44px); }
+/* Demo 顶部标签栏 */
+.demo-topnav { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 70;
+  display: flex; align-items: center; gap: 2px; padding: calc(env(safe-area-inset-top) + 5px) 6px 5px;
+  background: rgba(20,16,40,.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,.12); overflow-x: auto; }
+.demo-topnav .demo-tag { font-size: 9px; font-weight: 800; color: #1a1426; background: #ffd86b; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+.demo-topnav a { flex-shrink: 0; font-size: 12px; color: rgba(255,255,255,.6); text-decoration: none; padding: 5px 9px; border-radius: 999px; }
+.demo-topnav a.active { color: #1a1426; background: linear-gradient(90deg,#ffd86b,#ffb347); font-weight: 700; }
+.demo-topnav a span { margin-right: 3px; }
 /* 全局刷新按钮:右下角浮标,在底部导航之上 */
 .refresh-fab {
   position: fixed; right: 14px; z-index: 65;
