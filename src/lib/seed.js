@@ -16,9 +16,10 @@ export function buildDemoSeed() {
   if (p) { p.level = 11; p.exp = 30; p.stage_idx = tierFromLevel(11); p.mood = 'happy' }
   // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
   const day = k => new Date(Date.now() - k * 86400000).toISOString()
-  s.time_bank_accounts[0].current_balance_minutes = 146
+  s.time_bank_accounts[0].current_balance_minutes = 480
   s.time_bank_accounts[0].last_interest_date = day(1)
   s.time_bank_transactions = [
+    { id: 'tbi0', type: 'interest', screen_minutes: 186, description: '累计每日利息', created_at: day(25) },
     { id: 'tbd1', type: 'deposit', screen_minutes: 30, exercise_type: 'badminton', exercise_minutes: 15, description: '羽毛球存入', created_at: day(0) },
     { id: 'tbd2', type: 'interest', screen_minutes: 5, description: '✨ 收取每日利息', created_at: day(0) },
     { id: 'tbd3', type: 'withdraw', screen_minutes: -20, description: '玩游戏', created_at: day(0) },
