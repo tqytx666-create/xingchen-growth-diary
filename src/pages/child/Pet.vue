@@ -6,6 +6,7 @@ import { formImage, skinImage } from '../../lib/petImages.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 import { fmtDateTime } from '../../lib/util.js'
 import { toast } from '../../lib/toast.js'
+import { skinTrackState, equipSkin } from '../../services/skinService.js'
 
 const p = computed(() => pet())
 const a = computed(() => petAttrs())
@@ -31,6 +32,15 @@ const events = computed(() => db.pet_events.slice(0, 30))
 const dexTotal = computed(() => DEX.length)
 const dexUnlocked = computed(() => DEX.filter(d => d.cond(p.value, a.value)).length)
 const dexPct = computed(() => dexTotal.value ? Math.round(dexUnlocked.value / dexTotal.value * 100) : 0)
+
+// 皮肤衣柜(商城购买的皮肤,在这里装扮)
+const wardrobe = computed(() => skinTrackState())
+const ownedSkinCount = computed(() => wardrobe.value.filter(s => s.owned).length)
+function equipFromPet(s) {
+  if (!s.owned) { toast(`还没拥有 ${s.emoji}${s.name},去 🛍️ 商城用星币买下它`); return }
+  equipSkin(s.equipped ? 'default' : s.key)
+  toast(s.equipped ? '已脱下装扮,变回原来的样子' : `已给小愿穿上「${s.name}」${s.emoji}`)
+}
 </script>
 
 <template>
@@ -80,19 +90,22 @@ const dexPct = computed(() => dexTotal.value ? Math.round(dexUnlocked.value / de
     </div>
     </div>
 
-    <div v-else-if="tab==='skin'" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div v-for="sk in SKINS" :key="sk.key" class="card" style="padding:12px;text-align:center;position:relative;cursor:pointer"
-           :style="p.skin===sk.key ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (sk.unlock(a,p) ? '' : 'filter:grayscale(.6) brightness(.7)')"
-           @click="pickSkin(sk)">
-        <div style="height:96px;display:grid;place-items:center"><img :src="skinImage(sk.key)" style="height:96px;object-fit:contain" /></div>
-        <h3 style="font-size:13px;margin:6px 0 2px">{{ sk.t }}</h3>
-        <p class="dim" style="font-size:11px">{{ sk.d }}</p>
-        <span style="display:inline-block;font-size:9px;padding:2px 7px;border-radius:999px;margin-top:6px;font-weight:700;background:rgba(255,216,107,.18);color:#ffd86b">{{ RARE_TXT[sk.rare] }}</span>
-        <div v-if="p.skin===sk.key" style="position:absolute;top:8px;right:8px">✅</div>
-        <template v-else-if="!sk.unlock(a,p)">
-          <div style="position:absolute;top:8px;right:8px">🔒</div>
-          <div style="font-size:10px;color:#ff7a7a;margin-top:4px">{{ sk.why }}</div>
-        </template>
+    <div v-else-if="tab==='skin'">
+      <div style="display:flex;align-items:center;margin:0 2px 11px">
+        <span class="dim" style="font-size:12px">拥有的点一下就给小愿穿上,没有的去🛍️商城买</span>
+        <span class="dim" style="margin-left:auto;font-size:12px;font-weight:600">已拥有 {{ ownedSkinCount }}/{{ wardrobe.length }}</span>
+      </div>
+      <div class="pskin-grid">
+        <div v-for="s in wardrobe" :key="s.key" class="pskin-cell" :class="{ equipped:s.equipped, locked:!s.owned }" @click="equipFromPet(s)">
+          <div class="pskin-pic">
+            <img :src="s.img" :alt="s.name" :style="s.owned ? '' : 'filter:grayscale(1) brightness(.45)'" />
+            <span v-if="!s.owned" class="pskin-lock">🔒</span>
+            <span v-if="s.animated" class="pskin-anim">✨动</span>
+            <span v-if="s.equipped" class="pskin-on">装扮中</span>
+          </div>
+          <div class="pskin-nm">{{ s.emoji }} {{ s.name }}</div>
+          <div class="pskin-act" :class="{ dim:!s.owned }">{{ s.owned ? (s.equipped ? '点击脱下' : '点击装扮') : '商城购买' }}</div>
+        </div>
       </div>
     </div>
 
@@ -116,5 +129,20 @@ const dexPct = computed(() => dexTotal.value ? Math.round(dexUnlocked.value / de
 @keyframes petFloat { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-7px) } }
 /* 图鉴收集进度条 */
 .dex-prog { display: flex; align-items: center; gap: 11px; margin: 2px 2px 14px; }
+/* 皮肤衣柜:商城同款小格(3列) */
+.pskin-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.pskin-cell { text-align: center; cursor: pointer; transition: transform .12s ease; }
+.pskin-cell:active { transform: scale(.95); }
+.pskin-pic { position: relative; width: 100%; aspect-ratio: 1; border-radius: 14px; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, rgba(124,107,255,.22), rgba(255,255,255,.05)); border: 1px solid rgba(255,255,255,.1); }
+.pskin-cell.equipped .pskin-pic { border-color: #ffd86b; box-shadow: 0 0 0 1px #ffd86b, 0 0 12px -2px #ffd86b; }
+.pskin-pic img { width: 82%; height: 82%; object-fit: contain; }
+.pskin-lock { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; }
+.pskin-anim { position: absolute; top: 3px; left: 3px; font-size: 9px; font-weight: 700; color: #1a1426;
+  background: linear-gradient(90deg,#8be9ff,#c79bff); border-radius: 999px; padding: 1px 6px; }
+.pskin-on { position: absolute; bottom: 0; left: 0; right: 0; font-size: 10px; font-weight: 700; color: #1a1426; background: #ffd86b; padding: 1px 0; }
+.pskin-nm { font-size: 11px; font-weight: 600; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pskin-act { font-size: 10px; color: #ffd86b; margin-top: 1px; }
+.pskin-act.dim { color: rgba(255,255,255,.4); }
 @media (prefers-reduced-motion: reduce) { .pet-float { animation: none } }
 </style>
