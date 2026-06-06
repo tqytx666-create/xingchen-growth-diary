@@ -2,8 +2,11 @@
 
 // ===== 30 级体系 =====
 export const MAX_LEVEL = 30
-// 每级所需经验(随级数缓慢增长):Lv1→2 需 24,Lv29→30 需 82
-export function expForLevel(level) { return 24 + (level - 1) * 2 }
+// 每级所需经验:Lv1~5 前期轻快(24→32),从 Lv6 起明显加大,放慢中后期升级节奏
+// Lv5→6 仍是 32;Lv6→7 起跳到 90,之后每级 +20(Lv7:110…Lv12:210…Lv29:550)
+export function expForLevel(level) {
+  return level <= 5 ? 24 + (level - 1) * 2 : 90 + (level - 6) * 20
+}
 
 // 初遇蛋:攒够这么多经验(≈5~6 次打卡)才孵化成幼犬 Lv.1
 export const HATCH_EXP = 30
