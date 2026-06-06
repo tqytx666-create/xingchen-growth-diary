@@ -36,10 +36,16 @@ export const session = reactive({ userId: localStorage.getItem(SESSION_KEY) || n
 if (IS_DEMO) { const c = db.users.find(u => u.role === 'child'); if (c) session.userId = c.id }
 
 // 任务迁移:确保 seed 里新增的任务(按 id)补进现有数据(不丢进度、不重激活被禁用的)
+const DEPRECATED_TASKS = ['t_baci', 't_abc_reading']   // 已合并进「每日作业」t_homework
 function ensureTasks() {
   if (!Array.isArray(db.tasks)) return
   const have = new Set(db.tasks.map(t => t.id))
   for (const t of buildSeed().tasks) if (!have.has(t.id)) db.tasks.push({ ...t })
+  // 停用已废弃/合并的旧任务
+  db.tasks.forEach(t => { if (DEPRECATED_TASKS.includes(t.id)) t.is_active = false })
+  // 改名迁移:仅当仍是旧默认名时更新(不覆盖管理员自定义改名)
+  const te = db.tasks.find(t => t.id === 't_english')
+  if (te && te.name === '英语学习一课') te.name = '孙立志老师课程'
 }
 ensureTasks()
 export const syncState = reactive({ online: false, syncing: false })

@@ -107,24 +107,27 @@ const tasksSorted = computed(() => [...tasks.value].sort((x, y) => {
 // 今日任务按类别分板块;英语合并成一个可展开入口(任一完成即主线)
 function sortByState(arr) { return [...arr].sort((x, y) => (STATE_ORDER[taskState(x)] ?? 2) - (STATE_ORDER[taskState(y)] ?? 2)) }
 const GROUP_DEF = [
-  { key: 'english', label: '📚 英语学习', cats: ['english'], merged: true },
-  { key: 'sport', label: '🏃 运动', cats: ['sport'] },
-  { key: 'life', label: '🧼 生活习惯', cats: ['hygiene', 'chore'] },
-  { key: 'hobby', label: '🎨 兴趣', cats: ['hobby', 'interest'] }
+  { key: 'english', emoji: '📚', name: '英语学习', cats: ['english'], main: true },
+  { key: 'sport', emoji: '🏃', name: '运动', cats: ['sport'] },
+  { key: 'life', emoji: '🧼', name: '生活习惯', cats: ['hygiene', 'chore'] },
+  { key: 'hobby', emoji: '🎨', name: '兴趣', cats: ['hobby', 'interest'] }
 ]
+const doneish = t => ['wait', 'ready', 'done'].includes(taskState(t))
 const taskGroups = computed(() => {
   const used = new Set()
   const groups = GROUP_DEF.map(g => {
     const items = sortByState(tasks.value.filter(t => g.cats.includes(t.category)))
     items.forEach(t => used.add(t.id))
-    return { ...g, items }
+    const done = items.filter(doneish).length
+    // 英语主线:任一完成即达标;其它类:全部完成才达标
+    const allDone = g.main ? done > 0 : (items.length > 0 && done >= items.length)
+    return { ...g, items, done, allDone }
   }).filter(g => g.items.length)
   const rest = sortByState(tasks.value.filter(t => !used.has(t.id)))
-  if (rest.length) groups.push({ key: 'other', label: '📋 其他', cats: [], items: rest })
+  if (rest.length) { const done = rest.filter(doneish).length; groups.push({ key: 'other', emoji: '📋', name: '其他', items: rest, done, allDone: done >= rest.length }) }
   return groups
 })
-const engDone = computed(() => tasks.value.some(t => t.category === 'english' && ['wait', 'ready', 'done'].includes(taskState(t))))
-const engOpen = ref(false)
+const openGroup = ref(null)   // 点开的二级打卡页
 const trust = computed(() => levelInfo(creditRow().credit_score))
 const coinBal = computed(() => coins())
 // 每日利息:累计待收,孩子手动收取(魔法棒动效汇入时间余额)
@@ -354,48 +357,19 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 每日利息:攒着待收,点一下魔法棒星星汇入时间余额 -->
-    <button v-if="pendingItr > 0" class="itr-collect" @click="doCollectInterest">
-      <span class="itr-spark">✨</span>
-      <span style="flex:1;text-align:left">小愿帮你攒了 <b>{{ pendingItr }}</b> 分钟利息</span>
-      <span class="itr-go">点我收取 →</span>
-    </button>
+    <!-- 进化/状态提示(紧跟宠物) -->
+    <div style="text-align:center;font-size:12px;line-height:1.55;margin:2px 6px 12px" :class="{ dim: !evoHint.warn }" v-html="evoHint.html"></div>
 
-    <!-- 今日任务:每天最高频,放在宠物正下方;未完成的排前面 -->
-    <div style="display:flex;align-items:center;margin:2px 2px 9px">
-      <span style="font-size:16px;font-weight:700">📋 今日任务</span>
-      <span v-if="allDone" style="margin-left:auto;font-size:12px;font-weight:700;color:#9bffcf">🎉 今天全部完成啦!</span>
-      <span v-else class="dim" style="margin-left:auto;font-size:13px;font-weight:600">{{ doneCount }} / {{ tasks.length }}</span>
-    </div>
-    <div class="bar" style="margin:0 2px 14px;height:8px">
-      <i style="background:linear-gradient(90deg,#6bffb0,#7c6bff)" :style="{ width: taskPct + '%' }"></i>
+    <!-- 宠物属性(点开看说明)— 紧跟宠物 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.charm }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(a.charm)}"></i></div></div>
     </div>
 
-    <template v-for="g in taskGroups" :key="g.key">
-      <!-- 英语:合并成一个入口,点开再分别打卡 -->
-      <template v-if="g.merged">
-        <button class="eng-head" :class="{ done: engDone }" @click="engOpen = !engOpen">
-          <span style="font-size:22px">📚</span>
-          <div style="flex:1;text-align:left;min-width:0">
-            <div style="font-size:15px;font-weight:700">英语学习</div>
-            <div class="dim" style="font-size:11px;margin-top:1px">任意完成一个就算今日英语主线 ✓</div>
-          </div>
-          <span v-if="engDone" style="font-size:12px;color:#6bffb0;font-weight:700;margin-right:6px">今日已完成</span>
-          <span class="dim" style="font-size:16px">{{ engOpen ? '收起 ▾' : '展开 ▸' }}</span>
-        </button>
-        <div v-show="engOpen" style="margin-bottom:4px">
-          <TaskRow v-for="t in g.items" :key="t.id" :task="t" :state="taskState(t)" @do="doTask" />
-        </div>
-      </template>
-      <!-- 其他类别:板块标题 + 打卡行 -->
-      <template v-else>
-        <div class="grp-label">{{ g.label }}</div>
-        <TaskRow v-for="t in g.items" :key="t.id" :task="t" :state="taskState(t)" @do="doTask" />
-      </template>
-    </template>
-
-    <!-- 道具栏 -->
-    <div class="card" style="padding:11px 13px;margin-bottom:12px">
+    <!-- 道具栏(紧跟宠物) -->
+    <div class="card" style="padding:11px 13px;margin-bottom:11px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
         <span style="font-weight:600;font-size:14px">🎒 道具</span>
         <span class="dim" style="font-size:11px">点一下喂给小愿,开心又长经验</span>
@@ -408,14 +382,28 @@ onMounted(() => {
       </div>
     </div>
 
-    <div style="text-align:center;font-size:12px;line-height:1.55;margin:2px 6px 14px" :class="{ dim: !evoHint.warn }" v-html="evoHint.html"></div>
+    <!-- 每日利息:攒着待收,点一下魔法棒星星汇入时间余额 -->
+    <button v-if="pendingItr > 0" class="itr-collect" @click="doCollectInterest">
+      <span class="itr-spark">✨</span>
+      <span style="flex:1;text-align:left">小愿帮你攒了 <b>{{ pendingItr }}</b> 分钟利息</span>
+      <span class="itr-go">点我收取 →</span>
+    </button>
 
-    <!-- 属性(点开看说明) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.charm }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(a.charm)}"></i></div></div>
+    <!-- 今日任务:分类卡片,点开二级页打卡 -->
+    <div style="display:flex;align-items:center;margin:2px 2px 9px">
+      <span style="font-size:16px;font-weight:700">📋 今日任务</span>
+      <span v-if="allDone" style="margin-left:auto;font-size:12px;font-weight:700;color:#9bffcf">🎉 今天全部完成啦!</span>
+      <span v-else class="dim" style="margin-left:auto;font-size:13px;font-weight:600">{{ doneCount }} / {{ tasks.length }}</span>
+    </div>
+    <div class="bar" style="margin:0 2px 14px;height:8px">
+      <i style="background:linear-gradient(90deg,#6bffb0,#7c6bff)" :style="{ width: taskPct + '%' }"></i>
+    </div>
+    <div class="cat-grid">
+      <button v-for="g in taskGroups" :key="g.key" class="cat-card" :class="{ cdone: g.allDone }" @click="openGroup = g">
+        <span class="cat-emoji">{{ g.emoji }}</span>
+        <div class="cat-name">{{ g.name }}<span v-if="g.main" class="cat-tag">主线</span></div>
+        <div class="cat-sub" :class="{ ok: g.allDone }">{{ g.allDone ? '✓ 今日完成' : g.done + ' / ' + g.items.length + ' 已打卡' }}</div>
+      </button>
     </div>
 
     <!-- 属性说明弹窗 -->
@@ -435,6 +423,17 @@ onMounted(() => {
         </div>
         <div v-if="!attrTasksFor(attrInfo).length" class="dim" style="font-size:13px;text-align:center;padding:10px 0">暂时没有提升这个属性的任务</div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="attrInfo=null">知道啦</button>
+      </div>
+    </div>
+
+    <!-- 二级打卡页:点分类卡弹出,在这里分别打卡 -->
+    <div v-if="openGroup" class="grp-overlay" @click.self="openGroup=null">
+      <div class="grp-sheet">
+        <div style="font-size:17px;font-weight:700;margin-bottom:3px">{{ openGroup.emoji }} {{ openGroup.name }}</div>
+        <div v-if="openGroup.main" class="dim" style="font-size:12px;margin-bottom:12px">任意完成一个就算今日英语主线 ✓</div>
+        <div v-else class="dim" style="font-size:12px;margin-bottom:12px">完成这些打卡,陪小愿一起成长~</div>
+        <TaskRow v-for="t in openGroup.items" :key="t.id" :task="t" :state="taskState(t)" @do="doTask" />
+        <button class="btn-accent" style="width:100%;margin-top:12px;padding:11px" @click="openGroup=null">完成</button>
       </div>
     </div>
 
@@ -537,13 +536,23 @@ onMounted(() => {
   font-size: 13px; font-weight: 700; color: #ffd86b; cursor: pointer;
   background: rgba(10,8,22,.55); border: 1px solid rgba(255,216,107,.3); backdrop-filter: blur(4px); }
 .hud-chip:active { transform: scale(.95); }
-/* 英语合并入口 + 分组标题 */
-.eng-head { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 9px; padding: 13px;
-  border: 1px solid rgba(255,216,107,.4); border-radius: 16px; cursor: pointer; color: #fff;
-  background: linear-gradient(135deg, rgba(255,216,107,.14), rgba(124,200,255,.08)); }
-.eng-head.done { border-color: rgba(107,255,176,.4); background: linear-gradient(135deg, rgba(107,255,176,.12), rgba(255,255,255,.04)); }
-.eng-head:active { transform: scale(.99); }
-.grp-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.8); margin: 14px 2px 9px; }
+/* 今日任务分类卡(像商城小卡)+ 二级打卡弹窗 */
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.cat-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 16px 10px; border-radius: 16px; cursor: pointer;
+  background: radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.2), transparent 60%), rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1); color: #fff; transition: transform .12s ease; }
+.cat-card:active { transform: scale(.96); }
+.cat-card.cdone { border-color: rgba(107,255,176,.45); background: radial-gradient(120% 80% at 50% 0%, rgba(107,255,176,.16), transparent 60%), rgba(255,255,255,.04); }
+.cat-emoji { font-size: 30px; line-height: 1; }
+.cat-name { font-size: 14px; font-weight: 700; }
+.cat-tag { font-size: 9px; font-weight: 700; color: #ffd86b; background: rgba(255,216,107,.2); border-radius: 999px; padding: 1px 6px; margin-left: 5px; vertical-align: 1px; }
+.cat-sub { font-size: 11px; color: rgba(255,255,255,.6); }
+.cat-sub.ok { color: #6bffb0; font-weight: 700; }
+.grp-overlay { position: fixed; inset: 0; z-index: 72; display: grid; place-items: end center;
+  background: rgba(6,4,16,.7); backdrop-filter: blur(3px); animation: af .2s ease; }
+.grp-sheet { width: 100%; max-width: 460px; background: #14111f; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px 22px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 30px rgba(0,0,0,.4); animation: sheetup .28s cubic-bezier(.2,1,.4,1); max-height: 82vh; overflow-y: auto; }
 /* 每日利息收取条 */
 .itr-collect { width: 100%; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 11px 14px;
   border: 1px solid rgba(255,216,107,.4); border-radius: 14px; cursor: pointer; color: #fff; font-size: 13px;
