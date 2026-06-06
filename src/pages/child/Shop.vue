@@ -54,13 +54,13 @@ function redeem(w) {
     <div style="margin-bottom:22px">
       <div class="sec-head wish-head">🌠 心愿兑换</div>
       <div class="dim" style="font-size:11px;margin:-4px 2px 10px">用星币兑换现实奖励,下单后告诉爸爸妈妈,通过了就兑现给你~</div>
-      <div v-for="w in wishes" :key="w.key" class="card" style="display:flex;align-items:center;gap:12px;padding:12px 13px;margin-bottom:9px">
-        <div style="font-size:26px">{{ w.emoji }}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:600">{{ w.name }}</div>
-          <div class="dim" style="font-size:11px;margin-top:1px">{{ w.note }}</div>
+      <div class="shop-grid">
+        <div v-for="w in wishes" :key="w.key" class="shop-card">
+          <div class="shop-pic"><span style="font-size:40px">{{ w.emoji }}</span></div>
+          <div class="shop-nm">{{ w.name }}</div>
+          <div class="dim" style="font-size:10px;line-height:1.3;min-height:26px;margin-bottom:4px">{{ w.note }}</div>
+          <button class="shop-buy" :class="{ poor: bal < w.price }" @click="redeem(w)"><CoinIcon /> {{ w.price }}</button>
         </div>
-        <button class="shop-buy" style="width:auto;padding:7px 13px" :class="{ poor: bal < w.price }" @click="redeem(w)"><CoinIcon /> {{ w.price }}</button>
       </div>
     </div>
 

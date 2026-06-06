@@ -17,7 +17,10 @@ export function buildDemoSeed() {
   // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
   const day = k => new Date(Date.now() - k * 86400000).toISOString()
   s.time_bank_accounts[0].current_balance_minutes = 480
-  s.time_bank_accounts[0].last_interest_date = day(1)
+  s.time_bank_accounts[0].last_interest_date = day(10).slice(0, 10)   // 纯日期(daysBetween需要);攒了10天利息≈48分钟可收
+  // demo 送每款宝箱 14 个,去奖励页点开看效果
+  s.boxes = []
+  for (const tier of ['silver', 'gold', 'diamond']) for (let i = 0; i < 14; i++) s.boxes.push({ id: `bxd_${tier}_${i}`, tier, source_task: '演示', earned_at: day(0), opened_at: null, minutes: null })
   s.time_bank_transactions = [
     { id: 'tbi0', type: 'interest', screen_minutes: 186, description: '累计每日利息', created_at: day(25) },
     { id: 'tbd1', type: 'deposit', screen_minutes: 30, exercise_type: 'badminton', exercise_minutes: 15, description: '羽毛球存入', created_at: day(0) },
