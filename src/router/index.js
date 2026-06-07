@@ -15,6 +15,7 @@ const routes = [
   { path: '/child/shop', component: () => import('../pages/child/Shop.vue'), meta: { role: 'child' } },
 
   { path: '/family/dashboard', component: () => import('../pages/family/Dashboard.vue'), meta: { role: 'family' } },
+  { path: '/family/childview', component: () => import('../pages/family/ChildView.vue'), meta: { role: 'family' } },
   { path: '/family/checkins', component: () => import('../pages/family/Checkins.vue'), meta: { role: 'family' } },
   { path: '/family/calendar', component: () => import('../pages/family/CalendarView.vue'), meta: { role: 'family' } },
   { path: '/family/logs', component: () => import('../pages/family/Logs.vue'), meta: { role: 'family' } },

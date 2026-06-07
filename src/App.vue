@@ -18,6 +18,7 @@ const childNav = [
 const familyNav = computed(() => {
   const base = [
     { to: '/family/dashboard', ic: '🏠', label: '概览' },
+    { to: '/family/childview', ic: '👀', label: '看星晨' },
     { to: '/family/checkins', ic: '✅', label: '核验' },
     { to: '/family/calendar', ic: '📅', label: '日历' },
     { to: '/family/logs', ic: '📒', label: '日志' },
