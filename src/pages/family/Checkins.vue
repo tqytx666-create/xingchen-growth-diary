@@ -45,6 +45,8 @@ function doMarkFalse() {
 }
 function dispute(c) { vs.dispute(c.id, me.value.id); toast('已标记争议') }
 function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
+// 误触取消:把孩子误点的"自报"打卡作废,不扣信任分,孩子可重新打卡
+function cancelMisclick(c) { vs.revoke(c.id, me.value.id); toast('已取消这次打卡(误触,不扣分)') }
 </script>
 
 <template>
@@ -80,6 +82,7 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
         <button v-if="c.status!=='confirmed'" class="btn-ghost" style="padding:7px 12px;font-size:13px;border-color:rgba(107,255,176,.4);color:#9bffcf" @click="confirm(c)">确认属实</button>
         <button v-if="c.status!=='false_reported'" class="btn-ghost" style="padding:7px 12px;font-size:13px;border-color:rgba(255,122,122,.4);color:#ffb3b3" @click="markFalse(c)">标记虚报</button>
         <button class="btn-ghost" style="padding:7px 12px;font-size:13px" @click="dispute(c)">争议</button>
+        <button v-if="c.status==='self_reported'" class="btn-ghost" style="padding:7px 12px;font-size:13px;border-color:rgba(255,255,255,.22);color:rgba(255,255,255,.7)" @click="cancelMisclick(c)">✕ 取消(误触)</button>
         <button v-if="c.status!=='self_reported'" class="btn-ghost" style="padding:7px 12px;font-size:13px" @click="revoke(c)">撤销</button>
       </div>
     </div>
