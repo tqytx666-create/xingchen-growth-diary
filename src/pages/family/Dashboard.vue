@@ -1,9 +1,10 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank, mainTask } from '../../lib/store.js'
 import { todayStr } from '../../lib/util.js'
-import { levelInfo } from '../../services/creditService.js'
+import { levelInfo, manualAdjust } from '../../services/creditService.js'
+import { toast } from '../../lib/toast.js'
 import { STAGES, DEX, charmTotal, healthState, HEALTH_MAX } from '../../lib/petConfig.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 
@@ -17,6 +18,26 @@ const unverified = computed(() => db.checkins.filter(c => c.status === 'self_rep
 const pendingReq = computed(() => db.reward_requests.filter(r => r.status === 'pending').length)
 const trust = computed(() => levelInfo(credit().credit_score))
 const todoTotal = computed(() => unverified.value + pendingReq.value)
+
+// 信任分手动调整(扣分/恢复):内联弹窗(不用 window.prompt,iOS PWA 会禁)
+const adjOpen = ref(false)
+const adjDelta = ref(-10)
+const adjReason = ref('')
+const PRESET = [
+  { d: -5, t: '小提醒 −5', r: '小提醒' },
+  { d: -10, t: '不守约 −10', r: '没遵守约定' },
+  { d: -20, t: '严重 −20', r: '严重违规' },
+  { d: 5, t: '表现好 +5', r: '表现好,恢复信任' }
+]
+function openAdj() { adjOpen.value = true; adjDelta.value = -10; adjReason.value = '' }
+function pickPreset(p) { adjDelta.value = p.d; if (!adjReason.value) adjReason.value = p.r }
+function doAdj() {
+  const d = Math.round(Number(adjDelta.value) || 0)
+  if (d === 0) { toast('请选择扣/加的分数'); return }
+  manualAdjust(d, adjReason.value.trim(), me.value.id)
+  toast(`${d < 0 ? '已扣' : '已加'} ${Math.abs(d)} 信任分 · 当前 ${credit().credit_score}`)
+  adjOpen.value = false
+}
 
 function logout() { setUser(null); router.push('/login') }
 // 锁定本机:清掉"免密信任",下次进家长端要重新输密码(把手机给孩子前用)
@@ -76,9 +97,10 @@ function lockDevice() {
         <div style="font-size:26px;font-weight:800">{{ streak().current_streak }}</div>
         <div class="dim" style="font-size:12px">英语连续天数</div>
       </div>
-      <div class="card" style="padding:14px">
+      <div class="card" style="padding:14px;cursor:pointer;position:relative" @click="openAdj">
         <div style="font-size:26px;font-weight:800;color:#ffd86b">{{ credit().credit_score }}</div>
         <div class="dim" style="font-size:12px">诚信分 · {{ trust.name }}</div>
+        <div style="position:absolute;top:8px;right:10px;font-size:11px;color:#8be9ff">调整 ›</div>
       </div>
     </div>
 
@@ -100,6 +122,27 @@ function lockDevice() {
       <span v-if="healthState(pet())==='sick'" style="font-size:11px;color:#ff7a7a;font-weight:700">🤒 生病</span>
       <span v-else-if="pet().risk>=2" style="font-size:11px;color:#ff7a7a">退阶风险</span>
     </div>
+
+    <!-- 信任分调整弹窗(扣分/恢复) -->
+    <div v-if="adjOpen" class="adj-overlay" @click.self="adjOpen=false">
+      <div class="adj-sheet">
+        <div style="font-size:17px;font-weight:700;margin-bottom:3px">🛡️ 调整信任分</div>
+        <div class="dim" style="font-size:12px;margin-bottom:14px">当前 <b style="color:#ffd86b">{{ credit().credit_score }}</b> · {{ trust.name }}。扣分会影响宠物信任能量,谨慎使用。</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <button v-for="p in PRESET" :key="p.t" class="adj-chip" :class="{ on: adjDelta===p.d, plus: p.d>0 }" @click="pickPreset(p)">{{ p.t }}</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span class="dim" style="font-size:13px">分数</span>
+          <input v-model.number="adjDelta" type="number" inputmode="numeric" style="flex:1;text-align:center;font-size:18px;font-weight:700;padding:8px;border-radius:10px" />
+          <span class="dim" style="font-size:12px">负=扣 / 正=加</span>
+        </div>
+        <input v-model="adjReason" placeholder="原因(会记录在诚信分流水里)" style="width:100%;padding:10px;border-radius:10px;font-size:14px" />
+        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" :style="adjDelta<0 ? 'background:linear-gradient(90deg,#ff7a7a,#ff9ec7);color:#fff' : ''" @click="doAdj">
+          {{ adjDelta<0 ? '确认扣 '+Math.abs(adjDelta)+' 分' : '确认加 '+adjDelta+' 分' }}
+        </button>
+        <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="adjOpen=false">取消</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -107,4 +150,14 @@ function lockDevice() {
 .dot-pulse { animation: dotPulse 1.3s ease-in-out infinite; }
 @keyframes dotPulse { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,122,122,.5);} 50%{transform:scale(1.25);box-shadow:0 0 0 5px rgba(255,122,122,0);} }
 .todo-card:active { transform: scale(.97); }
+/* 信任分调整弹窗 */
+.adj-overlay { position: fixed; inset: 0; z-index: 92; display: grid; place-items: center; padding: 24px;
+  background: rgba(6,4,16,.78); backdrop-filter: blur(4px); }
+.adj-sheet { width: 100%; max-width: 340px; background: #14111f; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px; padding: 20px; }
+.adj-sheet input { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.18); color: #fff; box-sizing: border-box; }
+.adj-chip { padding: 10px 8px; border-radius: 12px; border: 1px solid rgba(255,122,122,.35); background: rgba(255,122,122,.1);
+  color: #ffb3b3; font-size: 13px; font-weight: 700; cursor: pointer; }
+.adj-chip.plus { border-color: rgba(107,255,176,.4); background: rgba(107,255,176,.1); color: #9bffcf; }
+.adj-chip.on { outline: 2px solid currentColor; }
 </style>

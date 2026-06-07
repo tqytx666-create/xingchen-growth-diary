@@ -33,6 +33,13 @@ export function applyFalsePenalty(task, checkinId, actorId) {
   txn('penalty', checkinId, d, `虚报:${task.name}`, actorId)
 }
 
+// 家长手动调整信任分(扣分/加分):delta 负=扣,正=恢复;留审计记录
+export function manualAdjust(delta, reason, actorId) {
+  const d = Math.round(Number(delta) || 0)
+  if (d === 0) return
+  txn('manual', null, d, reason || (d < 0 ? '家长手动扣分' : '家长手动加分'), actorId)
+}
+
 export function initIfNeeded() {
   if (!db.credit_profile.length) {
     db.credit_profile.push({ id: 'credit_1', child_id: child().id, credit_score: 100, credit_level: '完全信任', reward_discount_rate: 1, updated_at: nowISO() })
