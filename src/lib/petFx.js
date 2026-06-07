@@ -66,20 +66,28 @@ export function magicCollect(fromEl, toEl, onArrive) {
     s.textContent = ICON[i % ICON.length]
     s.style.cssText = 'position:fixed;left:' + sx + 'px;top:' + sy + 'px;font-size:' + (12 + Math.random() * 14) + 'px;transform:translate(-50%,-50%);opacity:0;will-change:transform,opacity;filter:drop-shadow(0 0 6px rgba(255,216,107,.95)) drop-shadow(0 0 12px rgba(255,201,64,.6))'
     layer.appendChild(s)
+    // 多圈环绕:绕中心点逐步推进角度,转好几圈再慢慢汇入余额(慢一点、看得清)
     const ang = (Math.PI * 2 * i) / N + Math.random() * 0.5
     const R = 120 + Math.random() * 95
-    const mx = cx + Math.cos(ang) * R, my = cy + Math.sin(ang) * R
-    const a2 = ang + 1.5, R2 = R * 0.66
-    const wx = cx + Math.cos(a2) * R2, wy = cy + Math.sin(a2) * R2
+    const orbit = (da, scaleR) => { const a = ang + da, r = R * scaleR; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r] }
+    const [m1x, m1y] = orbit(0, 1)
+    const [m2x, m2y] = orbit(2.1, 0.92)
+    const [m3x, m3y] = orbit(4.2, 0.78)
+    const [m4x, m4y] = orbit(6.3, 0.64)   // 又绕了一圈多
+    const [m5x, m5y] = orbit(8.4, 0.5)
+    const T = (dx, dy, sc, rot) => 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) scale(' + sc + ') rotate(' + rot + 'deg)'
     s.animate([
-      { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.4) rotate(0deg)', opacity: 0, offset: 0 },
-      { opacity: 1, offset: 0.12 },
-      { transform: 'translate(-50%,-50%) translate(' + (mx - sx) + 'px,' + (my - sy) + 'px) scale(1.3) rotate(170deg)', opacity: 1, offset: 0.4 },
-      { transform: 'translate(-50%,-50%) translate(' + (wx - sx) + 'px,' + (wy - sy) + 'px) scale(1) rotate(310deg)', opacity: 1, offset: 0.66 },
-      { transform: 'translate(-50%,-50%) translate(' + (tx - sx) + 'px,' + (ty - sy) + 'px) scale(.22) rotate(540deg)', opacity: 0, offset: 1 }
-    ], { duration: 1300 + Math.random() * 250, delay: i * 22, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' })
+      { transform: T(0, 0, 0.4, 0), opacity: 0, offset: 0 },
+      { opacity: 1, offset: 0.08 },
+      { transform: T(m1x - sx, m1y - sy, 1.3, 180), opacity: 1, offset: 0.22 },
+      { transform: T(m2x - sx, m2y - sy, 1.2, 360), opacity: 1, offset: 0.4 },
+      { transform: T(m3x - sx, m3y - sy, 1.1, 560), opacity: 1, offset: 0.58 },
+      { transform: T(m4x - sx, m4y - sy, 1.0, 760), opacity: 1, offset: 0.74 },
+      { transform: T(m5x - sx, m5y - sy, 0.85, 960), opacity: 1, offset: 0.88 },
+      { transform: T(tx - sx, ty - sy, 0.2, 1180), opacity: 0, offset: 1 }
+    ], { duration: 2600 + Math.random() * 400, delay: i * 26, easing: 'cubic-bezier(.42,0,.3,1)', fill: 'forwards' })
   }
   document.body.appendChild(layer)
-  setTimeout(() => onArrive && onArrive(), 1080)
-  setTimeout(() => layer.remove(), 1800)
+  setTimeout(() => onArrive && onArrive(), 2500)   // 星星快汇入余额时再入账 + 数字上跳
+  setTimeout(() => layer.remove(), 3600)
 }
