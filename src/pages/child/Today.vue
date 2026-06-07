@@ -10,7 +10,7 @@ import PetAvatar from '../../components/pet/PetAvatar.vue'
 import CountUp from '../../components/CountUp.vue'
 import TaskRow from '../../components/child/TaskRow.vue'
 import CoinIcon from '../../components/CoinIcon.vue'
-import { BOX_LABEL } from '../../lib/rewardConfig.js'
+import { BOX_LABEL, STREAK_MILESTONES } from '../../lib/rewardConfig.js'
 import LivingPet from '../../components/pet/LivingPet.vue'
 import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
@@ -171,6 +171,34 @@ const isEgg = computed(() => (p.value.stage_idx || 0) <= 0)
 // 经验进度(蛋阶段是孵化进度,满 HATCH_EXP 孵化)
 const expNeed = computed(() => isEgg.value ? HATCH_EXP : expForLevel(p.value.level || 1))
 const expPct = computed(() => (!isEgg.value && p.value.level >= MAX_LEVEL) ? 100 : Math.min(100, Math.round((p.value.exp || 0) / expNeed.value * 100)))
+
+// 宠物每日专属寄语:根据真实数据,小愿用第一人称对主人说一句话(AI 化身的第一步,先用规则,后可换 LLM)
+const todayMainDone = computed(() => { const g = taskGroups.value.find(x => x.key === 'english'); return g ? g.done > 0 : false })
+const petSays = computed(() => {
+  const cur = streakRow()?.current_streak || 0
+  if (isEgg.value) { const need = Math.max(0, HATCH_EXP - (p.value.exp || 0)); return `🥚 再坚持打卡 ${need} 点经验,我就能孵出来啦,快帮帮我!` }
+  if (hpState.value === 'sick') return '🤒 我有点难受…打个卡、或喂我点好吃的,我就能慢慢好起来~'
+  if (hpState.value === 'weak') return '😟 今天有点没精神,陪我一起打个卡好不好?'
+  if (!todayMainDone.value) return '📚 今天的英语还没打卡哦,我等你一起加油!'
+  const nextMs = STREAK_MILESTONES.find(m => m.days > cur)
+  if (nextMs && cur > 0 && nextMs.days - cur <= 3) return `🔥 再坚持 ${nextMs.days - cur} 天,就到「${nextMs.days} 天里程碑」啦,冲呀!`
+  const weak = [
+    { n: '智慧', v: a.value.wisdom, h: '多读英语、认真学习' },
+    { n: '清洁', v: a.value.cleanliness, h: '好好刷牙洗澡' },
+    { n: '活力', v: a.value.vitality, h: '多运动' },
+    { n: '魅力', v: charmVal.value, h: '收集更多皮肤和形态' },
+    { n: '自律', v: disciplineVal.value, h: '按时睡觉、专注不拖延' }
+  ].sort((x, y) => x.v - y.v)[0]
+  if (weak && weak.v < 30) return `💪 我们最近「${weak.n}」有点落后,一起靠「${weak.h}」把它提上来吧?`
+  const lines = [
+    cur > 0 ? `🌟 已经连续坚持 ${cur} 天啦,你超棒的!` : '🌟 今天也和我一起加油吧!',
+    '🥰 有你陪着,我每天都好开心~',
+    '✨ 今天也要元气满满哦!',
+    '🐾 谢谢你一直照顾我,我会努力长大!',
+    '💛 你坚持的样子,真的很酷!'
+  ]
+  return lines[(new Date().getDate()) % lines.length]
+})
 
 function taskState(t) {
   const c = checkinSvc.statusOf(t.id)
@@ -394,6 +422,9 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 宠物每日专属寄语(小愿在对你说话)-->
+    <div class="say-bubble"><span class="say-tail"></span><b>{{ p.name }}</b> 想对你说:{{ petSays }}</div>
 
     <!-- 健康值(紧跟宠物):不打卡会下降,病了/虚弱有提醒 -->
     <div v-if="hpState!=='egg'" class="card hp-card" :class="hpState">
@@ -638,6 +669,14 @@ onMounted(() => {
 .bal-num { font-size: 19px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bal-lb { font-size: 10px; color: rgba(255,255,255,.55); white-space: nowrap; margin-left: 1px; }
 .bal-div { height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
+/* 宠物每日寄语气泡 */
+.say-bubble { position: relative; margin: 2px 6px 12px; padding: 11px 14px; border-radius: 15px;
+  background: linear-gradient(135deg, rgba(124,107,255,.2), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.14);
+  font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.92); }
+.say-bubble b { color: #ffd86b; }
+.say-tail { position: absolute; top: -7px; left: 32px; width: 12px; height: 12px;
+  background: linear-gradient(135deg, rgba(124,107,255,.2), rgba(124,107,255,.2)); border-left: 1px solid rgba(255,255,255,.14); border-top: 1px solid rgba(255,255,255,.14);
+  transform: rotate(45deg); }
 /* 健康值卡 */
 .hp-card { display: flex; align-items: center; gap: 12px; padding: 11px 13px; margin-bottom: 11px; }
 .hp-card.sick { border-color: rgba(255,91,91,.5); background: linear-gradient(160deg, rgba(255,91,91,.14), rgba(255,255,255,.04)); }
