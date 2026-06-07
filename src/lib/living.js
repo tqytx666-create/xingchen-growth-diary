@@ -65,7 +65,7 @@ export function livingSet(pet) {
   if (skin && skin !== 'default') return SKIN_SETS[skin] || null
   const idx = effectiveStage(pet)
   if (FORM_SETS[idx]) return FORM_SETS[idx]
-  if (idx >= 6 && idx <= 14) return EVO5   // 中间新形态暂用御星活视频
+  // 没有专属活视频的形态(蛋 / f6流光~f14天河):回落静态立绘(显示正确形态),不再错播御星视频
   return null
 }
 

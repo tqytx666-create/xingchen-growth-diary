@@ -32,8 +32,10 @@ function pickSkin(sk) {
 function pickForm(i, d) {
   if (i === 0) return                                  // 蛋不可选
   if (!d.cond(p.value, a.value)) { toast('这个形态还没解锁哦,继续升级解锁 ✨'); return }
+  const hadSkin = p.value.skin && p.value.skin !== 'default'
+  if (hadSkin) p.value.skin = 'default'   // 选图鉴形态 → 自动脱下皮肤,显示这个形态
   p.value.displayForm = (i === (p.value.stage_idx || 0)) ? null : i
-  toast(`已把小愿的形象切换成「${d.t}」`)
+  toast(hadSkin ? `已脱下皮肤,切换成「${d.t}」形态` : `已把小愿的形象切换成「${d.t}」`)
 }
 const events = computed(() => db.pet_events.slice(0, 30))
 // 图鉴收集进度
