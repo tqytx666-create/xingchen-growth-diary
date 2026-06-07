@@ -4,7 +4,7 @@ import { tierFromLevel } from './petConfig.js'
 
 export const SEED_VERSION = 4
 // demo 专用版本:只控制 demo 本地是否重建种子,不参与云端同步门控(改它不影响线上真实数据)
-export const DEMO_SEED_VERSION = 3
+export const DEMO_SEED_VERSION = 4
 
 // Demo 版(分享给朋友看):全解锁、有基础数据、打卡免确认。基于正式种子覆盖。
 export function buildDemoSeed() {
@@ -27,7 +27,7 @@ export function buildDemoSeed() {
   s.time_bank_accounts[0].last_interest_date = day(10).slice(0, 10)   // 纯日期(daysBetween需要);攒了10天利息≈48分钟可收
   // demo 送每款宝箱 14 个,去奖励页点开看效果
   s.boxes = []
-  for (const tier of ['silver', 'gold', 'diamond']) for (let i = 0; i < 14; i++) s.boxes.push({ id: `bxd_${tier}_${i}`, tier, source_task: '演示', earned_at: day(0), opened_at: null, minutes: null })
+  for (const tier of ['iron', 'bronze', 'silver', 'gold', 'diamond']) for (let i = 0; i < 12; i++) s.boxes.push({ id: `bxd_${tier}_${i}`, tier, source_task: '演示', earned_at: day(0), opened_at: null, minutes: null })
   s.time_bank_transactions = [
     { id: 'tbi0', type: 'interest', screen_minutes: 186, description: '累计每日利息', created_at: day(25) },
     { id: 'tbd1', type: 'deposit', screen_minutes: 30, exercise_type: 'badminton', exercise_minutes: 15, description: '羽毛球存入', created_at: day(0) },

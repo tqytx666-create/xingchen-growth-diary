@@ -16,8 +16,11 @@ import imgFamily from '../../assets/reward/r_family.jpg'
 import imgKing from '../../assets/reward/r_king.jpg'
 import imgBig from '../../assets/reward/r_big.jpg'
 // 宝箱图
+import boxIron from '../../assets/box/box_iron.png'
+import boxBronze from '../../assets/box/box_bronze.png'
 import boxSilver from '../../assets/box/box_silver.png'
 import boxGold from '../../assets/box/box_gold.png'
+import boxDiamond from '../../assets/box/box_diamond.png'
 
 // 每个奖励的插画 + 稀有度(决定卡片质感)
 const ART = { r_miniso: imgMiniso, r_card_nostreak: imgCard, r_family: imgFamily, r_king: imgKing, r_big: imgBig }
@@ -49,8 +52,14 @@ function req(r) {
 
 // ---- 宝箱库存 ----
 const boxes = computed(() => ownedBoxes())
-const BOX_META = { silver: { img: boxSilver, name: '银宝箱', range: '1~3 分' }, gold: { img: boxGold, name: '金宝箱', range: '2~5 分' }, diamond: { img: boxGold, name: '钻石宝箱', range: '5~10 分' } }
-const boxTiers = ['silver', 'gold', 'diamond']
+const BOX_META = {
+  iron:    { img: boxIron,    name: '铁宝箱',   range: '1~2 分 · 3~6 星币' },
+  bronze:  { img: boxBronze,  name: '铜宝箱',   range: '2~3 分 · 5~10 星币' },
+  silver:  { img: boxSilver,  name: '银宝箱',   range: '2~4 分 · 8~14 星币' },
+  gold:    { img: boxGold,    name: '金宝箱',   range: '4~6 分 · 12~20 星币' },
+  diamond: { img: boxDiamond, name: '钻石宝箱', range: '8~12 分 · 25~40 星币' }
+}
+const boxTiers = ['iron', 'bronze', 'silver', 'gold', 'diamond']
 const hasBox = computed(() => boxTiers.some(t => (boxes.value[t] || 0) > 0))
 const boxReward = ref(null)   // { tier, minutes } 开箱动画
 const opening = ref(false)    // 防连点:一次只开一个

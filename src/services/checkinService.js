@@ -69,7 +69,7 @@ export function interact(checkinId) {
   // 获得宝箱:不当场开,发一个"未开封宝箱"进库存,星晨去奖励页自己点击开箱(延迟满足,仪式感更强)
   let boxTier = null
   if (task.blindbox) {
-    boxTier = BOX_TIER[task.id] || 'silver'
+    boxTier = BOX_TIER[task.id] || 'bronze'
     if (!db.boxes) db.boxes = []
     db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null })
   }
@@ -101,14 +101,22 @@ export function makeUpMissedDay(date, actorId) {
   return checkin
 }
 
-// 宝箱分级:银(刷牙/房间)金(洗澡/洗头)。钻石档暂不分配给任何任务。
-const BOX_TIER = { t_teeth_am: 'silver', t_teeth_pm: 'silver', t_room: 'silver', t_bath: 'gold', t_hair: 'gold' }
-const BOX_RANGE = { silver: [1, 3], gold: [2, 5], diamond: [5, 10] }
-const BOX_NAME = { silver: '🥈银宝箱', gold: '🥇金宝箱', diamond: '💎钻石宝箱' }
+// 宝箱 5 档:铁 < 铜 < 银 < 金 < 钻。日常打卡按重要度配档;钻石留给里程碑(及将来运动满60分钟)。
+const BOX_TIER = {
+  t_teeth_am: 'iron', t_teeth_pm: 'iron',         // 每日刷牙:铁
+  t_room: 'bronze', t_sleep: 'bronze',            // 房间整洁 / 按时睡觉:铜
+  t_bath: 'silver', t_homework: 'silver', t_focus: 'silver',  // 洗澡 / 每日作业 / 专注不拖延:银
+  t_hair: 'gold'                                  // 洗头(3天一次,较珍贵):金
+}
+const BOX_RANGE = { iron: [1, 2], bronze: [2, 3], silver: [2, 4], gold: [4, 6], diamond: [8, 12] }  // 开箱游戏时间(分钟)
+const BOX_COIN = { iron: [3, 6], bronze: [5, 10], silver: [8, 14], gold: [12, 20], diamond: [25, 40] }  // 开箱星币
+const BOX_DROP = { iron: 0.22, bronze: 0.32, silver: 0.45, gold: 0.6, diamond: 0.8 }   // 额外掉道具概率(按档递增)
+const BOX_NAME = { iron: '🔩 铁宝箱', bronze: '🥉 铜宝箱', silver: '🥈 银宝箱', gold: '🥇 金宝箱', diamond: '💎 钻石宝箱' }
+const BOX_ORDER = ['iron', 'bronze', 'silver', 'gold', 'diamond']
 
 // 未开封宝箱各档数量
 export function ownedBoxes() {
-  const c = { silver: 0, gold: 0, diamond: 0 }
+  const c = { iron: 0, bronze: 0, silver: 0, gold: 0, diamond: 0 }
   for (const b of (db.boxes || [])) if (!b.opened_at) c[b.tier] = (c[b.tier] || 0) + 1
   return c
 }
@@ -121,14 +129,14 @@ export function openOneByTier(tier) {
   const minutes = lo + (h % (hi - lo + 1))
   box.opened_at = nowISO(); box.minutes = minutes
   bankSvc.addBonus({ minutes, description: `${BOX_NAME[box.tier]}:${box.source_task || ''}`, createdBy: 'system' })
-  // 开箱随机送星币:银 5~12,金 10~20
-  const [clo, chi] = box.tier === 'gold' ? [10, 20] : [5, 12]
+  // 开箱随机送星币(按档递增)
+  const [clo, chi] = BOX_COIN[box.tier] || BOX_COIN.silver
   const coins = clo + Math.floor(Math.random() * (chi - clo + 1))
   coinSvc.earnCoins(coins, `${BOX_NAME[box.tier]}开箱`)
   box.coins = coins
-  // 约 45% 概率额外掉落一个道具(金/钻箱概率更高)
+  // 额外掉落道具概率,按档递增(铁 0.22 → 钻 0.8)
   let item = null
-  const dropRate = box.tier === 'silver' ? 0.4 : 0.6
+  const dropRate = BOX_DROP[box.tier] ?? 0.45
   if (Math.random() < dropRate) item = itemSvc.giveRandomItem()
   audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes, coins, item: item?.key || null })
   return { tier: box.tier, minutes, coins, item }

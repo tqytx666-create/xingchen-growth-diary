@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import boxIron from '../../assets/box/box_iron.png'
+import boxBronze from '../../assets/box/box_bronze.png'
 import boxSilver from '../../assets/box/box_silver.png'
 import boxGold from '../../assets/box/box_gold.png'
 import boxDiamond from '../../assets/box/box_diamond.png'
@@ -7,15 +9,17 @@ import { BOX_ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 import CoinIcon from '../CoinIcon.vue'
 
 const props = defineProps({
-  tier: { type: String, default: 'silver' },   // silver / gold / diamond
+  tier: { type: String, default: 'silver' },   // iron / bronze / silver / gold / diamond
   minutes: { type: Number, default: 0 },
   coins: { type: Number, default: 0 },
   taskName: { type: String, default: '' }
 })
 const emit = defineEmits(['close'])
 
-const IMG = { silver: boxSilver, gold: boxGold, diamond: boxDiamond }
+const IMG = { iron: boxIron, bronze: boxBronze, silver: boxSilver, gold: boxGold, diamond: boxDiamond }
 const META = {
+  iron:    { name: '铁宝箱',   emoji: '🔩', glow: '#b9c2cc' },
+  bronze:  { name: '铜宝箱',   emoji: '🥉', glow: '#e1944e' },
   silver:  { name: '银宝箱',   emoji: '🥈', glow: '#d8e0ec' },
   gold:    { name: '金宝箱',   emoji: '🥇', glow: '#ffd86b' },
   diamond: { name: '钻石宝箱', emoji: '💎', glow: '#8be9ff' }
@@ -51,7 +55,7 @@ function done() { if (opened.value) emit('close') }
       <transition name="reveal">
         <div v-if="opened" class="box-reward">
           <div class="prize-list">
-            <div class="prize-row">
+            <div v-if="minutes" class="prize-row">
               <span class="prize-ic">⏱️</span>
               <span class="prize-val">+{{ minutes }}</span>
               <span class="prize-unit">分钟<br>游戏时间</span>
