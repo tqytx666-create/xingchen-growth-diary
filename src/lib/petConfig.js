@@ -83,6 +83,31 @@ export function isLow(pet) {
   return pet.mood === 'low' || pet.mood === 'disappointed'
 }
 
+// ---- 健康 / 衰减机制 ----
+// 不打卡 → 属性减少 + 健康下降;健康越低状态越差:健康→虚弱→生病→死亡(变回蛋)。
+// 随时打卡/喂食都能回血,所以"死亡"只会发生在长期完全不管的情况(约连续 10 天彻底不打卡)。
+export const HEALTH_MAX = 100
+export const HEALTH_SICK = 25   // ≤ 此值:生病(明显病恹恹 + 强提醒)
+export const HEALTH_WARN = 50   // ≤ 此值:虚弱(状态下滑,温和提醒)
+export const DECAY = {
+  missAllHealth: 10, missAllAttr: 3, missAllCharm: 2, // 一整天完全没打卡
+  missMainHealth: 4, missMainWisdom: 3,               // 打了卡但没打英语主线
+  regenMain: 8,                                       // 当天完成主线:健康回升
+  catchupCap: 60                                      // 单次最多回补处理的天数(防卡顿)
+}
+export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
+export const REGEN_CHECKIN_SIDE = 8   // 打支线卡回血
+export const REGEN_ITEM = 10          // 喂道具回血
+// 健康状态:egg(蛋,不生病) / healthy / weak(虚弱) / sick(生病) / dead(死亡→回蛋)
+export function healthState(pet) {
+  if (!pet || (pet.stage_idx || 0) <= 0) return 'egg'
+  const h = pet.health == null ? HEALTH_MAX : pet.health
+  if (h <= 0) return 'dead'
+  if (h <= HEALTH_SICK) return 'sick'
+  if (h <= HEALTH_WARN) return 'weak'
+  return 'healthy'
+}
+
 export const SKINS = [
   { key: 'default', t: '默认', d: '星愿犬本来的样子', rare: 'n', o: {}, unlock: () => true, why: '' },
   { key: 'scholar', t: '英语学者', d: '小圆眼镜 + 知识星光', rare: 'r', o: { glasses: true, sparkle: true }, unlock: a => a.wisdom >= 50, why: '智慧达到 50' },

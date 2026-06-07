@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX } from '../../lib/petConfig.js'
+import { settleHealth } from '../../services/petService.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -56,6 +57,14 @@ const attrVal = (key) => key === 'charm' ? charmVal.value : key === 'discipline'
 // 连续打卡里程碑庆祝(由 streakService 在达成当天写入 db.pending_milestones)
 const milestone = computed(() => (db.pending_milestones || [])[0] || null)
 function closeMilestone() { if (db.pending_milestones && db.pending_milestones.length) db.pending_milestones.shift() }
+// 健康值 + 状态(egg/healthy/weak/sick/dead)
+const hp = computed(() => p.value.health == null ? HEALTH_MAX : Math.round(p.value.health))
+const hpState = computed(() => healthState(p.value))
+const hpColor = computed(() => hpState.value === 'sick' ? '#ff5b5b' : hpState.value === 'weak' ? '#ffb347' : '#6bffb0')
+const hpEmoji = computed(() => ({ sick: '🤒', weak: '😟', healthy: '❤️', egg: '🥚' }[hpState.value] || '❤️'))
+// 死亡回蛋纪念弹窗(petService.reviveAsEgg 写入)
+const death = computed(() => db.pending_death || null)
+function closeDeath() { db.pending_death = null }
 
 // 诚信分记录(点顶部"信任"徽章打开)
 const creditOpen = ref(false)
@@ -65,7 +74,7 @@ const userName = (id) => (id === 'system' ? '系统' : (db.users.find(u => u.id 
 // 活宠物:皮肤有活视频 + 默认房间 + 已孵化 + 状态正常 + 支持自动播视频(非微信)→ 启用
 const livingSetCur = computed(() => livingSet(p.value))
 const livingActive = computed(() => BLEND_VIDEO_OK && !!livingSetCur.value && (p.value.room || 'night') === 'night'
-  && !isLow(p.value) && p.value.risk < 2)
+  && !isLow(p.value) && p.value.risk < 2 && hpState.value !== 'sick')
 const livingAction = ref('')
 // 触发活宠物动作:先清空再设,确保连续同一个动作也能重播(watch 同值不触发)
 function playLiving(a) { livingAction.value = ''; nextTick(() => { livingAction.value = a }) }
@@ -301,6 +310,7 @@ function switchAccount() {
 
 function bar(v) { return Math.min(100, v) + '%' }
 onMounted(() => {
+  settleHealth()      // 进首页结算"上次到今天"漏打卡的健康衰减(幂等;健康归零→自动回蛋)
   const stage = document.getElementById('homeStage')
   if (stage) for (let i = 0; i < 12; i++) {
     const s = document.createElement('div'); s.className = 'spark'
@@ -382,6 +392,20 @@ onMounted(() => {
             <span style="font-size:10px">点我</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- 健康值(紧跟宠物):不打卡会下降,病了/虚弱有提醒 -->
+    <div v-if="hpState!=='egg'" class="card hp-card" :class="hpState">
+      <span class="hp-face">{{ hpEmoji }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="hp-top">
+          <span>健康 <b :style="{color:hpColor}">{{ hp }}</b><span class="dim" style="font-size:11px">/100</span></span>
+          <span v-if="hpState==='sick'" class="hp-tag sick">生病了!快照顾它</span>
+          <span v-else-if="hpState==='weak'" class="hp-tag warn">状态下滑,记得打卡</span>
+        </div>
+        <div class="bar"><i :style="{ width: hp+'%', background: hpColor }"></i></div>
+        <div v-if="hpState==='sick'" class="hp-hint">打卡或喂它吃东西就能慢慢康复;太久不管它会变回一颗蛋哦 💔</div>
       </div>
     </div>
 
@@ -476,6 +500,20 @@ onMounted(() => {
           <div v-if="milestone.privilege" class="ms-rw"><span class="ms-ic">🎖️</span><div class="ms-rt"><b>{{ milestone.privilege }}</b><small>去奖励页领取</small></div></div>
         </div>
         <button class="btn-accent" style="width:100%;margin-top:4px;padding:12px;font-size:15px" @click="closeMilestone">太棒了,继续坚持 🔥</button>
+      </div>
+    </div>
+
+    <!-- 死亡 → 回蛋 纪念弹窗(温柔,不吓人) -->
+    <div v-if="death" class="ms-overlay" @click.self="closeDeath">
+      <div class="ms-card">
+        <div class="ms-fire">🥚</div>
+        <div class="ms-title">{{ death.name }} 变回了一颗蛋…</div>
+        <div class="ms-sub">它太久没被照顾,身体撑不住了 💔<br>别难过——重新孵化,再陪它从头长大吧!</div>
+        <div class="ms-rewards">
+          <div class="ms-rw"><span class="ms-ic">✨</span><div class="ms-rt"><b>你的收集都还在</b><small>星币 · 皮肤 · 房间 · 家具 · 最长连签 全部保留</small></div></div>
+          <div class="ms-rw"><span class="ms-ic">📚</span><div class="ms-rt"><b>每天坚持打卡</b><small>健康就会满满,它才不会再生病</small></div></div>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:4px;padding:12px;font-size:15px" @click="closeDeath">重新开始,好好照顾它 🥚</button>
       </div>
     </div>
 
@@ -600,6 +638,17 @@ onMounted(() => {
 .bal-num { font-size: 19px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bal-lb { font-size: 10px; color: rgba(255,255,255,.55); white-space: nowrap; margin-left: 1px; }
 .bal-div { height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
+/* 健康值卡 */
+.hp-card { display: flex; align-items: center; gap: 12px; padding: 11px 13px; margin-bottom: 11px; }
+.hp-card.sick { border-color: rgba(255,91,91,.5); background: linear-gradient(160deg, rgba(255,91,91,.14), rgba(255,255,255,.04)); }
+.hp-card.weak { border-color: rgba(255,179,71,.4); }
+.hp-face { font-size: 30px; line-height: 1; flex-shrink: 0; }
+.hp-top { display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 7px; }
+.hp-tag { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+.hp-tag.sick { color: #fff; background: #ff5b5b; animation: hpBlink 1.1s ease-in-out infinite; }
+.hp-tag.warn { color: #1a1426; background: #ffb347; }
+.hp-hint { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 6px; line-height: 1.45; }
+@keyframes hpBlink { 0%,100% { opacity: 1 } 50% { opacity: .55 } }
 /* 连续打卡里程碑大奖庆祝弹窗 */
 .ms-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px;
   background: rgba(6,4,16,.82); backdrop-filter: blur(5px); animation: msf .25s ease; }

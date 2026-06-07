@@ -1,6 +1,77 @@
 import { db, pet, petAttrs } from '../lib/store.js'
-import { clamp, nowISO, uid } from '../lib/util.js'
-import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP } from '../lib/petConfig.js'
+import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
+import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
+  HEALTH_MAX, HEALTH_SICK, DECAY, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM } from '../lib/petConfig.js'
+
+const ATTR_KEYS = ['wisdom', 'cleanliness', 'vitality', 'charm', 'discipline']
+function isEnglishTask(t) { return !!t && (t.task_type === 'main' || t.lesson || t.category === 'english') }
+// 某天是否有有效打卡 / 是否打了英语主线
+function dayActivity(dateStr) {
+  let any = false, main = false
+  for (const c of db.checkins || []) {
+    if (c.checkin_date !== dateStr) continue
+    if (c.status === 'false_reported' || c.status === 'revoked') continue
+    any = true
+    if (isEnglishTask((db.tasks || []).find(t => t.id === c.task_id))) main = true
+  }
+  return { any, main }
+}
+
+// 每日健康结算:把"上次结算日"到"昨天"的每个完整过去日按打卡情况衰减/回血。
+// 幂等(只处理 last_decay_date 之后的日子);首次缺字段则只初始化、不追溯历史(不冤枉老数据)。
+// 健康归零 → 死亡回蛋。返回 { died, processed, state } 或 null(无需处理)。
+export function settleHealth() {
+  const p = pet(); const a = petAttrs()
+  if (!p) return null
+  if (p.health == null) p.health = HEALTH_MAX
+  const today = todayStr()
+  if (!p.last_decay_date) { p.last_decay_date = today; return null }
+  if ((p.stage_idx || 0) <= 0) { p.last_decay_date = today; return null }   // 蛋阶段不衰减
+  if (p.last_decay_date >= today) return null
+
+  let d = p.last_decay_date, processed = 0, died = false
+  while (d < today && processed < DECAY.catchupCap) {
+    d = addDays(d, 1)
+    if (d >= today) break                       // 今天还没过完,不罚今天
+    const { any, main } = dayActivity(d)
+    if (!any) {                                  // 完全没打卡:属性普减 + 健康大降
+      for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
+      p.health = clamp((p.health || 0) - DECAY.missAllHealth)
+    } else if (!main) {                          // 打了卡但没打英语主线
+      a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
+      p.health = clamp((p.health || 0) - DECAY.missMainHealth)
+    } else {                                     // 完成主线:健康回升
+      p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+    }
+    processed++
+    if (p.health <= 0) { died = true; break }
+  }
+  p.last_decay_date = died ? today : d
+  a.updated_at = nowISO()
+
+  const st = healthState(p)
+  if (st === 'sick') p.mood = 'low'
+  else if (st === 'weak' && p.mood === 'happy') p.mood = 'normal'
+
+  if (died) { reviveAsEgg('neglect'); return { died: true, processed, state: 'dead' } }
+  if (processed) event('decay', null, 'mood_change', {}, st === 'sick' ? `${p.name} 太久没人陪,生病了…快打卡照顾它` : (st === 'weak' ? `${p.name} 状态有点下滑了` : `${p.name} 状态稳住了`))
+  return { died: false, processed, state: st }
+}
+
+// 死亡:变回一颗蛋重新孵化。保留收集(星币/皮肤/房间/家具/最长连签/已得里程碑),只重养形态。
+export function reviveAsEgg(reason) {
+  const p = pet(); const a = petAttrs()
+  const wasLevel = p.level
+  p.level = 0; p.exp = 0; p.stage_idx = 0; p.mood = 'normal'; p.risk = 0
+  p.health = HEALTH_MAX; p.skin = 'default'; p.displayForm = null; p.last_decay_date = todayStr()
+  a.wisdom = 12; a.cleanliness = 8; a.vitality = 6; a.charm = 4; a.discipline = 5
+  a.mood_score = 60; a.updated_at = nowISO()
+  db.pending_death = { name: p.name, level: wasLevel, reason: reason || 'neglect', at: nowISO() }
+  event('evolution', null, 'death', {}, `💔 ${p.name} 太久没被照顾,变回了一颗蛋…重新孵化、再陪它长大吧。`)
+}
+
+// 打卡/喂食回血
+function regen(amount) { const p = pet(); p.health = Math.min(HEALTH_MAX, (p.health == null ? HEALTH_MAX : p.health) + amount) }
 
 function event(sourceType, sourceId, eventType, delta, message) {
   db.pet_events.unshift({
@@ -58,6 +129,7 @@ export function applyTaskExp(task, sourceId) {
   }
   a.mood_score = clamp(a.mood_score + 4)
   a.updated_at = nowISO()
+  regen(task.task_type === 'main' ? REGEN_CHECKIN_MAIN : REGEN_CHECKIN_SIDE)   // 打卡回血(能从生病中救回来)
   if (task.task_type === 'main') {
     if (p.mood === 'low') p.mood = 'normal'
     if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
@@ -74,6 +146,7 @@ export function applyItem(item) {
   const a = petAttrs(); const p = pet()
   if (item.mood) a.mood_score = clamp(a.mood_score + item.mood)
   p.mood = 'happy'
+  regen(REGEN_ITEM)                                  // 喂食回血
   if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
   a.updated_at = nowISO()
   event('item', item.key, 'item_use', {}, `用了${item.name},${item.msg}`)

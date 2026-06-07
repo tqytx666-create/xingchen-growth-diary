@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
 import { ANIM, BLEND_VIDEO_OK, STAGE_IDLE, SKIN_IDLE } from '../../lib/petAnims.js'
-import { isLow, sizeForLevel, animClassForLevel } from '../../lib/petConfig.js'
+import { isLow, sizeForLevel, animClassForLevel, HEALTH_SICK } from '../../lib/petConfig.js'
 
 const props = defineProps({
   pet: { type: Object, required: true },
@@ -19,23 +19,26 @@ const img = computed(() => mainImage(props.pet, props.attrs))
 const px = computed(() => props.size || sizeForLevel(props.pet.level || 1))
 
 const stageIdx = computed(() => props.pet.stage_idx || 0)
+// 生病:已孵化 + 健康 ≤ 生病线 → 病恹恹(回落静态图 + 滤镜 + 🤒)
+const sick = computed(() => stageIdx.value >= 1 && props.pet.health != null && props.pet.health <= HEALTH_SICK)
 // 蛋阶段(stage 0)只显示静态蛋图,不放任何视频
 const hatched = computed(() => stageIdx.value >= 1)
 // 待机视频:① 装扮了"会动的皮肤"→播皮肤专属待机;② 默认皮肤→按阶段(幼犬/成长摇尾、神犬漂浮)。
 // 蛋阶段、微信X5、低落/退阶风险一律回落静态图。
 const idleSrc = computed(() => {
-  if (!props.useVideo || !BLEND_VIDEO_OK || isLow(props.pet) || props.pet.risk >= 2) return null
+  if (!props.useVideo || !BLEND_VIDEO_OK || isLow(props.pet) || props.pet.risk >= 2 || sick.value) return null
   if (stageIdx.value <= 0) return null
   const skin = props.pet.skin
   if (skin && skin !== 'default') return SKIN_IDLE[skin] || null
   return STAGE_IDLE[stageIdx.value] || null
 })
 // 静态形态图的 CSS 待机动效(幼犬抖动/成长蹦跳/进阶呼吸/精英摆动/神犬漂浮发光),仅在不播待机视频时启用
-const animClass = computed(() => (hatched.value && !idleSrc.value && !isLow(props.pet) && props.pet.risk < 2) ? animClassForLevel(props.pet.level) : '')
+const animClass = computed(() => (hatched.value && !idleSrc.value && !isLow(props.pet) && props.pet.risk < 2 && !sick.value) ? animClassForLevel(props.pet.level) : '')
 // 顶层动作视频(叠加,不替换底层 → 无重建闪烁);蛋阶段/不支持的环境关闭,避免黑框
 const actionSrc = computed(() => (hatched.value && BLEND_VIDEO_OK && props.actionAnim && ANIM[props.actionAnim]) ? ANIM[props.actionAnim] : null)
 
 const stateClass = computed(() => {
+  if (sick.value) return 'sick'
   if (props.pet.risk >= 2) return 'risk'
   if (isLow(props.pet)) return 'low'
   if (props.happy) return 'happy'
@@ -55,6 +58,9 @@ const stateClass = computed(() => {
       <video v-if="actionSrc" :key="actionSrc" :src="actionSrc" autoplay muted playsinline
              class="dog-media blend action-layer"></video>
     </transition>
+
+    <!-- 生病标记 -->
+    <span v-if="sick" class="sick-badge">🤒</span>
   </div>
 </template>
 
@@ -76,6 +82,11 @@ img.dog-media { position: absolute; }
 /* 状态不佳(低落 / 退阶风险):不换图,直接给原图加灰色蒙板 */
 .dog.low .dog-media,
 .dog.risk .dog-media { filter: grayscale(1) brightness(.7); transition: filter .4s ease; }
+/* 生病:病恹恹的青灰滤镜 */
+.dog.sick .dog-media { filter: grayscale(.75) brightness(.78) hue-rotate(55deg); transition: filter .4s ease; }
+.sick-badge { position: absolute; top: 6%; right: 10%; font-size: 26px; z-index: 3;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); animation: sickWobble 1.6s ease-in-out infinite; }
+@keyframes sickWobble { 0%,100% { transform: rotate(-8deg) } 50% { transform: rotate(8deg) } }
 /* 动作层淡入淡出,避免硬切黑闪 */
 .fade-enter-active, .fade-leave-active { transition: opacity .35s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank, mainTask } from '../../lib/store.js'
 import { todayStr } from '../../lib/util.js'
 import { levelInfo } from '../../services/creditService.js'
-import { STAGES, DEX, charmTotal } from '../../lib/petConfig.js'
+import { STAGES, DEX, charmTotal, healthState, HEALTH_MAX } from '../../lib/petConfig.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
 
 const router = useRouter()
@@ -91,8 +91,14 @@ function lockDevice() {
         <div style="font-weight:600">{{ pet().name }} · {{ STAGES[pet().stage_idx ?? 0]?.name }}{{ (pet().stage_idx||0)<=0 ? ' · 待孵化' : ' · Lv.' + pet().level }}</div>
         <div class="dim" style="font-size:12px;margin-top:2px">智慧 {{ petAttrs().wisdom }} · 清洁 {{ petAttrs().cleanliness }} · 活力 {{ petAttrs().vitality }} · 魅力 {{ charmTotal(petAttrs().charm, (db.owned_skins||[]).filter(k=>k&&k!=='default').length, DEX.filter(d=>d.cond(pet(),petAttrs())).length) }} · 自律 {{ Math.round((petAttrs().discipline||0) + ((streak()?.longest_streak)||0)) }}</div>
         <div v-if="(pet().stage_idx||0)<=0" class="dim" style="font-size:11px;margin-top:2px;color:#ffd86b">🥚 孵化进度 {{ pet().exp||0 }}/30</div>
+        <div v-else style="font-size:11px;margin-top:3px">
+          <span :style="{ color: healthState(pet())==='sick' ? '#ff7a7a' : healthState(pet())==='weak' ? '#ffb347' : '#6bffb0' }">❤️ 健康 {{ Math.round(pet().health==null?HEALTH_MAX:pet().health) }}/100</span>
+          <span v-if="healthState(pet())==='sick'" style="color:#ff7a7a;font-weight:700"> · 🤒 生病了,提醒孩子打卡照顾</span>
+          <span v-else-if="healthState(pet())==='weak'" style="color:#ffb347"> · 状态下滑,久不打卡会生病</span>
+        </div>
       </div>
-      <span v-if="pet().risk>=2" style="font-size:11px;color:#ff7a7a">退阶风险</span>
+      <span v-if="healthState(pet())==='sick'" style="font-size:11px;color:#ff7a7a;font-weight:700">🤒 生病</span>
+      <span v-else-if="pet().risk>=2" style="font-size:11px;color:#ff7a7a">退阶风险</span>
     </div>
   </div>
 </template>
