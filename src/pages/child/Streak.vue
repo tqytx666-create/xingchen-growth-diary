@@ -6,7 +6,9 @@ import { ownedFreezeCards } from '../../services/rewardService.js'
 import { makeUpMissedDay } from '../../services/checkinService.js'
 import { todayStr, addDays } from '../../lib/util.js'
 import { toast } from '../../lib/toast.js'
+import { STREAK_MILESTONES, BOX_LABEL } from '../../lib/rewardConfig.js'
 import CountUp from '../../components/CountUp.vue'
+import CoinIcon from '../../components/CoinIcon.vue'
 import Calendar from './Calendar.vue'
 
 const wp = computed(() => weeklyProgress())
@@ -23,6 +25,21 @@ function makeUp(date) {
     toast('补卡成功!用掉 1 张免断签卡,连续天数接上啦 🛡️')
   } catch (e) { toast(e.message) }
 }
+
+// 里程碑路线图:7/14/21/30 天奖励,标 已达成/进行中(带进度)/未解锁
+const roadmap = computed(() => {
+  const s = streak()
+  const claimed = new Set(s.milestones_claimed || [])
+  const cur = s.current_streak || 0
+  let activeFound = false
+  return STREAK_MILESTONES.map(m => {
+    let state
+    if (claimed.has(m.days)) state = 'done'
+    else if (!activeFound) { state = 'active'; activeFound = true }
+    else state = 'locked'
+    return { ...m, state, daysLeft: Math.max(0, m.days - cur), pct: Math.min(100, Math.round(cur / m.days * 100)), boxName: BOX_LABEL[m.box] }
+  })
+})
 
 const weekDays = computed(() => {
   const ids = new Set(db.tasks.filter(isMainStreakTask).map(t => t.id))
@@ -63,6 +80,29 @@ const weekDays = computed(() => {
              :style="d.done ? 'background:linear-gradient(160deg,rgba(255,216,107,.3),rgba(255,179,71,.15));border:1px solid #ffd86b;color:#ffd86b;font-weight:700' : (d.future ? 'background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.35)' : 'background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5)')">
           <div>周{{ d.l }}</div>
           <div style="font-size:17px;line-height:1.1;margin-top:1px">{{ d.done ? '🐾' : (d.today ? '⭐' : (d.future ? '·' : '–')) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 里程碑路线图:坚持越久,奖励越大 -->
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <div style="font-weight:700;margin-bottom:4px">🏁 坚持里程碑(连续英语签到)</div>
+      <div class="dim" style="font-size:11px;margin-bottom:14px">坚持越久,奖励越大。达成当天自动到账宝箱+星币,特权卡去 🎁 奖励页领。</div>
+      <div class="ms-road">
+        <div v-for="m in roadmap" :key="m.days" class="ms-step" :class="[m.state, { hero: m.hero }]">
+          <div class="ms-dot">{{ m.state==='done' ? '✓' : m.days }}</div>
+          <div class="ms-body">
+            <div class="ms-line1">
+              <span class="ms-days">{{ m.days }} 天<span v-if="m.hero" class="ms-herotag">习惯养成</span></span>
+              <span class="ms-statetag" :class="m.state">{{ m.state==='done' ? '已达成' : (m.state==='active' ? (m.daysLeft>0 ? '还差 '+m.daysLeft+' 天' : '就快到账') : '未解锁') }}</span>
+            </div>
+            <div class="ms-rewards">
+              <span class="ms-rw">{{ m.boxName }}</span>
+              <span class="ms-rw"><CoinIcon /> +{{ m.coins }}</span>
+              <span class="ms-rw">🎖️ {{ m.privilege }}</span>
+            </div>
+            <div v-if="m.state==='active'" class="ms-prog"><i :style="{ width: m.pct+'%' }"></i></div>
+          </div>
         </div>
       </div>
     </div>
@@ -118,6 +158,31 @@ const weekDays = computed(() => {
 .day-cell.today { animation: todayPulse 1.6s ease-in-out infinite; }
 @keyframes todayPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,216,107,.4);} 50%{box-shadow:0 0 0 4px rgba(255,216,107,.12);} }
 
+/* 里程碑路线图 */
+.ms-road { position: relative; }
+.ms-step { display: flex; gap: 12px; padding: 0 0 14px; position: relative; }
+.ms-step:not(:last-child)::before { content: ''; position: absolute; left: 15px; top: 30px; bottom: -2px; width: 2px; background: rgba(255,255,255,.12); }
+.ms-step.done:not(:last-child)::before { background: rgba(107,255,176,.45); }
+.ms-dot { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 13px; font-weight: 800; z-index: 1; background: rgba(255,255,255,.1); color: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.18); }
+.ms-step.done .ms-dot { background: #6bffb0; color: #0a3d28; border-color: transparent; }
+.ms-step.active .ms-dot { background: linear-gradient(135deg,#ffd86b,#ffb347); color: #1a1426; border-color: transparent; animation: msDotPulse 1.8s ease-in-out infinite; }
+.ms-step.hero .ms-dot { box-shadow: 0 0 0 3px rgba(255,216,107,.25); }
+@keyframes msDotPulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(255,216,107,.45) } 50%{ box-shadow: 0 0 0 5px rgba(255,216,107,.1) } }
+.ms-body { flex: 1; min-width: 0; padding-top: 1px; }
+.ms-step.locked .ms-body { opacity: .5; }
+.ms-line1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ms-days { font-size: 14px; font-weight: 700; }
+.ms-herotag { font-size: 10px; font-weight: 800; color: #1a1426; background: linear-gradient(90deg,#ffd86b,#ffb347); border-radius: 999px; padding: 1px 7px; margin-left: 7px; }
+.ms-statetag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; flex-shrink: 0; }
+.ms-statetag.done { color: #6bffb0; background: rgba(107,255,176,.14); }
+.ms-statetag.active { color: #1a1426; background: #ffd86b; }
+.ms-statetag.locked { color: rgba(255,255,255,.4); background: rgba(255,255,255,.07); }
+.ms-rewards { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 5px; font-size: 11.5px; color: rgba(255,255,255,.75); }
+.ms-rw { display: inline-flex; align-items: center; gap: 2px; }
+.ms-prog { height: 6px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; margin-top: 7px; }
+.ms-prog i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffd86b,#ffb347); transition: width .6s; }
 /* 签到皮肤跑道 */
 .skin-card { background:radial-gradient(130% 90% at 50% 0%, rgba(255,158,199,.16), transparent 55%), rgba(255,255,255,.04); }
 .skin-track { display:flex; gap:11px; overflow-x:auto; padding:2px 2px 6px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
