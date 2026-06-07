@@ -1,5 +1,5 @@
 <script setup>
-import coin from '../assets/coin.png'
+import coin from '../assets/coin.webp'
 </script>
 <template><img :src="coin" alt="星币" class="coin-ic" /></template>
 <style scoped>

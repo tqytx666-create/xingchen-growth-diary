@@ -1,10 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import boxIron from '../../assets/box/box_iron.png'
-import boxBronze from '../../assets/box/box_bronze.png'
-import boxSilver from '../../assets/box/box_silver.png'
-import boxGold from '../../assets/box/box_gold.png'
-import boxDiamond from '../../assets/box/box_diamond.png'
+import boxIron from '../../assets/box/box_iron.webp'
+import boxBronze from '../../assets/box/box_bronze.webp'
+import boxSilver from '../../assets/box/box_silver.webp'
+import boxGold from '../../assets/box/box_gold.webp'
+import boxDiamond from '../../assets/box/box_diamond.webp'
 import { BOX_ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 import CoinIcon from '../CoinIcon.vue'
 

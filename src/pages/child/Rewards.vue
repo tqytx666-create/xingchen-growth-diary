@@ -10,17 +10,17 @@ import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
 import BoxModal from '../../components/pet/BoxModal.vue'
 // 奖励卡片插画
-import imgMiniso from '../../assets/reward/r_miniso.jpg'
-import imgCard from '../../assets/reward/r_card_nostreak.jpg'
-import imgFamily from '../../assets/reward/r_family.jpg'
-import imgKing from '../../assets/reward/r_king.jpg'
-import imgBig from '../../assets/reward/r_big.jpg'
+import imgMiniso from '../../assets/reward/r_miniso.webp'
+import imgCard from '../../assets/reward/r_card_nostreak.webp'
+import imgFamily from '../../assets/reward/r_family.webp'
+import imgKing from '../../assets/reward/r_king.webp'
+import imgBig from '../../assets/reward/r_big.webp'
 // 宝箱图
-import boxIron from '../../assets/box/box_iron.png'
-import boxBronze from '../../assets/box/box_bronze.png'
-import boxSilver from '../../assets/box/box_silver.png'
-import boxGold from '../../assets/box/box_gold.png'
-import boxDiamond from '../../assets/box/box_diamond.png'
+import boxIron from '../../assets/box/box_iron.webp'
+import boxBronze from '../../assets/box/box_bronze.webp'
+import boxSilver from '../../assets/box/box_silver.webp'
+import boxGold from '../../assets/box/box_gold.webp'
+import boxDiamond from '../../assets/box/box_diamond.webp'
 
 // 每个奖励的插画 + 稀有度(决定卡片质感)
 const ART = { r_miniso: imgMiniso, r_card_nostreak: imgCard, r_family: imgFamily, r_king: imgKing, r_big: imgBig }
@@ -90,11 +90,10 @@ function openBox(tier) {
     <div class="card" style="padding:16px;margin-bottom:18px">
       <div style="font-weight:700;margin-bottom:3px">🧰 我的宝箱</div>
       <div class="dim" style="font-size:11px;margin-bottom:12px">完成支线任务获得宝箱,点击打开抽游戏时间(自动到时间银行)</div>
-      <div v-if="hasBox" style="display:flex;gap:14px;flex-wrap:wrap">
+      <div v-if="hasBox" class="box-row">
         <button v-for="t in boxTiers" :key="t" v-show="boxes[t] > 0" class="box-stack" @click="openBox(t)">
-          <div class="box-thumb"><img :src="BOX_META[t].img" :alt="BOX_META[t].name" /><span class="box-badge">×{{ boxes[t] }}</span></div>
-          <div style="font-size:12px;font-weight:600;margin-top:4px">{{ BOX_META[t].name }}</div>
-          <div class="dim" style="font-size:10px">{{ BOX_META[t].range }} · 点击打开</div>
+          <div class="box-thumb"><img :src="BOX_META[t].img" :alt="BOX_META[t].name" /><span class="box-badge">{{ boxes[t] }}</span></div>
+          <div class="box-nm">{{ BOX_META[t].name }}</div>
         </button>
       </div>
       <div v-else class="dim" style="font-size:13px;text-align:center;padding:14px 0">还没有宝箱~ 完成刷牙/洗澡/洗头/房间等任务来获得 🎁</div>
@@ -142,14 +141,16 @@ function openBox(tier) {
 </template>
 
 <style scoped>
-/* 宝箱库存 */
-.box-stack { background:none; border:none; padding:0; cursor:pointer; text-align:center; color:#fff; transition:transform .12s; }
-.box-stack:active { transform:scale(.94); }
-.box-thumb { position:relative; width:84px; height:84px; border-radius:16px; display:grid; place-items:center;
+/* 宝箱库存:一排紧凑放,只显示宝箱图+数量 */
+.box-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-start; }
+.box-stack { background:none; border:none; padding:0; cursor:pointer; text-align:center; color:#fff; transition:transform .12s; flex:0 0 auto; }
+.box-stack:active { transform:scale(.92); }
+.box-thumb { position:relative; width:62px; height:62px; border-radius:14px; display:grid; place-items:center;
   background:radial-gradient(circle at 50% 35%, rgba(255,216,107,.25), rgba(255,255,255,.05)); border:1px solid rgba(255,255,255,.12); }
-.box-thumb img { width:64px; height:64px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); animation:bob 2.4s ease-in-out infinite; }
-.box-badge { position:absolute; top:-6px; right:-6px; background:#ff7a7a; color:#fff; font-size:11px; font-weight:700;
-  border-radius:999px; padding:1px 7px; box-shadow:0 2px 6px rgba(0,0,0,.4); }
+.box-thumb img { width:48px; height:48px; object-fit:contain; filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); animation:bob 2.4s ease-in-out infinite; }
+.box-nm { font-size:10px; font-weight:600; margin-top:3px; color:rgba(255,255,255,.8); white-space:nowrap; }
+.box-badge { position:absolute; top:-5px; right:-5px; background:#ff7a7a; color:#fff; font-size:11px; font-weight:800;
+  border-radius:999px; min-width:18px; padding:1px 5px; box-shadow:0 2px 6px rgba(0,0,0,.4); }
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 
 /* 奖励卡片 */

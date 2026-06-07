@@ -47,13 +47,13 @@ export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, ev
 const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, f6, f7, f8, f9, f10, f11, f12, f13, f14, god }
 
 // 宠物窝房间主题(按累计签到天数解锁;深色调保证宠物视频不穿帮)
-import roomNight from '../assets/room/room_night.jpg'
-import roomForest from '../assets/room/room_forest.jpg'
-import roomOcean from '../assets/room/room_ocean.jpg'
-import roomSpace from '../assets/room/room_space.jpg'
-import roomSakura from '../assets/room/room_sakura.jpg'
-import roomCastle from '../assets/room/room_castle.jpg'
-import roomCandy from '../assets/room/room_candy.jpg'
+import roomNight from '../assets/room/room_night.webp'
+import roomForest from '../assets/room/room_forest.webp'
+import roomOcean from '../assets/room/room_ocean.webp'
+import roomSpace from '../assets/room/room_space.webp'
+import roomSakura from '../assets/room/room_sakura.webp'
+import roomCastle from '../assets/room/room_castle.webp'
+import roomCandy from '../assets/room/room_candy.webp'
 export const ROOM_TRACK = [
   { key: 'night',  name: '星空小窝', emoji: '🌙', days: 0,  img: roomNight },
   { key: 'forest', name: '森林树屋', emoji: '🌳', days: 20, img: roomForest },
@@ -66,12 +66,12 @@ export const ROOM_TRACK = [
 export function roomImg(key) { return (ROOM_TRACK.find(r => r.key === key) || ROOM_TRACK[0]).img }
 
 // 可摆放家具(按累计签到解锁,摆在房间固定槽位)
-import furnBowl from '../assets/furniture/furn_bowl.png'
-import furnToybox from '../assets/furniture/furn_toybox.png'
-import furnPlant from '../assets/furniture/furn_plant.png'
-import furnShelf from '../assets/furniture/furn_shelf.png'
-import furnLamp from '../assets/furniture/furn_lamp.png'
-import furnPlush from '../assets/furniture/furn_plush.png'
+import furnBowl from '../assets/furniture/furn_bowl.webp'
+import furnToybox from '../assets/furniture/furn_toybox.webp'
+import furnPlant from '../assets/furniture/furn_plant.webp'
+import furnShelf from '../assets/furniture/furn_shelf.webp'
+import furnLamp from '../assets/furniture/furn_lamp.webp'
+import furnPlush from '../assets/furniture/furn_plush.webp'
 export const FURNITURE = [
   { key: 'bowl',   name: '零食碗', emoji: '🍖', days: 10, img: furnBowl,   slot: { left: '15%', bottom: '11%', width: '58px' } },
   { key: 'plant',  name: '小绿植', emoji: '🪴', days: 35, img: furnPlant,  slot: { left: '4%',  bottom: '26%', width: '46px' } },
