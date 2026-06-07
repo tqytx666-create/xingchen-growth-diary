@@ -352,10 +352,10 @@ onMounted(() => {
   <div style="padding:14px 14px 90px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="dim" style="font-size:14px">你好,<b style="color:#fff">星晨</b></div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span class="card" style="padding:6px 11px;font-size:13px;font-weight:600;color:#ffd86b;cursor:pointer" @click="creditOpen=true">⭐ 信任 Lv.{{ trust.stars }} <span style="opacity:.5;font-size:11px">ⓘ</span></span>
-        <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
-        <button class="card" style="padding:6px 9px;font-size:14px;line-height:1" title="切换账号" @click="switchAccount">🔄</button>
+      <div style="display:flex;gap:7px;align-items:center">
+        <span class="trust-pill" @click="creditOpen=true"><span class="trust-star">★</span>信任 Lv.{{ trust.stars }}<span class="trust-i">ⓘ</span></span>
+        <button class="icon-btn" @click="snd=toggleSound()">{{ snd ? '🔊' : '🔇' }}</button>
+        <button class="icon-btn" title="切换账号" @click="switchAccount">🔄</button>
       </div>
     </div>
 
@@ -372,13 +372,13 @@ onMounted(() => {
         </div>
         <div class="bal-card">
           <div ref="timeChipRef" class="bal-row" @click="router.push('/child/bank')">
-            <span class="bal-ic">⏱️</span>
+            <span class="bal-ic time"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8be9ff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.2v5l3.2 2"/></svg></span>
             <span class="bal-num" style="color:#8be9ff"><CountUp :value="Math.floor(bankRow().current_balance_minutes || 0)" /></span>
             <span class="bal-lb">分 · 时间银行</span>
           </div>
           <div class="bal-div"></div>
           <div class="bal-row" @click="router.push('/child/shop')">
-            <CoinIcon class="bal-ic" />
+            <span class="bal-ic coin"><CoinIcon /></span>
             <span class="bal-num" style="color:#ffd86b"><CountUp :value="coinBal" /></span>
             <span class="bal-lb">星币 · 去商城</span>
           </div>
@@ -416,8 +416,8 @@ onMounted(() => {
         <div style="font-size:12px;color:#ffd86b;text-align:center;margin-bottom:8px">✨ 点道具陪小愿互动</div>
         <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
           <button v-for="c in pending" :key="c.id" class="prop-btn" @click="interactProp(c)">
-            <span style="font-size:26px">{{ db.tasks.find(t=>t.id===c.task_id)?.icon }}</span>
-            <span style="font-size:10px">点我</span>
+            <span style="font-size:19px;line-height:1">{{ db.tasks.find(t=>t.id===c.task_id)?.icon }}</span>
+            <span style="font-size:9px">点我</span>
           </button>
         </div>
       </div>
@@ -663,11 +663,28 @@ onMounted(() => {
 /* 余额名片:跟宠物名片同款两行卡片(上行=时间银行,下行=星币) */
 .bal-card { flex-shrink: 0; min-width: 116px; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12);
   backdrop-filter: blur(6px); border-radius: 14px; padding: 6px 12px; display: flex; flex-direction: column; justify-content: center; }
-.bal-row { display: flex; align-items: center; gap: 5px; cursor: pointer; transition: transform .12s ease; padding: 1px 0; }
+/* 余额行:网格三列(图标 / 数字右对齐 / 文字),两行数字与文字竖直对齐 */
+.bal-row { display: grid; grid-template-columns: 24px 52px 1fr; align-items: center; gap: 6px; cursor: pointer; transition: transform .12s ease; padding: 1px 0; }
 .bal-row:active { transform: scale(.95); }
-.bal-ic { font-size: 15px; line-height: 1; display: inline-flex; align-items: center; }
-.bal-num { font-size: 19px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.bal-lb { font-size: 10px; color: rgba(255,255,255,.55); white-space: nowrap; margin-left: 1px; }
+.bal-ic { width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; line-height: 1; }
+.bal-ic.time { background: rgba(139,233,255,.16); }
+.bal-ic.coin { background: rgba(255,216,107,.16); }
+.bal-num { font-size: 18px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; text-align: right; }
+.bal-lb { font-size: 10px; color: rgba(255,255,255,.6); white-space: nowrap; }
+/* 顶部信任徽章 + 圆形图标按钮 */
+.trust-pill { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #ffd86b; cursor: pointer;
+  background: linear-gradient(135deg, rgba(255,216,107,.22), rgba(255,179,71,.08)); border: 1px solid rgba(255,216,107,.42); }
+.trust-pill:active { transform: scale(.96); }
+.trust-star { font-size: 14px; color: #ffd86b; text-shadow: 0 0 8px rgba(255,216,107,.85); }
+.trust-i { opacity: .5; font-size: 11px; font-weight: 400; margin-left: 1px; }
+.icon-btn { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; line-height: 1; cursor: pointer;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); transition: transform .12s ease, background .2s; }
+.icon-btn:active { transform: scale(.9); }
+/* 打卡后互动小道具:小巧的胶囊按钮(轻轻跳动) */
+.prop-btn { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 9px; border-radius: 13px; cursor: pointer; color: #ffd86b;
+  background: rgba(255,216,107,.12); border: 1px solid rgba(255,216,107,.32); transition: transform .12s ease; animation: propBob 1.9s ease-in-out infinite; }
+.prop-btn:active { transform: scale(.9); }
+@keyframes propBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3px) } }
 .bal-div { height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
 /* 宠物每日寄语气泡 */
 .say-bubble { position: relative; margin: 2px 6px 12px; padding: 11px 14px; border-radius: 15px;
