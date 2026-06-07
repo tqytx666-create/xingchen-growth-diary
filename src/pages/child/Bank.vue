@@ -1,7 +1,10 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue'
 import { db, bank } from '../../lib/store.js'
-import { fmtDateTime, weekStart } from '../../lib/util.js'
+import { fmtDateTime, weekStart, todayStr } from '../../lib/util.js'
+
+// 交易时间一律按"本地日期"归类(created_at 是 UTC ISO,直接 slice 会差一天导致今日利息不进今日桶)
+function localDay(iso) { return iso ? todayStr(new Date(iso)) : '' }
 
 // 中国股市习惯:红涨绿跌(增=红,减=绿)
 const UP = '#ff5b5b', DOWN = '#2fcf86'
@@ -84,7 +87,7 @@ const chartData = computed(() => {
   const defs = bucketDefs(range.value)
   const inc = {}, exp = {}
   for (const t of txns.value) {
-    const d = (t.created_at || '').slice(0, 10); if (!d) continue
+    const d = localDay(t.created_at); if (!d) continue
     const k = bucketKey(d, range.value), m = t.screen_minutes || 0
     if (m >= 0) inc[k] = (inc[k] || 0) + m; else exp[k] = (exp[k] || 0) + (-m)
   }
@@ -99,8 +102,8 @@ function barH(v) { return v > 0 ? Math.max(3, Math.round(v / chartMax.value * 30
 const dailyInterest = computed(() => Math.round((b.value.current_balance_minutes || 0) * (b.value.daily_interest_rate || 0.01)))
 
 // 今日 / 本周净增减(顶部)
-const todayNet = computed(() => { const k = (new Date()).toISOString().slice(0, 10); let s = 0; for (const t of txns.value) if ((t.created_at || '').slice(0, 10) === k) s += t.screen_minutes || 0; return Math.round(s) })
-const weekNet = computed(() => { const wk = weekStart((new Date()).toISOString().slice(0, 10)); let s = 0; for (const t of txns.value) { const d = (t.created_at || '').slice(0, 10); if (d && weekStart(d) === wk) s += t.screen_minutes || 0 } return Math.round(s) })
+const todayNet = computed(() => { const k = todayStr(); let s = 0; for (const t of txns.value) if (localDay(t.created_at) === k) s += t.screen_minutes || 0; return Math.round(s) })
+const weekNet = computed(() => { const wk = weekStart(todayStr()); let s = 0; for (const t of txns.value) { const d = localDay(t.created_at); if (d && weekStart(d) === wk) s += t.screen_minutes || 0 } return Math.round(s) })
 function fmtNet(n) { return (Number(n) >= 0 ? '+' : '') + n }
 </script>
 
