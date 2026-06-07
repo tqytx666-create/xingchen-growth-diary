@@ -168,3 +168,20 @@ input::placeholder, textarea::placeholder { color: rgba(255,255,255,.4); }
   cursor:pointer; animation:propPulse 1.2s ease-in-out infinite; }
 .prop-btn:active { transform:scale(.92); }
 @keyframes propPulse { 0%,100%{transform:scale(1); box-shadow:0 0 0 0 rgba(255,216,107,.4);} 50%{transform:scale(1.08); box-shadow:0 0 14px 2px rgba(255,216,107,.35);} }
+
+/* ===== 命名设计样式(南哥喜欢的"高级感"组件,沉淀复用;详见 docs/DESIGN_SYSTEM.md)===== */
+/* 「星愿金卡」Aurum:金色高级卡(里程碑英雄级同款)——顶部金光晕 + 金边 + 金色投影 */
+.fx-aurum { background: radial-gradient(130% 90% at 50% 0%, rgba(255,200,90,.42), transparent 64%), #1b1530;
+  border: 1px solid rgba(255,216,107,.55); box-shadow: 0 18px 60px -14px rgba(255,200,90,.5); }
+/* 「星愿金标」金色胶囊/徽章(深字) */
+.fx-aurum-pill { background: linear-gradient(90deg,#ffd86b,#ffb347); color:#1a1426; font-weight:800; }
+/* 「火苗卡」Ember:一团火点亮整张卡(连续签到 Hero 同款)——左上暖橙火光晕 + 金色微渐变 */
+.fx-ember { background: radial-gradient(120% 95% at 25% 0%, rgba(255,140,60,.24), transparent 58%), linear-gradient(160deg, rgba(255,216,107,.12), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,216,107,.32); }
+/* 「呼吸光圈」Breath Halo:金色脉冲呼吸(里程碑当前节点同款)——用在"当前/进行中"的小圆点 */
+.fx-breath { animation: fxBreath 1.8s ease-in-out infinite; }
+@keyframes fxBreath { 0%,100%{ box-shadow:0 0 0 0 rgba(255,216,107,.45) } 50%{ box-shadow:0 0 0 6px rgba(255,216,107,.08) } }
+/* 「火苗跳动」Flame Bob:火焰图标轻轻上跳+放大(连续签到大火苗同款) */
+.fx-flamebob { animation: fxFlamebob 2s ease-in-out infinite; filter: drop-shadow(0 4px 14px rgba(255,140,60,.55)); }
+@keyframes fxFlamebob { 0%,100%{ transform: translateY(0) scale(1) } 50%{ transform: translateY(-3px) scale(1.06) } }
+@media (prefers-reduced-motion: reduce) { .fx-breath, .fx-flamebob { animation: none !important; } }
