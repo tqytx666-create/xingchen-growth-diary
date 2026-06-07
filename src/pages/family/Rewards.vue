@@ -32,6 +32,7 @@ function reject(r) { handleRequest(r.id, false, me.value.id); toast('已拒绝')
     </div>
 
     <div style="font-weight:600;margin:18px 2px 10px">历史</div>
+    <div v-if="!history.length" class="dim" style="text-align:center;padding:20px 0">还没有处理过的兑换记录</div>
     <div v-for="r in history" :key="r.id" class="card" style="display:flex;justify-content:space-between;padding:11px 13px;margin-bottom:8px">
       <div><div style="font-size:14px">{{ r.reward_name }}</div><div class="dim" style="font-size:11px;margin-top:2px">{{ fmtDateTime(r.handled_at) }}</div></div>
       <span style="font-size:12px">{{ STATUS[r.status] }}</span>
