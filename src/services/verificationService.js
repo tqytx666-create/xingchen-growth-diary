@@ -25,9 +25,12 @@ export function confirm(checkinId, actorId, minutes) {
     bankSvc.addBonus({ minutes: m, description: `英语外教课:${task.name}`, createdBy: actorId })
     c.game_minutes = m
   } else if (task?.category === 'sport' && m > 0) {
-    bankSvc.addBonus({ minutes: m, description: `运动:${task.name}(${m}分钟)`, createdBy: actorId })
-    c.game_minutes = m
-    c.exercise_minutes = m   // 供开箱判定:运动≥60分钟那次升钻石宝箱
+    // 羽毛球 1 分钟换 2 分钟游戏,其它运动 1:1(与文案/管理员页一致)
+    const ratio = task.id === 't_badminton' ? 2 : 1
+    const game = m * ratio
+    bankSvc.addBonus({ minutes: game, description: `运动:${task.name}(${m}分钟${ratio > 1 ? ' ×2' : ''})`, createdBy: actorId })
+    c.game_minutes = game
+    c.exercise_minutes = m   // 存原始运动分钟,供开箱判定:运动≥60分钟那次升钻石宝箱
   }
   audit(actorId, 'checkin', checkinId, 'confirm', { task: task?.name, minutes: m })
 }

@@ -20,8 +20,12 @@ function actor(id) { return db.users.find(u => u.id === id)?.display_name || '' 
 const minuteModal = ref(null)   // 待输入分钟的打卡
 const minuteMode = ref('lesson')
 const minuteVal = ref(45)
+const minuteTask = computed(() => task(minuteModal.value))
+// 羽毛球 1 分钟换 2 分钟游戏,其它运动/外教 1:1(与文案/管理员页一致)
+const minuteRatio = computed(() => (minuteMode.value === 'sport' && minuteTask.value?.id === 't_badminton') ? 2 : 1)
+const minuteGame = computed(() => Math.max(0, Math.round(Number(minuteVal.value) || 0)) * minuteRatio.value)
 const minuteUI = computed(() => minuteMode.value === 'sport'
-  ? { title: '🏃 确认运动打卡', tip: '运动了多久?换等量游戏时间存入时间银行(满 60 分钟那次开箱直升钻石宝箱)。', chips: [15, 30, 45, 60] }
+  ? { title: '🏃 确认运动打卡', tip: (minuteRatio.value > 1 ? '羽毛球 1 分钟换 2 分钟游戏。' : '运动 1 分钟换 1 分钟游戏。') + '运动了多久?(满 60 分钟那次开箱直升钻石宝箱 💎)', chips: [15, 30, 45, 60] }
   : { title: '📘 确认英语外教课', tip: '这节课换多少游戏时间?确认后自动存入时间银行。', chips: [25, 30, 45, 60] })
 function confirm(c) {
   const t = task(c)
@@ -32,8 +36,9 @@ function confirm(c) {
 function doMinuteConfirm() {
   const c = minuteModal.value; if (!c) return
   const m = Math.max(0, Math.round(Number(minuteVal.value) || 0))
+  const game = minuteGame.value
   vs.confirm(c.id, me.value.id, m)
-  toast(m > 0 ? `已确认 ✅ 游戏时间 +${m} 分钟` : '已确认 ✅')
+  toast(m > 0 ? `已确认 ✅ 游戏时间 +${game} 分钟` : '已确认 ✅')
   minuteModal.value = null
 }
 // 标记虚报:同样用内联确认弹窗替代 window.confirm
@@ -103,7 +108,7 @@ function cancelMisclick(c) { vs.revoke(c.id, me.value.id); toast('已取消这�
         <input v-model.number="minuteVal" type="number" min="0" inputmode="numeric"
                style="text-align:center;font-size:18px;font-weight:700" />
         <div class="dim" style="font-size:11px;margin-top:6px">分钟{{ minuteMode==='sport' && Number(minuteVal)>=60 ? ' · 满60分钟,这次开箱升钻石宝箱 💎' : '' }}</div>
-        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" @click="doMinuteConfirm">确认 · 换 {{ Math.max(0, Math.round(Number(minuteVal)||0)) }} 分钟游戏时间</button>
+        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" @click="doMinuteConfirm">确认 · {{ minuteRatio>1 ? '运动 '+Math.max(0,Math.round(Number(minuteVal)||0))+' 分 → ' : '换 ' }}游戏时间 +{{ minuteGame }} 分</button>
         <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="minuteModal=null">取消</button>
       </div>
     </div>
