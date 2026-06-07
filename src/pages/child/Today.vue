@@ -423,6 +423,13 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 每日利息:紧挨顶部余额卡,点收取时星星粒子飞进时间银行余额,一眼看得见 -->
+    <button v-if="pendingItr > 0" class="itr-collect" @click="doCollectInterest">
+      <span class="itr-spark">✨</span>
+      <span style="flex:1;text-align:left">小愿帮你攒了 <b>{{ pendingItr }}</b> 分钟利息</span>
+      <span class="itr-go">点我收取 →</span>
+    </button>
+
     <!-- 宠物每日专属寄语(小愿在对你说话)-->
     <div class="say-bubble"><span class="say-tail"></span><b>{{ p.name }}</b> 想对你说:{{ petSays }}</div>
 
@@ -465,13 +472,6 @@ onMounted(() => {
         </button>
       </div>
     </div>
-
-    <!-- 每日利息:攒着待收,点一下魔法棒星星汇入时间余额 -->
-    <button v-if="pendingItr > 0" class="itr-collect" @click="doCollectInterest">
-      <span class="itr-spark">✨</span>
-      <span style="flex:1;text-align:left">小愿帮你攒了 <b>{{ pendingItr }}</b> 分钟利息</span>
-      <span class="itr-go">点我收取 →</span>
-    </button>
 
     <!-- 今日任务:分类卡片,点开二级页打卡 -->
     <div style="display:flex;align-items:center;margin:2px 2px 9px">

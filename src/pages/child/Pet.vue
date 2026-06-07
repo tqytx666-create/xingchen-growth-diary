@@ -88,7 +88,7 @@ function equipFromPet(s) {
       <div v-for="(d,i) in DEX" :key="d.key" class="card form-cell" :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')"
            :class="{ pickable: d.cond(p,a) && i>0 }" @click="pickForm(i,d)">
         <div style="height:96px;display:grid;place-items:center">
-          <img v-if="d.cond(p,a)" :src="formImage(d.key)" style="height:96px;object-fit:contain" />
+          <img v-if="d.cond(p,a)" :src="formImage(d.key)" loading="lazy" decoding="async" style="height:96px;object-fit:contain" />
           <span v-else style="font-size:40px">❔</span>
         </div>
         <h3 style="font-size:13px;margin:6px 0 2px">{{ d.cond(p,a) ? d.t : '???' }}</h3>
@@ -109,7 +109,7 @@ function equipFromPet(s) {
       <div v-if="ownedWardrobe.length" class="pskin-grid">
         <div v-for="s in ownedWardrobe" :key="s.key" class="pskin-cell" :class="{ equipped:s.equipped }" @click="equipFromPet(s)">
           <div class="pskin-pic">
-            <img :src="s.img" :alt="s.name" />
+            <img :src="s.img" :alt="s.name" loading="lazy" decoding="async" />
             <span v-if="s.animated" class="pskin-anim">✨动</span>
             <span v-if="s.equipped" class="pskin-on">装扮中</span>
           </div>

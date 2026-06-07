@@ -70,7 +70,7 @@ function redeem(w) {
       </div>
       <div class="shop-grid">
         <div v-for="g in sec.items" :key="g.key" class="shop-card" :class="{ 'is-owned': g.owned }">
-          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" /><span class="shop-info">ⓘ</span><span v-if="g.owned" class="owned-rib">✓ 拥有</span></div>
+          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" loading="lazy" decoding="async" /><span class="shop-info">ⓘ</span><span v-if="g.owned" class="owned-rib">✓ 拥有</span></div>
           <div class="shop-nm" style="cursor:pointer" @click="openDetail(sec.type, g)">{{ g.emoji }} {{ g.name }}</div>
           <div v-if="sec.type==='item' && itemCounts[g.key]" class="dim" style="font-size:10px">已有 {{ itemCounts[g.key] }}</div>
           <button v-if="g.owned" class="shop-buy owned" disabled>已拥有</button>
@@ -84,7 +84,7 @@ function redeem(w) {
     <!-- 商品详情 -->
     <div v-if="detail" class="sd-overlay" @click.self="detail=null">
       <div class="sd-card">
-        <div class="sd-pic"><img :src="detail.g.img" :alt="detail.g.name" /></div>
+        <div class="sd-pic"><img :src="detail.g.img" :alt="detail.g.name" decoding="async" /></div>
         <div class="sd-name">{{ detail.g.emoji }} {{ detail.g.name }}</div>
         <div class="sd-desc">{{ detail.g.desc }}</div>
         <div v-if="detail.type==='item' && itemCounts[detail.g.key]" class="dim" style="font-size:12px;margin-top:6px">当前持有 {{ itemCounts[detail.g.key] }} 个</div>
