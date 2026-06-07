@@ -47,4 +47,17 @@ router.beforeEach((to) => {
   return true
 })
 
+// 兜底:用户 app 开着时正好发版,点进未加载过的懒加载页会拿不到旧 chunk(404)。
+// 这种动态导入失败时自动整页刷新一次(拿到最新版),避免白屏;每次成功跳转后清标记,允许下次发版再兜底。
+router.onError((err) => {
+  const msg = (err && err.message) || ''
+  if (/dynamically imported module|Importing a module script|Failed to fetch dynamically|error loading dynamically/i.test(msg)) {
+    if (!sessionStorage.getItem('xc_chunk_reload')) {
+      sessionStorage.setItem('xc_chunk_reload', '1')
+      location.reload()
+    }
+  }
+})
+router.afterEach(() => { sessionStorage.removeItem('xc_chunk_reload') })
+
 export default router
