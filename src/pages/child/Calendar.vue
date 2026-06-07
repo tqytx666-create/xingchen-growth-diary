@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { db } from '../../lib/store.js'
 const props = defineProps({ embed: { type: Boolean, default: false } })
-import { todayStr } from '../../lib/util.js'
+import { todayStr, addDays } from '../../lib/util.js'
 import { requestMakeup } from '../../services/checkinService.js'
 import { toast } from '../../lib/toast.js'
 
@@ -10,6 +10,29 @@ const cursor = ref(new Date())
 const ym = computed(() => ({ y: cursor.value.getFullYear(), m: cursor.value.getMonth() }))
 const today = todayStr()
 const activeTasks = computed(() => db.tasks.filter(t => t.is_active))
+
+// 单项筛选:null=全部;否则只看该任务的打卡热力 + 连续天数(火花)
+const selTask = ref(null)
+const selTaskObj = computed(() => activeTasks.value.find(t => t.id === selTask.value) || null)
+function dayDone(taskId, date) { return ['done', 'wait'].includes(statusOn(taskId, date)) }
+// 该任务"当前连续打卡"天数:从今天(或昨天)往回数
+const taskStreak = computed(() => {
+  if (!selTask.value) return 0
+  const has = d => dayDone(selTask.value, d)
+  let anchor = has(today) ? today : (has(addDays(today, -1)) ? addDays(today, -1) : null)
+  if (!anchor) return 0
+  let n = 0, d = anchor
+  while (has(d)) { n++; d = addDays(d, -1) }
+  return n
+})
+// 该任务历史最长连续
+const taskBest = computed(() => {
+  if (!selTask.value) return 0
+  const dates = (db.checkins || []).filter(c => c.task_id === selTask.value && c.status !== 'revoked' && c.status !== 'false_reported').map(c => c.checkin_date).sort()
+  let best = 0, run = 0, prev = null
+  for (const ds of dates) { if (prev && addDays(prev, 1) === ds) run++; else run = 1; best = Math.max(best, run); prev = ds }
+  return best
+})
 
 // 每天每个任务的状态:done / false / none
 function statusOn(taskId, date) {
@@ -38,10 +61,12 @@ const grid = computed(() => {
   for (let i = 0; i < lead; i++) cells.push(null)
   for (let d = 1; d <= days; d++) {
     const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    cells.push({ d, ds, n: doneCount(ds), main: mainDoneOn(ds), today: ds === today, future: ds > today })
+    cells.push({ d, ds, n: doneCount(ds), selDone: selTask.value ? dayDone(selTask.value, ds) : false, main: mainDoneOn(ds), today: ds === today, future: ds > today })
   }
   return cells
 })
+// 单项模式:打了=亮金,没打=暗;全部模式:按完成数热力
+function cellBg(c) { return selTask.value ? (c.selDone ? heat(5) : 'rgba(255,255,255,.05)') : heat(c.n) }
 // 热力色:完成越多越亮(0→暗,5+→金黄,跟周签到的金色呼应)
 function heat(n) {
   if (n <= 0) return 'rgba(255,255,255,.05)'
@@ -65,6 +90,20 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
 <template>
   <div :style="embed ? '' : 'padding:14px 14px 90px'">
     <h2 v-if="!embed" style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">📅 打卡日历</h2>
+    <!-- 任务筛选:选一项只看它的打卡热力 + 连续火花 -->
+    <div class="task-chips">
+      <button class="tchip" :class="{ on: !selTask }" @click="selTask=null">📅 全部</button>
+      <button v-for="t in activeTasks" :key="t.id" class="tchip" :class="{ on: selTask===t.id }" @click="selTask=t.id">{{ t.icon }} {{ t.name }}</button>
+    </div>
+    <!-- 单项连续火花条(火苗卡样式)-->
+    <div v-if="selTaskObj" class="card fx-ember streak-fire">
+      <span class="fire fx-flamebob">🔥</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px"><b>{{ selTaskObj.icon }} {{ selTaskObj.name }}</b> 已连续 <b style="color:#ffd86b;font-size:20px">{{ taskStreak }}</b> 天</div>
+        <div class="dim" style="font-size:11px;margin-top:2px">{{ taskStreak>0 ? '别断哦,坚持下去火越旺 🔥' : '今天打一下,点燃这项的连续火花!' }} · 历史最长 {{ taskBest }} 天</div>
+      </div>
+    </div>
+
     <div class="card" style="padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <button class="btn-ghost" style="padding:6px 12px" @click="move(-1)">‹</button>
@@ -76,11 +115,12 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
         <button v-for="(c,i) in grid" :key="i" class="day"
-                :disabled="!c" :style="c ? { background: heat(c.n), border: c.today ? '2px solid #fff' : (c.main ? '2px solid #ffd86b' : '1px solid transparent'), boxShadow: (c.main && !c.today) ? '0 0 7px -1px rgba(255,216,107,.8)' : 'none' } : { background:'transparent' }"
+                :disabled="!c" :style="c ? { background: cellBg(c), border: c.today ? '2px solid #fff' : ((!selTask && c.main) ? '2px solid #ffd86b' : '1px solid transparent'), boxShadow: (!selTask && c.main && !c.today) ? '0 0 7px -1px rgba(255,216,107,.8)' : 'none' } : { background:'transparent' }"
                 @click="openDay(c)">
           <template v-if="c">
-            <span :style="c.today ? 'color:#fff;font-weight:700' : (c.n>2 ? 'color:#5a3d00;font-weight:700' : 'color:rgba(255,255,255,.7)')">{{ c.d }}</span>
-            <span v-if="c.n>0" style="font-size:8px;line-height:1" :style="c.n>2 ? 'color:#5a3d00' : 'color:rgba(255,255,255,.6)'">{{ c.n }}项</span>
+            <span :style="c.today ? 'color:#fff;font-weight:700' : ((selTask ? c.selDone : c.n>2) ? 'color:#5a3d00;font-weight:700' : 'color:rgba(255,255,255,.7)')">{{ c.d }}</span>
+            <span v-if="selTask && c.selDone" style="font-size:9px;line-height:1;color:#5a3d00">✓</span>
+            <span v-else-if="!selTask && c.n>0" style="font-size:8px;line-height:1" :style="c.n>2 ? 'color:#5a3d00' : 'color:rgba(255,255,255,.6)'">{{ c.n }}项</span>
           </template>
         </button>
       </div>
@@ -90,7 +130,8 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
         <span>多</span>
       </div>
       <div style="text-align:center;margin-top:7px;font-size:11px;color:rgba(255,255,255,.5)">
-        <span style="display:inline-block;width:11px;height:11px;border-radius:3px;border:2px solid #ffd86b;vertical-align:-1px;margin-right:3px"></span>金边=当天打了英语主线 · 点某天可补卡
+        <template v-if="selTask">亮金格 = 那天打了「{{ selTaskObj?.name }}」· 点某天可补卡</template>
+        <template v-else><span style="display:inline-block;width:11px;height:11px;border-radius:3px;border:2px solid #ffd86b;vertical-align:-1px;margin-right:3px"></span>金边=当天打了英语主线 · 点某天可补卡</template>
       </div>
     </div>
 
@@ -115,6 +156,16 @@ function fmtSel(d) { if (!d) return ''; const p = d.split('-'); return `${+p[1]}
 </template>
 
 <style scoped>
+/* 任务筛选 chip 行 */
+.task-chips { display: flex; gap: 7px; overflow-x: auto; padding: 1px 1px 9px; -webkit-overflow-scrolling: touch; }
+.task-chips::-webkit-scrollbar { height: 3px; }
+.task-chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 9px; }
+.tchip { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.75); transition: all .15s; }
+.tchip.on { background: linear-gradient(90deg,#ffd86b,#ffb347); border-color: transparent; color: #1a1426; }
+/* 单项连续火花条 */
+.streak-fire { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 11px; }
+.streak-fire .fire { font-size: 34px; line-height: 1; flex-shrink: 0; }
 .day { aspect-ratio: .9; border-radius: 9px; padding: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;
   cursor: pointer; transition: transform .1s; }
 .day:active:not(:disabled) { transform: scale(.92); }
