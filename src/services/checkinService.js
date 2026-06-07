@@ -67,11 +67,18 @@ export function interact(checkinId) {
   c.interacted = true
   const delta = petSvc.applyTaskExp(task, c.id)
   // 获得宝箱:不当场开,发一个"未开封宝箱"进库存,星晨去奖励页自己点击开箱(延迟满足,仪式感更强)
-  let boxTier = null
+  let boxTier = null, coinsOnly = false
   if (task.blindbox) {
     boxTier = BOX_TIER[task.id] || 'bronze'
+  } else if (task.category === 'sport' || task.lesson) {
+    // 运动/外教课已直接换游戏时间 → 宝箱"只送星币不送时间";运动满60分钟那次升钻石
+    coinsOnly = true
+    const exMin = c.exercise_minutes || c.game_minutes || 0
+    boxTier = exMin >= 60 ? 'diamond' : (task.lesson ? 'gold' : 'silver')
+  }
+  if (boxTier) {
     if (!db.boxes) db.boxes = []
-    db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null })
+    db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null, coinsOnly })
   }
   // 打卡互动发星币(只能这样赚):英语主线 +10,支线 +5
   const coinsEarned = coinSvc.earnCoins(task.task_type === 'main' ? COIN_PER_MAIN : COIN_PER_SIDE, `打卡:${task.name}`)
@@ -124,13 +131,18 @@ export function ownedBoxes() {
 export function openOneByTier(tier) {
   const box = (db.boxes || []).filter(b => b.tier === tier && !b.opened_at).pop()
   if (!box) return null
-  const [lo, hi] = BOX_RANGE[box.tier] || BOX_RANGE.silver
   let h = 0; for (let i = 0; i < box.id.length; i++) h = (h * 31 + box.id.charCodeAt(i)) >>> 0
-  const minutes = lo + (h % (hi - lo + 1))
+  // 运动/外教宝箱(coinsOnly):不发游戏时间(运动已直接换过),星币按"高一档"补偿
+  let minutes = 0
+  if (!box.coinsOnly) {
+    const [lo, hi] = BOX_RANGE[box.tier] || BOX_RANGE.silver
+    minutes = lo + (h % (hi - lo + 1))
+    bankSvc.addBonus({ minutes, description: `${BOX_NAME[box.tier]}:${box.source_task || ''}`, createdBy: 'system' })
+  }
   box.opened_at = nowISO(); box.minutes = minutes
-  bankSvc.addBonus({ minutes, description: `${BOX_NAME[box.tier]}:${box.source_task || ''}`, createdBy: 'system' })
-  // 开箱随机送星币(按档递增)
-  const [clo, chi] = BOX_COIN[box.tier] || BOX_COIN.silver
+  // 开箱随机送星币(按档递增;coinsOnly 用高一档,补偿没有时间)
+  const coinTier = box.coinsOnly ? (BOX_ORDER[Math.min(BOX_ORDER.length - 1, BOX_ORDER.indexOf(box.tier) + 1)]) : box.tier
+  const [clo, chi] = BOX_COIN[coinTier] || BOX_COIN.silver
   const coins = clo + Math.floor(Math.random() * (chi - clo + 1))
   coinSvc.earnCoins(coins, `${BOX_NAME[box.tier]}开箱`)
   box.coins = coins
@@ -138,6 +150,6 @@ export function openOneByTier(tier) {
   let item = null
   const dropRate = BOX_DROP[box.tier] ?? 0.45
   if (Math.random() < dropRate) item = itemSvc.giveRandomItem()
-  audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes, coins, item: item?.key || null })
-  return { tier: box.tier, minutes, coins, item }
+  audit(child().id, 'box', box.id, 'open', { tier: box.tier, minutes, coins, item: item?.key || null, coinsOnly: !!box.coinsOnly })
+  return { tier: box.tier, minutes, coins, item, coinsOnly: !!box.coinsOnly }
 }

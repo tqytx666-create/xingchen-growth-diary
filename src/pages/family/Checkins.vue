@@ -15,20 +15,26 @@ const STATUS = {
 function task(c) { return db.tasks.find(t => t.id === c.task_id) }
 function actor(id) { return db.users.find(u => u.id === id)?.display_name || '' }
 
-// 外教课确认:用内联弹窗收游戏分钟(window.prompt 在 iOS 独立 PWA 里会被禁,导致无法确认)
-const lessonModal = ref(null)   // 待输入分钟的外教课打卡
-const lessonMin = ref(45)
+// 外教课 / 运动确认:用内联弹窗收分钟(window.prompt 在 iOS 独立 PWA 里会被禁)
+// mode: 'lesson'=外教课换游戏时间;'sport'=运动时长(换等量游戏时间,满60分钟开箱升钻石)
+const minuteModal = ref(null)   // 待输入分钟的打卡
+const minuteMode = ref('lesson')
+const minuteVal = ref(45)
+const minuteUI = computed(() => minuteMode.value === 'sport'
+  ? { title: '🏃 确认运动打卡', tip: '运动了多久?换等量游戏时间存入时间银行(满 60 分钟那次开箱直升钻石宝箱)。', chips: [15, 30, 45, 60] }
+  : { title: '📘 确认英语外教课', tip: '这节课换多少游戏时间?确认后自动存入时间银行。', chips: [25, 30, 45, 60] })
 function confirm(c) {
   const t = task(c)
-  if (t?.lesson) { lessonModal.value = c; lessonMin.value = 45 }
+  if (t?.lesson) { minuteMode.value = 'lesson'; minuteVal.value = 45; minuteModal.value = c }
+  else if (t?.category === 'sport') { minuteMode.value = 'sport'; minuteVal.value = 30; minuteModal.value = c }
   else { vs.confirm(c.id, me.value.id); toast('已确认属实 ✅') }
 }
-function doLessonConfirm() {
-  const c = lessonModal.value; if (!c) return
-  const m = Math.max(0, Math.round(Number(lessonMin.value) || 0))
+function doMinuteConfirm() {
+  const c = minuteModal.value; if (!c) return
+  const m = Math.max(0, Math.round(Number(minuteVal.value) || 0))
   vs.confirm(c.id, me.value.id, m)
   toast(m > 0 ? `已确认 ✅ 游戏时间 +${m} 分钟` : '已确认 ✅')
-  lessonModal.value = null
+  minuteModal.value = null
 }
 // 标记虚报:同样用内联确认弹窗替代 window.confirm
 const falseModal = ref(null)
@@ -56,6 +62,8 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
           <div style="font-size:15px;font-weight:600">{{ task(c)?.name }}
             <span v-if="task(c)?.task_type==='main'" style="font-size:10px;color:#ffd86b">主线</span>
             <span v-if="task(c)?.lesson" style="font-size:10px;color:#8be9ff">外教课</span>
+            <span v-if="task(c)?.category==='sport'" style="font-size:10px;color:#6bffb0">🏃运动</span>
+            <span v-if="c.game_minutes" style="font-size:10px;color:#9fe4ff">+{{ c.game_minutes }}分钟</span>
             <span v-if="c.make_up" style="font-size:10px;color:#c79bff">📅补卡</span>
           </div>
           <div class="dim" style="font-size:11px">{{ c.checkin_date }} · 自报 {{ fmtDateTime(c.self_reported_at) }}</div>
@@ -81,19 +89,19 @@ function revoke(c) { vs.revoke(c.id, me.value.id); toast('已撤销核验') }
       <img :src="lightbox" alt="打卡照片" style="max-width:100%;max-height:100%;border-radius:12px" />
     </div>
 
-    <!-- 外教课:确认并换游戏时间 -->
-    <div v-if="lessonModal" class="ck-overlay" @click.self="lessonModal=null">
+    <!-- 外教课 / 运动:确认并录分钟换游戏时间 -->
+    <div v-if="minuteModal" class="ck-overlay" @click.self="minuteModal=null">
       <div class="ck-sheet">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px">📘 确认英语外教课</div>
-        <div class="dim" style="font-size:12px;margin-bottom:14px">这节课换多少游戏时间?确认后自动存入时间银行。</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px">{{ minuteUI.title }}</div>
+        <div class="dim" style="font-size:12px;margin-bottom:14px">{{ minuteUI.tip }}</div>
         <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px">
-          <button v-for="p in [25,30,45,60]" :key="p" class="ck-chip" :class="{ on: lessonMin==p }" @click="lessonMin=p">{{ p }}</button>
+          <button v-for="p in minuteUI.chips" :key="p" class="ck-chip" :class="{ on: minuteVal==p }" @click="minuteVal=p">{{ p }}</button>
         </div>
-        <input v-model.number="lessonMin" type="number" min="0" inputmode="numeric"
+        <input v-model.number="minuteVal" type="number" min="0" inputmode="numeric"
                style="text-align:center;font-size:18px;font-weight:700" />
-        <div class="dim" style="font-size:11px;margin-top:6px">分钟</div>
-        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" @click="doLessonConfirm">确认 · 换 {{ Math.max(0, Math.round(Number(lessonMin)||0)) }} 分钟</button>
-        <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="lessonModal=null">取消</button>
+        <div class="dim" style="font-size:11px;margin-top:6px">分钟{{ minuteMode==='sport' && Number(minuteVal)>=60 ? ' · 满60分钟,这次开箱升钻石宝箱 💎' : '' }}</div>
+        <button class="btn-accent" style="width:100%;padding:11px;margin-top:14px" @click="doMinuteConfirm">确认 · 换 {{ Math.max(0, Math.round(Number(minuteVal)||0)) }} 分钟游戏时间</button>
+        <button class="btn-ghost" style="width:100%;padding:9px;margin-top:8px" @click="minuteModal=null">取消</button>
       </div>
     </div>
 

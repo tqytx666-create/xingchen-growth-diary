@@ -14,17 +14,22 @@ function getTask(checkin) { return db.tasks.find(t => t.id === checkin.task_id) 
 
 // 确认属实:解锁宠物互动(道具出现在宠物页),加诚信分。
 // 英语上课(lesson)可传 gameMinutes:确认时把这节课换成的游戏时间存进时间银行。
-export function confirm(checkinId, actorId, gameMinutes) {
+export function confirm(checkinId, actorId, minutes) {
   const c = db.checkins.find(x => x.id === checkinId); if (!c) return
   const task = getTask(c)
   c.status = 'confirmed'; c.verified_by = actorId; c.verified_at = nowISO()
   log(checkinId, actorId, 'confirm')
   creditSvc.applyConfirm(checkinId, actorId)
-  if (task?.lesson && gameMinutes > 0) {
-    bankSvc.addBonus({ minutes: gameMinutes, description: `英语外教课:${task.name}`, createdBy: actorId })
-    c.game_minutes = gameMinutes
+  const m = Math.max(0, Math.round(Number(minutes) || 0))
+  if (task?.lesson && m > 0) {
+    bankSvc.addBonus({ minutes: m, description: `英语外教课:${task.name}`, createdBy: actorId })
+    c.game_minutes = m
+  } else if (task?.category === 'sport' && m > 0) {
+    bankSvc.addBonus({ minutes: m, description: `运动:${task.name}(${m}分钟)`, createdBy: actorId })
+    c.game_minutes = m
+    c.exercise_minutes = m   // 供开箱判定:运动≥60分钟那次升钻石宝箱
   }
-  audit(actorId, 'checkin', checkinId, 'confirm', { task: task?.name, gameMinutes: gameMinutes || 0 })
+  audit(actorId, 'checkin', checkinId, 'confirm', { task: task?.name, minutes: m })
 }
 
 export function markFalse(checkinId, actorId, reason) {

@@ -66,7 +66,7 @@ function done() { if (opened.value) emit('close') }
               <span class="prize-unit">星币<br>去商城买</span>
             </div>
           </div>
-          <div class="box-sub">游戏时间已存银行{{ coins ? ',星币已到账,可去🛍️商城花' : '' }}</div>
+          <div class="box-sub">{{ minutes ? '游戏时间已存银行' : '' }}{{ coins ? (minutes ? ',' : '') + '星币已到账,可去🛍️商城花' : '' }}</div>
           <div class="box-tap">轻触关闭</div>
         </div>
       </transition>
