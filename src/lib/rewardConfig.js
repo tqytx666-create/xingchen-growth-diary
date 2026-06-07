@@ -12,3 +12,14 @@ export const REWARDS = [
 export function metricValue(r, s) {
   return r.metric === 'week' ? s.current_week_count : Math.max(s.longest_streak, s.current_streak)
 }
+
+// 连续英语打卡「里程碑大奖」:达成当天自动到账(宝箱 + 星币),并提示去领对应特权卡。
+// 设计:偏星币(只能商城消费)+ 特权卡(现实特权,不给游戏时间),游戏时间只靠宝箱给一点点,
+// 避免"奖励一堆游戏时间被马上花掉"。21 天=习惯养成里程碑,给最高级钻石宝箱,是英雄级节点。
+export const STREAK_MILESTONES = [
+  { days: 7,  box: 'gold',    coins: 50,  title: '坚持一整周啦!',           privilege: '名创优品小奖励' },
+  { days: 14, box: 'gold',    coins: 100, title: '两周不间断,真稳!',         privilege: '家庭活动选择权' },
+  { days: 21, box: 'diamond', coins: 200, title: '21 天 · 习惯养成里程碑!',   privilege: '👑 国王日特权卡', hero: true },
+  { days: 30, box: 'diamond', coins: 300, title: '满一个月,了不起!',         privilege: '🎁 150 元以内大奖' }
+]
+export const BOX_LABEL = { silver: '🥈 银宝箱', gold: '🥇 金宝箱', diamond: '💎 钻石宝箱' }

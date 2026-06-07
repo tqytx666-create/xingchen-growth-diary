@@ -9,6 +9,7 @@ import PetAvatar from '../../components/pet/PetAvatar.vue'
 import CountUp from '../../components/CountUp.vue'
 import TaskRow from '../../components/child/TaskRow.vue'
 import CoinIcon from '../../components/CoinIcon.vue'
+import { BOX_LABEL } from '../../lib/rewardConfig.js'
 import LivingPet from '../../components/pet/LivingPet.vue'
 import { livingSet, actionForAnim } from '../../lib/living.js'
 import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
@@ -52,6 +53,9 @@ const charmVal = computed(() => charmTotal(a.value.charm, skinCount.value, dexUn
 const bestStreak = computed(() => (streakRow()?.longest_streak) || 0)
 const disciplineVal = computed(() => Math.round((a.value.discipline || 0) + bestStreak.value))
 const attrVal = (key) => key === 'charm' ? charmVal.value : key === 'discipline' ? disciplineVal.value : a.value[key]
+// 连续打卡里程碑庆祝(由 streakService 在达成当天写入 db.pending_milestones)
+const milestone = computed(() => (db.pending_milestones || [])[0] || null)
+function closeMilestone() { if (db.pending_milestones && db.pending_milestones.length) db.pending_milestones.shift() }
 
 // 诚信分记录(点顶部"信任"徽章打开)
 const creditOpen = ref(false)
@@ -459,6 +463,22 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 连续打卡里程碑大奖庆祝 -->
+    <div v-if="milestone" class="ms-overlay" @click.self="closeMilestone">
+      <div class="ms-card" :class="{ hero: milestone.hero }">
+        <div class="ms-fire">{{ milestone.hero ? '🏆' : '🎉' }}</div>
+        <div class="ms-days">连续英语打卡 <b>{{ milestone.days }}</b> 天</div>
+        <div class="ms-title">{{ milestone.title }}</div>
+        <div v-if="milestone.hero" class="ms-sub">科学说坚持 21 天就养成习惯啦,你做到了!🌟</div>
+        <div class="ms-rewards">
+          <div class="ms-rw"><span class="ms-ic">{{ milestone.box==='diamond' ? '💎' : '🥇' }}</span><div class="ms-rt"><b>{{ BOX_LABEL[milestone.box] }} ×1</b><small>去奖励页开箱</small></div></div>
+          <div class="ms-rw"><CoinIcon class="ms-ic" /><div class="ms-rt"><b>星币 +{{ milestone.coins }}</b><small>已到账 · 商城里花</small></div></div>
+          <div v-if="milestone.privilege" class="ms-rw"><span class="ms-ic">🎖️</span><div class="ms-rt"><b>{{ milestone.privilege }}</b><small>去奖励页领取</small></div></div>
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:4px;padding:12px;font-size:15px" @click="closeMilestone">太棒了,继续坚持 🔥</button>
+      </div>
+    </div>
+
     <!-- 二级打卡页:点分类卡弹出,在这里分别打卡 -->
     <div v-if="openGroup" class="grp-overlay" @click.self="openGroup=null">
       <div class="grp-sheet">
@@ -580,6 +600,28 @@ onMounted(() => {
 .bal-num { font-size: 19px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bal-lb { font-size: 10px; color: rgba(255,255,255,.55); white-space: nowrap; margin-left: 1px; }
 .bal-div { height: 1px; background: rgba(255,255,255,.1); margin: 4px 0; }
+/* 连续打卡里程碑大奖庆祝弹窗 */
+.ms-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px;
+  background: rgba(6,4,16,.82); backdrop-filter: blur(5px); animation: msf .25s ease; }
+.ms-card { width: 100%; max-width: 330px; border-radius: 24px; padding: 24px 20px 18px; text-align: center;
+  background: radial-gradient(130% 90% at 50% 0%, rgba(124,107,255,.4), transparent 62%), #16121f;
+  border: 1px solid rgba(255,255,255,.14); box-shadow: 0 18px 60px -16px rgba(124,107,255,.6); }
+.ms-card.hero { background: radial-gradient(130% 90% at 50% 0%, rgba(255,200,90,.42), transparent 64%), #1b1530;
+  border-color: rgba(255,216,107,.55); box-shadow: 0 18px 60px -14px rgba(255,200,90,.55); }
+.ms-fire { font-size: 56px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(255,200,90,.5)); animation: msPop .5s cubic-bezier(.2,1.5,.4,1); }
+.ms-days { font-size: 14px; color: rgba(255,255,255,.85); margin-top: 8px; }
+.ms-days b { font-size: 22px; color: #ffd86b; font-variant-numeric: tabular-nums; }
+.ms-title { font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: #fff; }
+.ms-sub { font-size: 12px; color: rgba(255,255,255,.7); line-height: 1.5; margin-bottom: 6px; }
+.ms-rewards { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 16px; }
+.ms-rw { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 13px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); text-align: left; }
+.ms-ic { font-size: 24px; width: 28px; text-align: center; flex-shrink: 0; }
+.ms-rt { display: flex; flex-direction: column; line-height: 1.25; }
+.ms-rt b { font-size: 14px; font-weight: 700; }
+.ms-rt small { font-size: 11px; color: rgba(255,255,255,.5); }
+@keyframes msf { from { opacity: 0 } to { opacity: 1 } }
+@keyframes msPop { 0% { transform: scale(0) rotate(-20deg) } 100% { transform: scale(1) rotate(0) } }
 /* 今日任务分类卡(像商城小卡)+ 二级打卡弹窗 */
 .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
 .cat-card { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 16px 10px; border-radius: 16px; cursor: pointer;

@@ -4,11 +4,12 @@ import { tierFromLevel } from './petConfig.js'
 
 export const SEED_VERSION = 4
 // demo 专用版本:只控制 demo 本地是否重建种子,不参与云端同步门控(改它不影响线上真实数据)
-export const DEMO_SEED_VERSION = 2
+export const DEMO_SEED_VERSION = 3
 
 // Demo 版(分享给朋友看):全解锁、有基础数据、打卡免确认。基于正式种子覆盖。
 export function buildDemoSeed() {
   const s = buildSeed()
+  const day = k => new Date(Date.now() - k * 86400000).toISOString()
   s.coins = 9999
   s.owned_skins = ['default', ...SKIN_TRACK.map(x => x.key)]
   s.owned_rooms = ['night', ...ROOM_TRACK.map(x => x.key)]
@@ -18,9 +19,10 @@ export function buildDemoSeed() {
   if (p) { p.level = 29; p.exp = 100; p.stage_idx = tierFromLevel(29); p.mood = 'happy' }
   const pa = s.pet_attributes[0]
   if (pa) { pa.wisdom = 88; pa.cleanliness = 72; pa.vitality = 65; pa.charm = 30; pa.discipline = 40 }
-  if (s.streaks[0]) { s.streaks[0].current_streak = 12; s.streaks[0].longest_streak = 45; s.streaks[0].total_main_checkin_days = 60 }
+  if (s.streaks[0]) { s.streaks[0].current_streak = 21; s.streaks[0].longest_streak = 45; s.streaks[0].total_main_checkin_days = 60; s.streaks[0].milestones_claimed = [7, 14] }
+  // demo:预置一个「21天习惯养成」庆祝,打开就看到高光时刻(关掉后不再弹)
+  s.pending_milestones = [{ days: 21, box: 'diamond', coins: 200, title: '21 天 · 习惯养成里程碑!', privilege: '👑 国王日特权卡', hero: true, at: day(0) }]
   // demo 样例时间流水(近一周,让时间银行统计/图表是活的)
-  const day = k => new Date(Date.now() - k * 86400000).toISOString()
   s.time_bank_accounts[0].current_balance_minutes = 480
   s.time_bank_accounts[0].last_interest_date = day(10).slice(0, 10)   // 纯日期(daysBetween需要);攒了10天利息≈48分钟可收
   // demo 送每款宝箱 14 个,去奖励页点开看效果
@@ -80,7 +82,7 @@ export function buildSeed() {
   const streak = {
     id: 'streak_1', child_id: child.id, main_task_id: tEnglish.id,
     current_streak: 0, longest_streak: 0, total_main_checkin_days: 0,
-    current_week_start: weekStart(todayStr()), current_week_count: 0, updated_at: nowISO()
+    current_week_start: weekStart(todayStr()), current_week_count: 0, milestones_claimed: [], updated_at: nowISO()
   }
 
   const credit = { id: 'credit_1', child_id: child.id, credit_score: 100, credit_level: '完全信任', reward_discount_rate: 1, updated_at: nowISO() }
@@ -109,6 +111,7 @@ export function buildSeed() {
       { streak: 30, reward_name: '150 元以内大奖' }
     ],
     weekly_claims: [],
+    pending_milestones: [],
     boxes: [],
     coins: 0,
     items: { bone: 2, fish: 2, ball: 1, wand: 1 },

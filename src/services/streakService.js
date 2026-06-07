@@ -1,5 +1,7 @@
 import { db, streak, mainTask, child } from '../lib/store.js'
-import { todayStr, weekStart, addDays, nowISO } from '../lib/util.js'
+import { todayStr, weekStart, addDays, nowISO, uid } from '../lib/util.js'
+import { STREAK_MILESTONES } from '../lib/rewardConfig.js'
+import * as coinSvc from './coinService.js'
 
 // 算"英语主线"的任务:英语自学(main) 或 英语外教课(lesson)——任一完成当天就算主线有进行,签到续上
 // 英语主线:英语自学 / 外教课 / 百词斩 / ABC Reading 等任一(category==='english')完成即续签
@@ -48,6 +50,27 @@ export function recompute() {
   }
   s.longest_streak = Math.max(longest, s.longest_streak || 0)
   s.updated_at = nowISO()
+
+  grantStreakMilestones(s)
+}
+
+// 连续打卡里程碑大奖:到达 days 当天自动发「宝箱 + 星币」并入庆祝队列(每个里程碑只发一次)。
+// 特权卡仍走奖励页申请(达成后自动解锁可领)。返回新触发的里程碑数组。
+export function grantStreakMilestones(s = streak()) {
+  if (!Array.isArray(s.milestones_claimed)) s.milestones_claimed = []
+  if (!Array.isArray(db.pending_milestones)) db.pending_milestones = []
+  if (!Array.isArray(db.boxes)) db.boxes = []
+  const fired = []
+  for (const m of STREAK_MILESTONES) {
+    if (s.current_streak >= m.days && !s.milestones_claimed.includes(m.days)) {
+      s.milestones_claimed.push(m.days)
+      db.boxes.unshift({ id: uid('bx_'), tier: m.box, source_task: `连续${m.days}天里程碑`, earned_at: nowISO(), opened_at: null, minutes: null })
+      coinSvc.earnCoins(m.coins, `连续${m.days}天里程碑奖励`)
+      db.pending_milestones.push({ days: m.days, box: m.box, coins: m.coins, title: m.title, privilege: m.privilege, hero: !!m.hero, at: nowISO() })
+      fired.push(m.days)
+    }
+  }
+  return fired
 }
 
 // 每日"全勤"要求的支线任务:早刷牙+晚刷牙+洗澡+房间整洁(洗头是3天一次、羽毛球无每日要求,均不计)
