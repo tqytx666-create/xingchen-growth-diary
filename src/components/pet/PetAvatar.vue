@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { mainImage } from '../../lib/petImages.js'
 import { ANIM, BLEND_VIDEO_OK, STAGE_IDLE, SKIN_IDLE } from '../../lib/petAnims.js'
-import { isLow, sizeForLevel, animClassForLevel, HEALTH_SICK } from '../../lib/petConfig.js'
+import { isLow, animClassForLevel, HEALTH_SICK } from '../../lib/petConfig.js'
 
 const props = defineProps({
   pet: { type: Object, required: true },
@@ -16,7 +16,8 @@ const props = defineProps({
 const emit = defineEmits(['pet'])
 
 const img = computed(() => mainImage(props.pet, props.attrs))
-const px = computed(() => props.size || sizeForLevel(props.pet.level || 1))
+// 固定尺寸:不再随等级放大(高等级会撑出房间环境)。外部可用 size 覆盖。
+const px = computed(() => props.size || 168)
 
 const stageIdx = computed(() => props.pet.stage_idx || 0)
 // 生病:已孵化 + 健康 ≤ 生病线 → 病恹恹(回落静态图 + 滤镜 + 🤒)
