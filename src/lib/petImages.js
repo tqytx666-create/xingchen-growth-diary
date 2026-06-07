@@ -41,7 +41,7 @@ import skBunny from '../assets/skin/skin_bunny.png'
 import skUnicorn from '../assets/skin/skin_unicorn.png'
 import skMermaid from '../assets/skin/skin_mermaid.png'
 
-import { FORMS, effectiveStage } from './petConfig.js'
+import { FORMS, effectiveStage, speciesKey } from './petConfig.js'
 export const IMG = { base, egg, wisdom, clean, sport, charm, god, evo2, evo3, evo4, evo5 }
 // 各形态 key→图(f6~f14 暂无专属图,回落御星 evo5)
 const FORM_IMG_MAP = { egg, base, evo2, evo3, evo4, evo5, f6, f7, f8, f9, f10, f11, f12, f13, f14, god }
@@ -83,6 +83,14 @@ export const FURNITURE = [
 // 各阶段(stage_idx)对应形态图,由 FORMS 派生;缺图回落御星
 export const STAGE_IMG = FORMS.map(f => FORM_IMG_MAP[f.key] || evo5)
 
+// 多物种立绘表:按 species_key 取一套阶段图;新物种暂无图则回落 dog(STAGE_IMG)。
+// 下一轮即梦出第2物种立绘后,在此加 dragon: [...]/ cat: [...] 即可。
+const SPECIES_IMG = { dog: STAGE_IMG }
+export function stageImageFor(sKey, stage) {
+  const arr = SPECIES_IMG[sKey] || STAGE_IMG
+  return arr[stage] || arr[arr.length - 1] || STAGE_IMG[STAGE_IMG.length - 1]
+}
+
 // 签到皮肤跑道:按"累计英语签到天数"解锁,在签到页像每日登录奖励一样展示
 export const SKIN_TRACK = [
   { key: 'bow',    name: '粉蝴蝶结', emoji: '🎀', days: 3,  img: skBow },
@@ -111,7 +119,7 @@ export const SKIN_TRACK = [
 export function mainImage(pet, attrs) {
   if ((pet.stage_idx || 0) <= 0) return IMG.egg
   if (pet.skin && pet.skin !== 'default') return skinImage(pet.skin)
-  return STAGE_IMG[effectiveStage(pet)] || IMG.base
+  return stageImageFor(speciesKey(pet), effectiveStage(pet)) || IMG.base
 }
 
 // 图鉴每个形态对应的图(对齐 petConfig.FORMS 的 key;新形态回落御星)

@@ -48,6 +48,24 @@ export function effectiveStage(pet) {
   return (d != null && d >= 1 && d <= s) ? d : s
 }
 
+// ===== 多物种(化身可以是不同动物)=====
+// 设计:等级/经验/阶段/进化"数学结构"所有物种共享(同样 16 段、同样 lv 节点),
+// 只有"形态名 + 立绘图 + 活动画"按物种区分。新物种缺图时回落到 dog,不会破图。
+// pet.species_key 决定物种;老存档无该字段时默认 'dog'(见 store.ensurePet)。
+export const SPECIES = {
+  dog: { key: 'dog', name: '星愿犬', emoji: '🐶', forms: FORMS }
+  // 下一轮接入:dragon(星愿龙)/ cat(星愿猫)…,各自 forms 同结构、不同名,配套即梦立绘
+}
+export const SPECIES_LIST = Object.values(SPECIES)
+export function speciesKey(pet) { return (pet && pet.species_key) || 'dog' }
+export function speciesMeta(key) { return SPECIES[key] || SPECIES.dog }
+export function formsOf(key) { return (SPECIES[key] || SPECIES.dog).forms }
+// 某宠物当前形态名(按物种取;缺则回落 dog 名)
+export function formNameOf(pet, stage) {
+  const f = formsOf(speciesKey(pet))[stage] || FORMS[stage]
+  return f ? f.name : ''
+}
+
 // 体型随等级从小到大
 export function sizeForLevel(level, max = 200) {
   const t = Math.min(1, (level - 1) / (MAX_LEVEL - 1))

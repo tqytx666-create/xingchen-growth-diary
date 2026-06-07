@@ -1,6 +1,6 @@
 import { reactive, watch, ref } from 'vue'
 import { buildSeed, buildDemoSeed, SEED_VERSION, DEMO_SEED_VERSION } from './seed.js'
-import { nowISO } from './util.js'
+import { nowISO, todayStr } from './util.js'
 import { supabase } from './supabase.js'
 
 // Demo 模式:URL 带 ?demo —— 全解锁、本地独立数据、绝不连真实云端(防污染小鱼数据)
@@ -47,7 +47,16 @@ function ensureTasks() {
   const te = db.tasks.find(t => t.id === 't_english')
   if (te && te.name === '英语学习一课') te.name = '孙立志老师课程'
 }
+// 宠物字段迁移:老存档补上多物种/健康新字段(只加默认,不动已有进度)
+function ensurePet() {
+  const p = Array.isArray(db.pet_profile) ? db.pet_profile[0] : null
+  if (!p) return
+  if (!p.species_key) p.species_key = 'dog'
+  if (p.health == null) p.health = 100
+  if (!p.last_decay_date) p.last_decay_date = todayStr()
+}
 ensureTasks()
+ensurePet()
 export const syncState = reactive({ online: false, syncing: false })
 
 // ---- 同步内部状态 ----
@@ -68,6 +77,7 @@ function applyRemote(obj) {
   const fresh = buildSeed()
   for (const k in fresh) if (db[k] === undefined) db[k] = fresh[k]
   ensureTasks()   // 远端数据可能没有新任务,本地补齐
+  ensurePet()     // 远端宠物补上多物种/健康新字段
   lastSerialized = JSON.stringify(stripVolatile(db))
   localStorage.setItem(LS_KEY, lastSerialized)
   setTimeout(() => { suppress = false }, 0)
