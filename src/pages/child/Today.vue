@@ -324,7 +324,7 @@ onMounted(() => {
     <!-- 宠物舞台 -->
     <div id="homeStage" class="card" style="position:relative;border-radius:28px;padding:16px;margin-bottom:12px;overflow:hidden"
          :style="p.risk>=2 ? 'background:radial-gradient(100% 80% at 50% 0%, rgba(255,122,122,.28), transparent 60%), rgba(40,10,20,.35)' : isLow(p) ? 'background:rgba(0,0,0,.3)' : 'background:radial-gradient(120% 80% at 50% 0%, rgba(124,107,255,.35), transparent 60%), rgba(0,0,0,.18)'">
-      <div style="position:relative;z-index:6;display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="position:relative;z-index:6;display:flex;justify-content:space-between;align-items:stretch;gap:8px">
         <div class="pet-id">
           <div class="pet-id-top">
             <span class="pet-id-name">{{ p.name }}</span>
@@ -586,14 +586,14 @@ onMounted(() => {
 .attr-card:active { transform: scale(.97); }
 /* 宠物名片 + 房间 HUD(时间/星币) */
 .pet-id { min-width: 0; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px);
-  border-radius: 14px; padding: 7px 12px; }
+  border-radius: 14px; padding: 7px 12px; display: flex; flex-direction: column; justify-content: center; }
 .pet-id-top { display: flex; align-items: baseline; gap: 7px; }
 .pet-id-name { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pet-id-lv { font-size: 11px; font-weight: 800; color: #1a1426; background: linear-gradient(90deg,#ffd86b,#ffb347); border-radius: 999px; padding: 1px 8px; flex-shrink: 0; }
 .pet-id-sub { font-size: 11px; color: rgba(255,255,255,.65); margin-top: 3px; white-space: nowrap; }
 /* 余额名片:跟宠物名片同款两行卡片(上行=时间银行,下行=星币) */
 .bal-card { flex-shrink: 0; min-width: 116px; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12);
-  backdrop-filter: blur(6px); border-radius: 14px; padding: 6px 12px; }
+  backdrop-filter: blur(6px); border-radius: 14px; padding: 6px 12px; display: flex; flex-direction: column; justify-content: center; }
 .bal-row { display: flex; align-items: center; gap: 5px; cursor: pointer; transition: transform .12s ease; padding: 1px 0; }
 .bal-row:active { transform: scale(.95); }
 .bal-ic { font-size: 15px; line-height: 1; display: inline-flex; align-items: center; }
