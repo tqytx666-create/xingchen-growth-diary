@@ -65,6 +65,15 @@ const sources = computed(() => {
   const max = Math.max(1, ...arr.map(x => x.val))
   return arr.map(x => ({ ...x, pct: Math.round(x.val / max * 100) }))
 })
+// 收益分析:近10天双向涨跌柱(红收入/绿支出)——与孩子端时间银行同款
+const chartDays = computed(() => { const now = new Date(), res = []; for (let i = 9; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate() - i); res.push({ key: todayStr(d), label: `${d.getMonth() + 1}/${d.getDate()}` }) } return res })
+const chart = computed(() => {
+  const inc = {}, exp = {}
+  for (const t of txns.value) { const d = localDay(t.created_at); if (!d) continue; const m = t.screen_minutes || 0; if (m >= 0) inc[d] = (inc[d] || 0) + m; else exp[d] = (exp[d] || 0) - m }
+  return chartDays.value.map(x => ({ ...x, income: Math.round(inc[x.key] || 0), expense: Math.round(exp[x.key] || 0) }))
+})
+const cmax = computed(() => Math.max(1, ...chart.value.flatMap(d => [d.income, d.expense])))
+function barH(v) { return v > 0 ? Math.max(3, Math.round(v / cmax.value * 30)) : 0 }
 const UP = '#ff5b5b', DOWN = '#2fcf86'
 const recentFlow = computed(() => txns.value.slice(0, 6))
 const META = { deposit: '🏃 运动存入', interest: '💎 利息', bonus: '🎁 奖励', withdraw: '🎮 玩游戏', penalty: '➖ 扣减' }
@@ -143,6 +152,20 @@ const META = { deposit: '🏃 运动存入', interest: '💎 利息', bonus: '�
         <div style="font-size:38px;font-weight:800;color:#ffd86b;line-height:1">{{ balance }}</div>
         <div class="dim" style="font-size:12px;margin-top:2px">分钟可玩 · 约 {{ Math.floor(balance/60) }} 小时 {{ balance%60 }} 分</div>
       </div>
+      <!-- 收益分析:双向涨跌柱 -->
+      <div class="dim" style="font-size:12px;margin-bottom:8px">📈 近 10 天收益分析(红涨绿跌):</div>
+      <div class="cv-chart">
+        <div v-for="d in chart" :key="d.key" class="cv-col">
+          <div class="cv-up"><b v-if="d.income" class="cv-num" :style="{color:UP}">+{{ d.income }}</b><span class="cv-bar" :style="{ height: barH(d.income)+'px', background: UP, borderRadius:'4px 4px 0 0' }"></span></div>
+          <div class="cv-base"></div>
+          <div class="cv-down"><span class="cv-bar" :style="{ height: barH(d.expense)+'px', background: DOWN, borderRadius:'0 0 4px 4px' }"></span><b v-if="d.expense" class="cv-num" :style="{color:DOWN}">-{{ d.expense }}</b></div>
+          <div class="cv-lb">{{ d.label }}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:16px;margin:6px 0 12px;font-size:11px">
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#ff5b5b"></i> 收入</span>
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#2fcf86"></i> 支出</span>
+      </div>
       <div v-if="sources.length">
         <div class="dim" style="font-size:12px;margin-bottom:8px">时间都从哪来:</div>
         <div v-for="s in sources" :key="s.label" style="margin-bottom:9px">
@@ -173,4 +196,13 @@ const META = { deposit: '🏃 运动存入', interest: '💎 利息', bonus: '�
 .bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
 .bar i { display: block; height: 100%; border-radius: 999px; transition: width .5s ease; }
 .chip { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+/* 收益分析双向柱 */
+.cv-chart { display: flex; gap: 3px; }
+.cv-col { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.cv-up { height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.cv-down { height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.cv-base { height: 1px; width: 100%; background: rgba(255,255,255,.2); }
+.cv-bar { width: 60%; max-width: 15px; flex: none; transition: height .4s ease; }
+.cv-num { font-size: 9px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.cv-lb { font-size: 8px; color: rgba(255,255,255,.5); margin-top: 2px; white-space: nowrap; }
 </style>
