@@ -53,10 +53,14 @@ const GOD = { idle: g_walk, brush: g_brush, study: g_study, bath: g_bath, eat: g
 
 // 形态(stage_idx)→ 活视频套。新编号:1幼犬…5御星,15神犬;中间新形态(6-14)暂回落御星活视频
 const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 15: GOD }
-// 活皮肤(优先于形态);以后一套套补。只做2段:idle溜达 + 摸摸反应(其余动作复用摸摸)
-// eslint-disable-next-line no-unused-vars
+// 活皮肤(优先于形态);逐款补。每款2段:idle溜达 + 摸摸开心(其余动作复用开心)
 function skinSet(walk, happy) { return { idle: walk, happy, brush: happy, study: happy, bath: happy, eat: happy } }
-const SKIN_SETS = {}   // mermaid 视频待用新图重做后再加回
+// 🎀 粉蝴蝶结
+import sk_bow_walk from '../assets/living/skin_bow_walk.mp4'
+import sk_bow_happy from '../assets/living/skin_bow_happy.mp4'
+const SKIN_SETS = {
+  bow: skinSet(sk_bow_walk, sk_bow_happy)
+}
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
 export function livingSet(pet) {
