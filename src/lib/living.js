@@ -70,12 +70,16 @@ import sk_sleep_happy from '../assets/living/skin_sleep_happy.mp4'
 // 🧚 精灵翅膀
 import sk_wings_walk from '../assets/living/skin_wings_walk.mp4'
 import sk_wings_happy from '../assets/living/skin_wings_happy.mp4'
+// 🧙 小魔法师
+import sk_wizard_walk from '../assets/living/skin_wizard_walk.mp4'
+import sk_wizard_happy from '../assets/living/skin_wizard_happy.mp4'
 const SKIN_SETS = {
   bow: skinSet(sk_bow_walk, sk_bow_happy),
   scarf: skinSet(sk_scarf_walk, sk_scarf_happy),
   rain: skinSet(sk_rain_walk, sk_rain_happy),
   sleep: skinSet(sk_sleep_walk, sk_sleep_happy),
-  wings: skinSet(sk_wings_walk, sk_wings_happy)
+  wings: skinSet(sk_wings_walk, sk_wings_happy),
+  wizard: skinSet(sk_wizard_walk, sk_wizard_happy)
 }
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
