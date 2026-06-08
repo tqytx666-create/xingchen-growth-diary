@@ -8,6 +8,7 @@ import { toast } from '../../lib/toast.js'
 import { sfx } from '../../lib/sound.js'
 import CountUp from '../../components/CountUp.vue'
 import CoinIcon from '../../components/CoinIcon.vue'
+import CoinLedger from '../../components/child/CoinLedger.vue'
 
 const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())
@@ -49,6 +50,9 @@ function redeem(w) {
     <div class="card" style="padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
       完成打卡赚星币(英语主线 +10<CoinIcon /> · 其它打卡 +5<CoinIcon /> · 开宝箱还会多送),在这里买喜欢的皮肤、房间、家具和道具,星币只能靠努力赚哦~
     </div>
+
+    <!-- 星币收支分析 -->
+    <CoinLedger />
 
     <!-- 心愿兑换:用星币换现实里想要的东西 -->
     <div style="margin-bottom:22px">
