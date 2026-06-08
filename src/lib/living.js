@@ -100,6 +100,9 @@ import sk_angel_happy from '../assets/living/skin_angel_happy.mp4'
 // 🏮 小汉服
 import sk_hanfu_walk from '../assets/living/skin_hanfu_walk.mp4'
 import sk_hanfu_happy from '../assets/living/skin_hanfu_happy.mp4'
+// 🎒 JK校服
+import sk_jk_walk from '../assets/living/skin_jk_walk.mp4'
+import sk_jk_happy from '../assets/living/skin_jk_happy.mp4'
 const SKIN_SETS = {
   bow: skinSet(sk_bow_walk, sk_bow_happy),
   scarf: skinSet(sk_scarf_walk, sk_scarf_happy),
@@ -115,7 +118,8 @@ const SKIN_SETS = {
   chef: skinSet(sk_chef_walk, sk_chef_happy),
   pirate: skinSet(sk_pirate_walk, sk_pirate_happy),
   angel: skinSet(sk_angel_walk, sk_angel_happy),
-  hanfu: skinSet(sk_hanfu_walk, sk_hanfu_happy)
+  hanfu: skinSet(sk_hanfu_walk, sk_hanfu_happy),
+  jk: skinSet(sk_jk_walk, sk_jk_happy)
 }
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
