@@ -9,6 +9,9 @@ import { sfx } from '../../lib/sound.js'
 import CountUp from '../../components/CountUp.vue'
 import CoinIcon from '../../components/CoinIcon.vue'
 import CoinLedger from '../../components/child/CoinLedger.vue'
+import bandImg from '../../assets/wish/band.webp'
+// 心愿兑换的真实图片(有图用图,没有就回落 emoji)
+const WISH_IMG = { band_watchface_first: bandImg, band_watchface_renew: bandImg }
 
 const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())
@@ -58,11 +61,14 @@ function redeem(w) {
     <div style="margin-bottom:22px">
       <div class="sec-head wish-head">🌠 心愿兑换</div>
       <div class="dim" style="font-size:11px;margin:-4px 2px 10px">用星币兑换现实奖励,下单后告诉爸爸妈妈,通过了就兑现给你~</div>
-      <div class="shop-grid">
-        <div v-for="w in wishes" :key="w.key" class="shop-card">
-          <div class="shop-pic"><span style="font-size:40px">{{ w.emoji }}</span></div>
-          <div class="shop-nm">{{ w.name }}</div>
-          <div class="dim" style="font-size:10px;line-height:1.3;min-height:26px;margin-bottom:4px">{{ w.note }}</div>
+      <div class="shop-grid wish-grid">
+        <div v-for="w in wishes" :key="w.key" class="shop-card wish-card">
+          <div class="shop-pic">
+            <img v-if="WISH_IMG[w.key]" :src="WISH_IMG[w.key]" :alt="w.name" loading="lazy" decoding="async" />
+            <span v-else style="font-size:40px">{{ w.emoji }}</span>
+          </div>
+          <div class="shop-nm wish-nm">{{ w.name }}</div>
+          <div class="wish-note">{{ w.note }}</div>
           <button class="shop-buy" :class="{ poor: bal < w.price }" @click="redeem(w)"><CoinIcon /> {{ w.price }}</button>
         </div>
       </div>
@@ -139,4 +145,11 @@ function redeem(w) {
   color: #1a1426; background: linear-gradient(90deg, #ffd86b, #ffb347); cursor: pointer; }
 .shop-buy.poor { background: rgba(255,255,255,.12); color: rgba(255,255,255,.55); }
 .shop-buy.owned { background: rgba(107,255,176,.15); color: #9bffcf; cursor: default; }
+/* 心愿兑换:卡片等高、名字可两行居中、说明固定高度、按钮贴底,框大小统一 */
+.wish-card { display: flex; flex-direction: column; }
+.wish-nm { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25;
+  min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.wish-note { font-size: 10px; line-height: 1.3; color: rgba(255,255,255,.55); height: 40px; overflow: hidden;
+  margin-bottom: 7px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.wish-card .shop-buy { margin-top: auto; }
 </style>
