@@ -64,10 +64,14 @@ import sk_scarf_happy from '../assets/living/skin_scarf_happy.mp4'
 // 🌧️ 黄色雨衣
 import sk_rain_walk from '../assets/living/skin_rain_walk.mp4'
 import sk_rain_happy from '../assets/living/skin_rain_happy.mp4'
+// 😴 星星睡帽
+import sk_sleep_walk from '../assets/living/skin_sleep_walk.mp4'
+import sk_sleep_happy from '../assets/living/skin_sleep_happy.mp4'
 const SKIN_SETS = {
   bow: skinSet(sk_bow_walk, sk_bow_happy),
   scarf: skinSet(sk_scarf_walk, sk_scarf_happy),
-  rain: skinSet(sk_rain_walk, sk_rain_happy)
+  rain: skinSet(sk_rain_walk, sk_rain_happy),
+  sleep: skinSet(sk_sleep_walk, sk_sleep_happy)
 }
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
