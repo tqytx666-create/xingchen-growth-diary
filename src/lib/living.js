@@ -76,6 +76,9 @@ import sk_wizard_happy from '../assets/living/skin_wizard_happy.mp4'
 // 🍓 草莓装
 import sk_berry_walk from '../assets/living/skin_berry_walk.mp4'
 import sk_berry_happy from '../assets/living/skin_berry_happy.mp4'
+// 🦖 小恐龙
+import sk_dino_walk from '../assets/living/skin_dino_walk.mp4'
+import sk_dino_happy from '../assets/living/skin_dino_happy.mp4'
 const SKIN_SETS = {
   bow: skinSet(sk_bow_walk, sk_bow_happy),
   scarf: skinSet(sk_scarf_walk, sk_scarf_happy),
@@ -83,7 +86,8 @@ const SKIN_SETS = {
   sleep: skinSet(sk_sleep_walk, sk_sleep_happy),
   wings: skinSet(sk_wings_walk, sk_wings_happy),
   wizard: skinSet(sk_wizard_walk, sk_wizard_happy),
-  berry: skinSet(sk_berry_walk, sk_berry_happy)
+  berry: skinSet(sk_berry_walk, sk_berry_happy),
+  dino: skinSet(sk_dino_walk, sk_dino_happy)
 }
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
