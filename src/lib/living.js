@@ -57,6 +57,8 @@ import f10_walk from '../assets/living/form_f10_walk.mp4'
 import f10_happy from '../assets/living/form_f10_happy.mp4'
 import f11_walk from '../assets/living/form_f11_walk.mp4'
 import f11_happy from '../assets/living/form_f11_happy.mp4'
+import f12_walk from '../assets/living/form_f12_walk.mp4'
+import f12_happy from '../assets/living/form_f12_happy.mp4'
 const BASE = { idle: b_walk, brush: b_brush, study: b_study, bath: b_bath, eat: b_eat, happy: b_happy }
 const EVO2 = { idle: e2_walk, brush: e2_brush, study: e2_study, bath: e2_bath, eat: e2_eat, happy: e2_happy }
 const EVO3 = { idle: e3_walk, brush: e3_brush, study: e3_study, bath: e3_bath, eat: e3_eat, happy: e3_happy }
@@ -65,7 +67,7 @@ const EVO5 = { idle: e5_walk, brush: e5_brush, study: e5_study, bath: e5_bath, e
 const GOD = { idle: g_walk, brush: g_brush, study: g_study, bath: g_bath, eat: g_eat, happy: g_happy }
 
 // 形态(stage_idx)→ 活视频套。新编号:1幼犬…5御星,15神犬;中间新形态(6-14)暂回落御星活视频
-const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 6: skinSet(f6_walk, f6_happy), 7: skinSet(f7_walk, f7_happy), 8: skinSet(f8_walk, f8_happy), 9: skinSet(f9_walk, f9_happy), 10: skinSet(f10_walk, f10_happy), 11: skinSet(f11_walk, f11_happy), 15: GOD }
+const FORM_SETS = { 1: BASE, 2: EVO2, 3: EVO3, 4: EVO4, 5: EVO5, 6: skinSet(f6_walk, f6_happy), 7: skinSet(f7_walk, f7_happy), 8: skinSet(f8_walk, f8_happy), 9: skinSet(f9_walk, f9_happy), 10: skinSet(f10_walk, f10_happy), 11: skinSet(f11_walk, f11_happy), 12: skinSet(f12_walk, f12_happy), 15: GOD }
 // 活皮肤(优先于形态);逐款补。每款2段:idle溜达 + 摸摸开心(其余动作复用开心)
 function skinSet(walk, happy) { return { idle: walk, happy, brush: happy, study: happy, bath: happy, eat: happy } }
 // 🎀 粉蝴蝶结
