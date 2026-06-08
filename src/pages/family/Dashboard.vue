@@ -1,9 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank, mainTask } from '../../lib/store.js'
+import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank } from '../../lib/store.js'
 import { todayStr } from '../../lib/util.js'
 import { levelInfo, manualAdjust } from '../../services/creditService.js'
+import { isMainStreakTask } from '../../services/streakService.js'
 import { toast } from '../../lib/toast.js'
 import { STAGES, DEX, charmTotal, healthState, HEALTH_MAX } from '../../lib/petConfig.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
@@ -11,9 +12,12 @@ import PetAvatar from '../../components/pet/PetAvatar.vue'
 const router = useRouter()
 const me = computed(() => currentUser())
 const today = todayStr()
-const mt = computed(() => mainTask())
 const todayCheckins = computed(() => db.checkins.filter(c => c.checkin_date === today && c.status !== 'revoked'))
-const englishToday = computed(() => mt.value && todayCheckins.value.find(c => c.task_id === mt.value.id))
+// 英语主线:三项(自学/外教课/每日作业)任一完成即算今天主线过了(与连签 isMainStreakTask 口径一致)
+const englishToday = computed(() => {
+  const eng = todayCheckins.value.filter(c => isMainStreakTask(db.tasks.find(t => t.id === c.task_id)))
+  return eng.find(c => c.status === 'confirmed') || eng.find(c => c.status === 'self_reported') || eng[0] || null
+})
 const unverified = computed(() => db.checkins.filter(c => c.status === 'self_reported').length)
 const pendingReq = computed(() => db.reward_requests.filter(r => r.status === 'pending').length)
 const trust = computed(() => levelInfo(credit().credit_score))
