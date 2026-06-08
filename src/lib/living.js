@@ -109,6 +109,9 @@ import sk_bunny_happy from '../assets/living/skin_bunny_happy.mp4'
 // 🦄 独角兽装
 import sk_unicorn_walk from '../assets/living/skin_unicorn_walk.mp4'
 import sk_unicorn_happy from '../assets/living/skin_unicorn_happy.mp4'
+// 🧜‍♀️ 小美人鱼
+import sk_mermaid_walk from '../assets/living/skin_mermaid_walk.mp4'
+import sk_mermaid_happy from '../assets/living/skin_mermaid_happy.mp4'
 const SKIN_SETS = {
   bow: skinSet(sk_bow_walk, sk_bow_happy),
   scarf: skinSet(sk_scarf_walk, sk_scarf_happy),
@@ -127,7 +130,8 @@ const SKIN_SETS = {
   hanfu: skinSet(sk_hanfu_walk, sk_hanfu_happy),
   jk: skinSet(sk_jk_walk, sk_jk_happy),
   bunny: skinSet(sk_bunny_walk, sk_bunny_happy),
-  unicorn: skinSet(sk_unicorn_walk, sk_unicorn_happy)
+  unicorn: skinSet(sk_unicorn_walk, sk_unicorn_happy),
+  mermaid: skinSet(sk_mermaid_walk, sk_mermaid_happy)
 }
 
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
