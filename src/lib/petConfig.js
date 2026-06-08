@@ -90,6 +90,17 @@ export function charmTotal(baseCharm, skinCount, dexUnlocked) {
   return Math.round((baseCharm || 0) + (skinCount || 0) * CHARM_PER_SKIN + (dexUnlocked || 0) * CHARM_PER_DEX)
 }
 
+// ===== 属性满值机制(A 段位晋级 + B 解锁专属皮肤)=====
+// 通过打卡增长、会封顶的三项:满 100 不再卡住,而是「晋级一星」,数值溢出保留继续涨。
+export const ATTR_MAX = 100
+export const TIER_ATTRS = ['wisdom', 'cleanliness', 'vitality']
+export const ATTR_CN = { wisdom: '智慧', cleanliness: '清洁', vitality: '活力', charm: '魅力', discipline: '自律' }
+export const TIER_NAMES = ['', '闪耀', '璀璨', '辉煌', '传说', '神话']   // index = 星级
+export function tierName(t) { return TIER_NAMES[Math.min(t, TIER_NAMES.length - 1)] || `${t}阶` }
+// B:某属性「首次」满值解锁的专属皮肤(已拥有则改发星币)
+export const ATTR_SKIN = { wisdom: 'wizard', cleanliness: 'angel', vitality: 'dino' }
+export const PROMOTE_COIN = 60   // 已拥有专属皮肤时,晋级改发的星币
+
 export const FORM_LABEL = {
   wisdom: '会发光的学者犬 📚',
   cleanliness: '闪亮的香香犬 🛁',

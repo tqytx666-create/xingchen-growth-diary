@@ -1,7 +1,28 @@
 import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
 import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
-  HEALTH_MAX, HEALTH_SICK, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM } from '../lib/petConfig.js'
+  HEALTH_MAX, HEALTH_SICK, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
+  ATTR_MAX, TIER_ATTRS, ATTR_CN, ATTR_SKIN, tierName } from '../lib/petConfig.js'
+
+// 属性满值晋级(A+B):某项 ≥100 → 星级 +1、溢出保留;首次满值解锁专属皮肤(已有则标记发星币)
+function checkPromote(a, k, promotions) {
+  if (!TIER_ATTRS.includes(k)) return
+  if (!a.tiers) a.tiers = {}
+  let guard = 0
+  while ((a[k] || 0) >= ATTR_MAX && guard++ < 10) {
+    a[k] = (a[k] || 0) - ATTR_MAX
+    a.tiers[k] = (a.tiers[k] || 0) + 1
+    const tier = a.tiers[k]
+    const skinKey = ATTR_SKIN[k]
+    let gotSkin = null, needCoin = false
+    if (tier === 1 && skinKey && !(db.owned_skins || []).includes(skinKey)) {
+      if (!db.owned_skins) db.owned_skins = ['default']
+      db.owned_skins.push(skinKey); gotSkin = skinKey
+    } else needCoin = true
+    event('evolution', null, 'promote', {}, `🎉 ${ATTR_CN[k]}突破上限,晋升「${tierName(tier)}${ATTR_CN[k]}」!${gotSkin ? '解锁专属皮肤 🎁' : ''}`)
+    promotions.push({ attr: k, tier, gotSkin, needCoin })
+  }
+}
 
 const ATTR_KEYS = ['wisdom', 'cleanliness', 'vitality', 'charm', 'discipline']
 function isEnglishTask(t) { return !!t && (t.task_type === 'main' || t.lesson || t.category === 'english') }
@@ -147,6 +168,10 @@ export function applyTaskExp(task, sourceId) {
     delta[task.attribute_key2] = task.base_exp2
   }
   a.mood_score = clamp(a.mood_score + 4)
+  // 满值晋级检测(在 mood/updated 之前算,溢出保留)
+  const promotions = []
+  checkPromote(a, task.attribute_key, promotions)
+  if (task.attribute_key2) checkPromote(a, task.attribute_key2, promotions)
   a.updated_at = nowISO()
   regen(task.task_type === 'main' ? REGEN_CHECKIN_MAIN : REGEN_CHECKIN_SIDE)   // 打卡回血(能从生病中救回来)
   if (task.task_type === 'main') {
@@ -157,7 +182,7 @@ export function applyTaskExp(task, sourceId) {
   event('checkin', sourceId, 'exp_gain', delta, `${task.name}完成,${labelDelta(delta)}`)
   const expGain = (task.base_exp || 0) + (task.base_exp2 || 0)
   const lv = addExp(expGain, sourceId)
-  return { delta, ...lv }
+  return { delta, ...lv, promotions }
 }
 
 // 使用道具:加心情(变开心、消退阶风险)+ 少量经验(可触发孵化/升级)。返回 addExp 的结果(含 hatched/tierUp)

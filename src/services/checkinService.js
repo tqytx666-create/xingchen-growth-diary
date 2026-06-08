@@ -82,6 +82,8 @@ export function interact(checkinId) {
   }
   // 打卡互动发星币(只能这样赚):英语主线 +10,支线 +5
   const coinsEarned = coinSvc.earnCoins(task.task_type === 'main' ? COIN_PER_MAIN : COIN_PER_SIDE, `打卡:${task.name}`)
+  // 属性满值晋级:已拥有专属皮肤时改发星币(60)
+  if (delta && delta.promotions) for (const pr of delta.promotions) if (pr.needCoin) coinSvc.earnCoins(60, '属性满值晋级奖励')
   // 支线打卡可能让本周"全勤天数"达标 → 触发自动奖励
   let weeklyGranted = []
   if (task.task_type === 'side') weeklyGranted = rewardSvc.checkWeeklyRewards(child().id)

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS, tierName, ATTR_CN } from '../../lib/petConfig.js'
 import { settleHealth } from '../../services/petService.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -268,6 +268,14 @@ function runLevelFx(res) {
   const lv = res.delta || {}
   if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoHatch.value = !!lv.hatched; evoStage.value = lv.tierUp }, 250)
   else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); spawnBurst(fx.value, ['⭐', '✨', '🌟', '💫'], 10); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
+  // 属性满值晋级:晋级星级 + 解锁专属皮肤/星币
+  ;(lv.promotions || []).forEach((pr, i) => setTimeout(() => {
+    sfx.levelup(); spawnBurst(fx.value, ['🎉', '⭐', '✨', '🏅'], 12)
+    const nm = ATTR_CN[pr.attr] || pr.attr
+    toast(pr.gotSkin
+      ? `🎉 ${nm}突破上限,晋升「${tierName(pr.tier)}${nm}」!解锁专属皮肤,去签到页穿上吧~`
+      : `🎉 ${nm}晋升「${tierName(pr.tier)}${nm}」!奖励 60 星币 🪙`)
+  }, 600 + i * 1200))
 }
 function interactProp(c) {
   const res = checkinSvc.interact(c.id)
@@ -456,9 +464,9 @@ onMounted(() => {
 
     <!-- 宠物属性(点开看说明)— 紧跟宠物 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
-      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='wisdom'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🧠 智慧 <span style="opacity:.5;font-size:11px">ⓘ</span><span v-if="a.tiers&&a.tiers.wisdom" class="tier-bdg">{{ tierName(a.tiers.wisdom) }}⭐{{ a.tiers.wisdom }}</span></span><span class="dim">{{ a.wisdom }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#7c6bff,#b3a6ff)" :style="{width:bar(a.wisdom)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='cleanliness'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🛁 清洁 <span style="opacity:.5;font-size:11px">ⓘ</span><span v-if="a.tiers&&a.tiers.cleanliness" class="tier-bdg">{{ tierName(a.tiers.cleanliness) }}⭐{{ a.tiers.cleanliness }}</span></span><span class="dim">{{ a.cleanliness }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bd5ff,#a6f0ff)" :style="{width:bar(a.cleanliness)}"></i></div></div>
+      <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='vitality'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>⚡ 活力 <span style="opacity:.5;font-size:11px">ⓘ</span><span v-if="a.tiers&&a.tiers.vitality" class="tier-bdg">{{ tierName(a.tiers.vitality) }}⭐{{ a.tiers.vitality }}</span></span><span class="dim">{{ a.vitality }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#6bffb0,#b0ffd5)" :style="{width:bar(a.vitality)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer" @click="attrInfo='charm'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>✨ 魅力 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ charmVal }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9ec7,#ffc7e0)" :style="{width:bar(charmVal)}"></i></div></div>
       <div class="card attr-card" style="padding:11px;cursor:pointer;grid-column:1/-1" @click="attrInfo='discipline'"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>🔥 自律 <span style="opacity:.5;font-size:11px">ⓘ</span></span><span class="dim">{{ disciplineVal }}</span></div><div class="bar"><i style="background:linear-gradient(90deg,#ff9f5b,#ffce8a)" :style="{width:bar(disciplineVal)}"></i></div></div>
     </div>
@@ -657,6 +665,9 @@ onMounted(() => {
   background: #ff7a7a; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .attr-card { transition: transform .12s ease; }
 .attr-card:active { transform: scale(.97); }
+.tier-bdg { margin-left: 5px; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 999px;
+  color: #5a3d00; background: linear-gradient(90deg, #ffe08a, #ffb347); vertical-align: 1px;
+  box-shadow: 0 0 6px rgba(255,200,90,.5); }
 /* 宠物名片 + 房间 HUD(时间/星币) */
 .pet-id { min-width: 0; background: rgba(10,8,22,.45); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px);
   border-radius: 14px; padding: 7px 12px; display: flex; flex-direction: column; justify-content: center; }

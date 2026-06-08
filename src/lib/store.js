@@ -54,6 +54,8 @@ function ensurePet() {
   if (!p.species_key) p.species_key = 'dog'
   if (p.health == null) p.health = 100
   if (!p.last_decay_date) p.last_decay_date = todayStr()
+  const a = Array.isArray(db.pet_attributes) ? db.pet_attributes[0] : null
+  if (a && !a.tiers) a.tiers = {}   // 属性满值晋级的星级记录
 }
 ensureTasks()
 ensurePet()
