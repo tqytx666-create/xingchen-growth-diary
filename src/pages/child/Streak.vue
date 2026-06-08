@@ -13,6 +13,14 @@ import Calendar from './Calendar.vue'
 
 const wp = computed(() => weeklyProgress())
 const nc = computed(() => nextCumulative())
+// 火花拉满:连续越久火越大、火星越多
+const flameSize = computed(() => Math.round(Math.min(96, 44 + (nc.value.current || 0) * 3)))   // 44→封顶96
+const emberCount = computed(() => Math.min(8, Math.floor((nc.value.current || 0) / 3)))          // 每3天多一颗火星,最多8
+const flameTier = computed(() => { const c = nc.value.current || 0; return c >= 21 ? ' · 🔥燎原之火!' : c >= 14 ? ' · 🔥旺火' : c >= 7 ? ' · 🔥渐旺' : c >= 3 ? ' · 火苗渐起' : '' })
+function emberStyle(i) {
+  const left = 12 + (i * 73 % 70), delay = (i * 0.37 % 2.2).toFixed(2), dur = (1.6 + (i % 3) * 0.5).toFixed(2)
+  return { left: left + '%', animationDelay: delay + 's', animationDuration: dur + 's' }
+}
 const ws = computed(() => streak().current_week_start)
 
 // 补卡:本周漏打的英语日 + 持有的免断签卡
@@ -57,10 +65,13 @@ const weekDays = computed(() => {
     <!-- 连续签到 Hero:页面最重要的情绪指标,放最前最醒目 -->
     <div class="card streak-hero" style="margin-bottom:16px">
       <div class="hero-row">
-        <div class="flame">🔥</div>
+        <div class="flame-wrap" :style="{ width: flameSize+'px', height: flameSize+'px' }">
+          <div class="flame fx-flamebob" :style="{ fontSize: flameSize+'px' }">🔥</div>
+          <span v-for="e in emberCount" :key="e" class="ember" :style="emberStyle(e)"></span>
+        </div>
         <div style="flex:1;min-width:0">
           <div class="hero-num"><CountUp :value="nc.current" /> <span class="hero-unit">天</span></div>
-          <div class="hero-cur">当前连续英语签到</div>
+          <div class="hero-cur">当前连续英语签到{{ flameTier }}</div>
         </div>
         <div class="hero-side">
           <div>🏆 最长 <b>{{ nc.longest }}</b></div>
@@ -144,8 +155,13 @@ const weekDays = computed(() => {
   background: radial-gradient(120% 95% at 25% 0%, rgba(255,140,60,.22), transparent 58%), linear-gradient(160deg, rgba(255,216,107,.12), rgba(255,255,255,.04));
   border: 1px solid rgba(255,216,107,.32); }
 .hero-row { display: flex; align-items: center; gap: 14px; }
-.flame { font-size: 50px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(255,140,60,.55)); animation: flamebob 2s ease-in-out infinite; }
-@keyframes flamebob { 0%,100%{ transform: translateY(0) scale(1) } 50%{ transform: translateY(-3px) scale(1.06) } }
+.flame-wrap { position: relative; flex-shrink: 0; display: grid; place-items: center; }
+.flame { line-height: 1; }
+.ember { position: absolute; bottom: 10%; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle, #ffe08a, #ff7a3c); box-shadow: 0 0 6px 1px rgba(255,160,70,.8);
+  animation: emberRise 2s ease-out infinite; opacity: 0; pointer-events: none; }
+@keyframes emberRise { 0%{ transform: translateY(0) scale(.6); opacity: 0 } 15%{ opacity: 1 } 100%{ transform: translateY(-46px) scale(.2); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .ember { animation: none; opacity: 0 } }
 .hero-num { font-size: 40px; font-weight: 800; color: #ffd86b; line-height: 1; text-shadow: 0 0 18px rgba(255,216,107,.45); }
 .hero-unit { font-size: 17px; font-weight: 700; color: rgba(255,255,255,.7); }
 .hero-cur { font-size: 13px; color: rgba(255,255,255,.72); margin-top: 4px; }
