@@ -263,11 +263,19 @@ function onPhotoDone(photoUrl) {
   } catch (e) { toast(e.message) }
 }
 
-// 升级提示 / 进化弹窗:字段在 res.delta 里(leveledUp / newLevel / tierUp)
+// 升级礼包文案
+const ITEM_CN = { bone: '🦴 骨头', fish: '🐟 小鱼干', ball: '🎾 玩具球', wand: '🪄 魔法棒' }
+const BOX_CN = { silver: '🥈 银宝箱', gold: '🥇 金宝箱', diamond: '💎 钻石宝箱' }
+function rewardText(rewards) {
+  return rewards.map(r => r.type === 'coin' ? `🪙+${r.n}` : r.type === 'item' ? (ITEM_CN[r.key] || '道具') : r.type === 'evobox' ? (BOX_CN[r.tier] || '宝箱') : '').filter(Boolean).join(' · ')
+}
+// 升级提示 / 进化弹窗:字段在 res.delta 里(leveledUp / newLevel / tierUp / rewards)
 function runLevelFx(res) {
   const lv = res.delta || {}
   if (lv.tierUp) setTimeout(() => { sfx.evolve(); evoHatch.value = !!lv.hatched; evoStage.value = lv.tierUp }, 250)
   else if (lv.leveledUp) setTimeout(() => { sfx.levelup(); spawnBurst(fx.value, ['⭐', '✨', '🌟', '💫'], 10); toast(`⬆️ 升到 Lv.${lv.newLevel} 啦!`) }, 250)
+  // 升级/进化礼包提示
+  if (lv.rewards && lv.rewards.length) setTimeout(() => { sfx.levelup(); spawnBurst(fx.value, ['🎁', '🪙', '⭐', '🎉'], 12); toast(`🎁 升级礼包:${rewardText(lv.rewards)}`) }, 950)
   // 属性满值晋级:晋级星级 + 解锁专属皮肤/星币
   ;(lv.promotions || []).forEach((pr, i) => setTimeout(() => {
     sfx.levelup(); spawnBurst(fx.value, ['🎉', '⭐', '✨', '🏅'], 12)

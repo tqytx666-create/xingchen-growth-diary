@@ -1,5 +1,6 @@
 import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
+import { earnCoins } from './coinService.js'
 import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
   HEALTH_MAX, HEALTH_SICK, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
   ATTR_MAX, TIER_ATTRS, ATTR_CN, ATTR_SKIN, tierName } from '../lib/petConfig.js'
@@ -121,7 +122,28 @@ function event(sourceType, sourceId, eventType, delta, message) {
   if (db.pet_events.length > 300) db.pet_events.pop()
 }
 
-// 加经验并处理升级 / 跨阶段进化。返回 { leveledUp, newLevel, tierUp, hatched }
+// 升级礼包:每升一级发星币红包,逢5整级加道具;进化大礼包(宝箱+星币);孵化欢迎红包。收集到 rewards 给 UI 展示。
+const GIFT_ITEMS = ['bone', 'fish', 'ball', 'wand']
+function grantLevelGift(level, rewards) {
+  const coin = 10 + Math.floor(level / 5) * 5            // Lv1~4:10 / 5~9:15 / 10~14:20 …
+  earnCoins(coin, `🎉 升到 Lv.${level} 升级红包`)
+  rewards.push({ type: 'coin', n: coin })
+  if (level % 5 === 0) {                                  // 逢 5 整级加送一个道具
+    const it = GIFT_ITEMS[(level / 5 - 1) % GIFT_ITEMS.length]
+    if (!db.items) db.items = {}
+    db.items[it] = (db.items[it] || 0) + 1
+    rewards.push({ type: 'item', key: it })
+  }
+}
+function grantEvolveGift(level, stageName, rewards) {
+  if (!db.boxes) db.boxes = []
+  const tier = level >= 29 ? 'diamond' : (level >= 15 ? 'gold' : 'silver')
+  db.boxes.unshift({ id: uid('bx_'), tier, source_task: `进化礼包·${stageName}`, earned_at: nowISO(), opened_at: null, minutes: null, coinsOnly: false })
+  earnCoins(20, `🌟 进化礼包·${stageName}`)
+  rewards.push({ type: 'evobox', tier }, { type: 'coin', n: 20 })
+}
+
+// 加经验并处理升级 / 跨阶段进化。返回 { leveledUp, newLevel, tierUp, hatched, rewards }
 function addExp(amount, sourceId) {
   const p = pet()
   if (p.level == null) { p.level = 0; p.exp = 0; p.stage_idx = 0 }
@@ -132,19 +154,23 @@ function addExp(amount, sourceId) {
     if (p.exp >= HATCH_EXP) {
       p.exp = 0; p.level = 1; p.stage_idx = 1
       event('evolution', sourceId, 'evolution', {}, `🥚✨ 初遇蛋孵化啦!${p.name} 出生成了幼犬!`)
-      return { leveledUp: false, newLevel: 1, tierUp: STAGES[1], hatched: true }
+      const rewards = []
+      earnCoins(15, '🥚 孵化欢迎红包'); rewards.push({ type: 'coin', n: 15 })
+      return { leveledUp: false, newLevel: 1, tierUp: STAGES[1], hatched: true, rewards }
     }
-    return { leveledUp: false, newLevel: 0, tierUp: null, hatched: false }
+    return { leveledUp: false, newLevel: 0, tierUp: null, hatched: false, rewards: [] }
   }
 
   const beforeTier = tierFromLevel(p.level)
   p.exp = (p.exp || 0) + amount
   let leveledUp = false
+  const rewards = []
   while (p.level < MAX_LEVEL && p.exp >= expForLevel(p.level)) {
     p.exp -= expForLevel(p.level)
     p.level += 1
     leveledUp = true
     event('evolution', sourceId, 'levelup', {}, `升到 Lv.${p.level} 啦!`)
+    grantLevelGift(p.level, rewards)               // 每升一级:升级红包(+逢5道具)
   }
   if (p.level >= MAX_LEVEL) p.exp = 0
   const newTier = tierFromLevel(p.level)
@@ -153,8 +179,9 @@ function addExp(amount, sourceId) {
   if (newTier > beforeTier) {
     tierUp = STAGES[newTier]
     event('evolution', sourceId, 'evolution', {}, `进化成了 ${STAGES[newTier].name}!`)
+    grantEvolveGift(p.level, STAGES[newTier].name, rewards)   // 进化大礼包:宝箱 + 星币
   }
-  return { leveledUp, newLevel: p.level, tierUp, hatched: false }
+  return { leveledUp, newLevel: p.level, tierUp, hatched: false, rewards }
 }
 
 // 任务完成加属性 + 经验
