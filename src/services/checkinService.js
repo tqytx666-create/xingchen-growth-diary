@@ -113,6 +113,7 @@ const BOX_TIER = {
   t_teeth_am: 'iron', t_teeth_pm: 'iron',         // 每日刷牙:铁
   t_room: 'bronze', t_sleep: 'bronze',            // 房间整洁 / 按时睡觉:铜
   t_bath: 'silver', t_homework: 'silver', t_focus: 'silver',  // 洗澡 / 每日作业 / 专注不拖延:银
+  t_class_helper: 'silver',                       // 班级小管家(学校每日职责):银
   t_hair: 'gold'                                  // 洗头(3天一次,较珍贵):金
 }
 const BOX_RANGE = { iron: [1, 2], bronze: [2, 3], silver: [2, 4], gold: [4, 6], diamond: [8, 12] }  // 开箱游戏时间(分钟)

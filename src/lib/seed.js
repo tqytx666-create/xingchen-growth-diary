@@ -70,6 +70,8 @@ export function buildSeed() {
     { id: 't_english_class', name: '英语上课(外教)', task_type: 'lesson', category: 'english', attribute_key: 'wisdom', base_exp: 9, icon: '🎧', anim: 'study', lesson: true, desc: '上完外教课打卡 · 家长确认换游戏时间', is_active: true, created_at: nowISO() },
     // 英语老师布置的每日作业(百词斩 + ABC Reading 合并成一个必做卡;算英语主线)
     { id: 't_homework', name: '每日作业', task_type: 'side', category: 'english', attribute_key: 'wisdom', base_exp: 8, icon: '📝', anim: 'study', blindbox: true, desc: '百词斩(背5+复习5)· ABC Reading(3本/Level A)', is_active: true, created_at: nowISO() },
+    // 学校每日打卡:班级小管家(不算英语主线,但完成有银宝箱;category=school 锻炼责任心→自律)
+    { id: 't_class_helper', name: '班级小管家', task_type: 'side', category: 'school', attribute_key: 'discipline', base_exp: 6, icon: '🏫', anim: '', blindbox: true, desc: '完成学校班级小管家的每日职责 · 责任心/自律 +', is_active: true, created_at: nowISO() },
     // 自律(毅力·耐心):按时睡觉 + 专注不拖延
     { id: 't_sleep', name: '按时睡觉', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 5, icon: '🌜', anim: '', blindbox: true, desc: '每天 · 自律 +(早睡早起,坚持就是毅力)', is_active: true, created_at: nowISO() },
     { id: 't_focus', name: '专注不拖延', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 6, icon: '🎯', anim: '', blindbox: true, desc: '该做的事一坐下就专心做完 · 自律 +', is_active: true, created_at: nowISO() }

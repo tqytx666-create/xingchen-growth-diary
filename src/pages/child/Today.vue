@@ -130,6 +130,7 @@ const tasksSorted = computed(() => [...tasks.value].sort((x, y) => {
 function sortByState(arr) { return [...arr].sort((x, y) => (STATE_ORDER[taskState(x)] ?? 2) - (STATE_ORDER[taskState(y)] ?? 2)) }
 const GROUP_DEF = [
   { key: 'english', emoji: '📚', name: '英语学习', cats: ['english'], main: true },
+  { key: 'school', emoji: '🏫', name: '学校', cats: ['school'] },
   { key: 'sport', emoji: '🏃', name: '运动', cats: ['sport'] },
   { key: 'life', emoji: '🧼', name: '生活习惯', cats: ['hygiene', 'chore'] },
   { key: 'discipline', emoji: '🔥', name: '自律', cats: ['discipline'] },
