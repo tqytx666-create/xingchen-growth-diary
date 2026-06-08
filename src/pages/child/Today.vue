@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS } from '../../lib/petConfig.js'
 import { settleHealth } from '../../services/petService.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -175,12 +175,15 @@ const expPct = computed(() => (!isEgg.value && p.value.level >= MAX_LEVEL) ? 100
 
 // 宠物每日专属寄语:根据真实数据,小愿用第一人称对主人说一句话(AI 化身的第一步,先用规则,后可换 LLM)
 const todayMainDone = computed(() => { const g = taskGroups.value.find(x => x.key === 'english'); return g ? g.done > 0 : false })
+// 今日还没做的「每日必做习惯」(漏打隔天会扣健康/对应属性,这里当下就提醒,让她看得到影响)
+const todayHabitMiss = computed(() => tasks.value.filter(t => DAILY_HABITS.includes(t.id) && taskState(t) === 'none'))
 const petSays = computed(() => {
   const cur = streakRow()?.current_streak || 0
   if (isEgg.value) { const need = Math.max(0, HATCH_EXP - (p.value.exp || 0)); return `🥚 再坚持打卡 ${need} 点经验,我就能孵出来啦,快帮帮我!` }
   if (hpState.value === 'sick') return '🤒 我有点难受…打个卡、或喂我点好吃的,我就能慢慢好起来~'
   if (hpState.value === 'weak') return '😟 今天有点没精神,陪我一起打个卡好不好?'
   if (!todayMainDone.value) return '📚 今天的英语还没打卡哦,我等你一起加油!'
+  if (todayHabitMiss.value.length) { const m = todayHabitMiss.value; return `🧼 今天还有「${m.map(t => t.name).join('、')}」没做,做完我会更健康精神哦~(漏掉会让我状态下滑)` }
   const nextMs = STREAK_MILESTONES.find(m => m.days > cur)
   if (nextMs && cur > 0 && nextMs.days - cur <= 3) return `🔥 再坚持 ${nextMs.days - cur} 天,就到「${nextMs.days} 天里程碑」啦,冲呀!`
   const weak = [

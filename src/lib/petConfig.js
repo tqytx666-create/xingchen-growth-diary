@@ -111,8 +111,14 @@ export const DECAY = {
   missAllHealth: 10, missAllAttr: 3, missAllCharm: 2, // 一整天完全没打卡
   missMainHealth: 4, missMainWisdom: 3,               // 打了卡但没打英语主线
   regenMain: 8,                                       // 当天完成主线:健康回升
+  missHabitAttr: 1,                                   // 每漏一项「每日必做习惯」:对应属性 -1
+  missHabitHealth: 1,                                 // 每漏一项:健康 -1
+  missHabitHealthCap: 3,                              // 每天因漏习惯最多扣 3 健康(温和,英语完成也照扣)
   catchupCap: 60                                      // 单次最多回补处理的天数(防卡顿)
 }
+// 每日必做习惯(漏打要体现代价,即使当天完成了英语主线也照扣对应属性 + 少量健康)
+// 周期性任务(洗澡/洗头)不按天判漏,避免冤枉
+export const DAILY_HABITS = ['t_teeth_am', 't_teeth_pm', 't_sleep', 't_room']
 export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
 export const REGEN_CHECKIN_SIDE = 8   // 打支线卡回血
 export const REGEN_ITEM = 10          // 喂道具回血

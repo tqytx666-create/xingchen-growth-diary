@@ -1,20 +1,37 @@
 import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
 import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
-  HEALTH_MAX, HEALTH_SICK, DECAY, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM } from '../lib/petConfig.js'
+  HEALTH_MAX, HEALTH_SICK, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM } from '../lib/petConfig.js'
 
 const ATTR_KEYS = ['wisdom', 'cleanliness', 'vitality', 'charm', 'discipline']
 function isEnglishTask(t) { return !!t && (t.task_type === 'main' || t.lesson || t.category === 'english') }
-// 某天是否有有效打卡 / 是否打了英语主线
+// 某天是否有有效打卡 / 是否打了英语主线 / 当天打了哪些任务
 function dayActivity(dateStr) {
-  let any = false, main = false
+  let any = false, main = false; const done = new Set()
   for (const c of db.checkins || []) {
     if (c.checkin_date !== dateStr) continue
     if (c.status === 'false_reported' || c.status === 'revoked') continue
-    any = true
+    any = true; done.add(c.task_id)
     if (isEnglishTask((db.tasks || []).find(t => t.id === c.task_id))) main = true
   }
-  return { any, main }
+  return { any, main, done }
+}
+// 当天漏打的「每日必做习惯」任务(只算仍启用的)
+function missedDailyHabits(done) {
+  const res = []
+  for (const id of DAILY_HABITS) {
+    const t = (db.tasks || []).find(x => x.id === id && x.is_active !== false)
+    if (t && !done.has(id)) res.push(t)
+  }
+  return res
+}
+// 漏打每日习惯的代价:对应属性各 -missHabitAttr,健康按漏打项数小扣(封顶)。返回扣的健康值
+function applyHabitMiss(missed, a, p) {
+  if (!missed.length) return 0
+  for (const t of missed) { const k = t.attribute_key || 'cleanliness'; a[k] = clamp((a[k] || 0) - DECAY.missHabitAttr) }
+  const hCut = Math.min(DECAY.missHabitHealthCap, missed.length * DECAY.missHabitHealth)
+  p.health = clamp((p.health || 0) - hCut)
+  return hCut
 }
 
 // 每日健康结算:把"上次结算日"到"昨天"的每个完整过去日按打卡情况衰减/回血。
@@ -33,15 +50,17 @@ export function settleHealth() {
   while (d < today && processed < DECAY.catchupCap) {
     d = addDays(d, 1)
     if (d >= today) break                       // 今天还没过完,不罚今天
-    const { any, main } = dayActivity(d)
+    const { any, main, done } = dayActivity(d)
     if (!any) {                                  // 完全没打卡:属性普减 + 健康大降
       for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
       p.health = clamp((p.health || 0) - DECAY.missAllHealth)
     } else if (!main) {                          // 打了卡但没打英语主线
       a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
       p.health = clamp((p.health || 0) - DECAY.missMainHealth)
-    } else {                                     // 完成主线:健康回升
+      applyHabitMiss(missedDailyHabits(done), a, p)   // 生活习惯漏打照样扣
+    } else {                                     // 完成主线:健康回升,但生活习惯漏打仍要体现
       p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+      applyHabitMiss(missedDailyHabits(done), a, p)
     }
     processed++
     if (p.health <= 0) { died = true; break }
