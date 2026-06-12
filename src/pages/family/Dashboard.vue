@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
 import { useRouter } from 'vue-router'
 import { db, child, currentUser, setUser, pet, petAttrs, streak, credit, bank } from '../../lib/store.js'
 import { todayStr } from '../../lib/util.js'
@@ -25,6 +26,7 @@ const todoTotal = computed(() => unverified.value + pendingReq.value)
 
 // 信任分手动调整(扣分/恢复):内联弹窗(不用 window.prompt,iOS PWA 会禁)
 const adjOpen = ref(false)
+watch(adjOpen, v => lockScroll(!!v)); onUnmounted(() => { if (adjOpen.value) lockScroll(false) })   // 调分弹窗锁背景
 const adjDelta = ref(-10)
 const adjReason = ref('')
 const PRESET = [

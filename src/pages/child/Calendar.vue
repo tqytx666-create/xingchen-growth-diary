@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
 import { db } from '../../lib/store.js'
 const props = defineProps({ embed: { type: Boolean, default: false } })
 import { todayStr, addDays } from '../../lib/util.js'
@@ -77,6 +78,7 @@ function move(n) { const c = new Date(cursor.value); c.setMonth(c.getMonth() + n
 
 // 选中某天看详情 + 补卡
 const sel = ref(null)
+watch(sel, v => lockScroll(!!v)); onUnmounted(() => { if (sel.value) lockScroll(false) })   // 日详情弹窗锁背景
 function openDay(c) { if (c) sel.value = c.ds }
 const selFuture = computed(() => !!sel.value && sel.value > today)
 const selTasks = computed(() => activeTasks.value.map(t => ({ ...t, st: statusOn(t.id, sel.value) })))

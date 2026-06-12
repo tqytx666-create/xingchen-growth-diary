@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
 import { db, currentUser } from '../../lib/store.js'
 import * as vs from '../../services/verificationService.js'
 import { fmtDateTime } from '../../lib/util.js'
@@ -18,6 +19,7 @@ function actor(id) { return db.users.find(u => u.id === id)?.display_name || '' 
 // 外教课 / 运动确认:用内联弹窗收分钟(window.prompt 在 iOS 独立 PWA 里会被禁)
 // mode: 'lesson'=外教课换游戏时间;'sport'=运动时长(换等量游戏时间,满60分钟开箱升钻石)
 const minuteModal = ref(null)   // 待输入分钟的打卡
+watch(minuteModal, v => lockScroll(!!v))
 const minuteMode = ref('lesson')
 const minuteVal = ref(45)
 const minuteTask = computed(() => task(minuteModal.value))
@@ -43,6 +45,7 @@ function doMinuteConfirm() {
 }
 // 标记虚报:同样用内联确认弹窗替代 window.confirm
 const falseModal = ref(null)
+watch(falseModal, v => lockScroll(!!v)); onUnmounted(() => { if (minuteModal.value) lockScroll(false); if (falseModal.value) lockScroll(false) })
 function markFalse(c) { falseModal.value = c }
 function doMarkFalse() {
   const c = falseModal.value; if (!c) return

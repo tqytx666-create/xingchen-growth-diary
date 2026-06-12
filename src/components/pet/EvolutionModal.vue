@@ -1,5 +1,7 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
+onMounted(() => lockScroll(true)); onUnmounted(() => lockScroll(false))   // 进化弹窗锁背景滚动
 import { mainImage } from '../../lib/petImages.js'
 import { ANIM, BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 const props = defineProps({ pet: Object, attrs: Object, stage: Object, hatch: Boolean })

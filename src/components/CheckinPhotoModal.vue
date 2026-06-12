@@ -1,5 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { lockScroll } from '../lib/scrollLock.js'
+onMounted(() => lockScroll(true)); onUnmounted(() => lockScroll(false))   // 拍照弹窗锁背景滚动
 import { photoHint } from '../lib/photoHints.js'
 import { uploadCheckinPhoto } from '../lib/photo.js'
 import { child } from '../lib/store.js'
