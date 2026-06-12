@@ -153,6 +153,9 @@ const SKIN_SETS = {
   mermaid: skinSet(sk_mermaid_walk, sk_mermaid_happy)
 }
 
+// 某皮肤是否有活视频(衣柜/商城"✨会动"标识的唯一数据源)
+export function hasLivingSkin(key) { return !!SKIN_SETS[key] }
+
 // 选当前该用哪套活视频:活皮肤优先;装了非活皮肤→不活(回落静态展示皮肤);默认皮肤→看形态
 export function livingSet(pet) {
   if (!pet) return null

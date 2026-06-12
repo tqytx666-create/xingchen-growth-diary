@@ -83,7 +83,7 @@ function redeem(w) {
       </div>
       <div class="shop-grid">
         <div v-for="g in sec.items" :key="g.key" class="shop-card" :class="{ 'is-owned': g.owned }">
-          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" loading="lazy" decoding="async" /><span class="shop-info">ⓘ</span><span v-if="g.owned" class="owned-rib">✓ 拥有</span></div>
+          <div class="shop-pic" style="cursor:pointer" @click="openDetail(sec.type, g)"><img :src="g.img" :alt="g.name" loading="lazy" decoding="async" /><span class="shop-info">ⓘ</span><span v-if="g.owned" class="owned-rib">✓ 拥有</span><span v-else-if="g.animated" class="anim-rib">✨会动</span></div>
           <div class="shop-nm" style="cursor:pointer" @click="openDetail(sec.type, g)">{{ g.emoji }} {{ g.name }}</div>
           <div v-if="sec.type==='item' && itemCounts[g.key]" class="dim" style="font-size:10px">已有 {{ itemCounts[g.key] }}</div>
           <button v-if="g.owned" class="shop-buy owned" disabled>已拥有</button>
@@ -123,6 +123,8 @@ function redeem(w) {
 .shop-card.is-owned { opacity: .72; border-color: rgba(107,255,176,.3); }
 .owned-rib { position: absolute; top: 3px; left: 3px; background: #6bffb0; color: #0a3d28;
   font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 999px; }
+.anim-rib { position: absolute; top: 3px; left: 3px; background: linear-gradient(90deg,#b39bff,#7c6bff); color: #fff;
+  font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 999px; box-shadow: 0 0 6px rgba(124,107,255,.5); }
 .shop-pic { width: 100%; aspect-ratio: 1; display: grid; place-items: center; position: relative; }
 .shop-pic img { width: 78%; height: 78%; object-fit: contain; }
 .shop-info { position: absolute; top: 2px; right: 2px; font-size: 11px; color: rgba(255,255,255,.45); }

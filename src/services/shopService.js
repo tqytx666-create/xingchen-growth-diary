@@ -5,6 +5,7 @@ import { ITEMS } from '../lib/items.js'
 import { SKIN_PRICE, ROOM_PRICE, FURN_PRICE, ITEM_PRICE, WISH } from '../lib/shop.js'
 import * as coinSvc from './coinService.js'
 import { isSkinOwned } from './skinService.js'
+import { hasLivingSkin } from '../lib/living.js'
 import { isRoomOwned } from './roomService.js'
 import { ownedFurniture } from './furnitureService.js'
 
@@ -21,7 +22,7 @@ function ownedNow(type, key) {
 // 商城目录:各分类商品 + 价格 + 是否已拥有
 export function shopCatalog() {
   return [
-    { type: 'skin', title: '👕 皮肤装扮', items: SKIN_TRACK.map(s => ({ key: s.key, name: s.name, emoji: s.emoji, img: s.img, price: SKIN_PRICE[s.key], owned: isSkinOwned(s.key), desc: `给小愿换上「${s.name}」装扮,买下后到「🔥签到」页衣柜点一下就能穿/脱,首页立刻变装~` })) },
+    { type: 'skin', title: '👕 皮肤装扮', items: SKIN_TRACK.map(s => ({ key: s.key, name: s.name, emoji: s.emoji, img: s.img, price: SKIN_PRICE[s.key], owned: isSkinOwned(s.key), animated: hasLivingSkin(s.key), desc: `给小愿换上「${s.name}」装扮,买下后到「🔥签到」页衣柜点一下就能穿/脱,首页立刻变装~` })) },
     { type: 'room', title: '🏠 房间主题', items: ROOM_TRACK.filter(r => r.key !== 'night').map(r => ({ key: r.key, name: r.name, emoji: r.emoji, img: r.img, price: ROOM_PRICE[r.key], owned: isRoomOwned(r.key), desc: `把宠物小窝换成「${r.name}」主题。买下后到首页右上角 🏠 切换房间。` })) },
     { type: 'furniture', title: '🛋️ 家具', items: FURNITURE.map(f => ({ key: f.key, name: f.name, emoji: f.emoji, img: f.img, price: FURN_PRICE[f.key], owned: ownedFurniture().includes(f.key), desc: `小窝家具「${f.name}」。买下后到首页 🛋️ 装饰,把它摆进小窝里。` })) },
     { type: 'item', title: '🎒 道具(消耗品)', items: ITEMS.map(i => ({ key: i.key, name: i.name, emoji: i.emoji, img: i.img, price: ITEM_PRICE[i.key], consumable: true, desc: `喂给小愿:心情 +${i.mood}${i.exp ? `、经验 +${i.exp}` : ''}。${i.msg || ''}(消耗品,可重复买)` })) }
