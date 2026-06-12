@@ -8,7 +8,8 @@ import { toast } from '../../lib/toast.js'
 
 const me = computed(() => currentUser())
 const list = computed(() => db.checkins.slice(0, 80))
-const lightbox = ref('')   // 放大查看的照片 URL
+const lightbox = ref('')
+watch(lightbox, v => lockScroll(!!v))   // 放大查看的照片 URL
 const STATUS = {
   self_reported: { t: '自报完成', c: '#ffd86b' }, confirmed: { t: '已确认', c: '#6bffb0' },
   false_reported: { t: '已标记虚报', c: '#ff7a7a' }, disputed: { t: '有争议', c: '#ff9ec7' }, revoked: { t: '已撤销', c: '#888' }
