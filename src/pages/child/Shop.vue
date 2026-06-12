@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
 import { coins } from '../../services/coinService.js'
 import { shopCatalog, buy, redeemWish } from '../../services/shopService.js'
 import { ownedItems } from '../../services/itemService.js'
@@ -27,8 +28,10 @@ function purchase(type, g) {
   else { toast(r.msg) }
 }
 
-// 商品详情弹窗
+// 商品详情弹窗(开着时锁背景滚动)
 const detail = ref(null)   // { type, g }
+watch(detail, v => lockScroll(!!v))
+onUnmounted(() => { if (detail.value) lockScroll(false) })
 function openDetail(type, g) { detail.value = { type, g } }
 function buyDetail() { if (!detail.value) return; const d = detail.value; detail.value = null; purchase(d.type, d.g) }
 

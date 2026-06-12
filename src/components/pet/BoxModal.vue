@@ -1,5 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { lockScroll } from '../../lib/scrollLock.js'
+// 开箱弹窗显示期间锁背景滚动
+onMounted(() => lockScroll(true))
+onUnmounted(() => lockScroll(false))
 import boxIron from '../../assets/box/box_iron.webp'
 import boxBronze from '../../assets/box/box_bronze.webp'
 import boxSilver from '../../assets/box/box_silver.webp'
