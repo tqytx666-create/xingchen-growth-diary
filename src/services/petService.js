@@ -267,9 +267,6 @@ function maybeRegress() {
   }
 }
 
-// 兼容旧调用(现在升级在 applyTaskExp 内完成)
-export function checkEvolution() { return null }
-
 function labelDelta(delta) {
   const names = { wisdom: '智慧', cleanliness: '清洁', vitality: '活力', charm: '魅力' }
   return Object.entries(delta).map(([k, v]) => `${names[k] || k}${v >= 0 ? '+' : ''}${v}`).join(' ')

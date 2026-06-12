@@ -24,10 +24,6 @@ export const STAGE_IDLE = { 1: idle, 2: idle, 6: god }
 // 会动的皮肤:装扮这些皮肤时播放专属待机视频(没列的皮肤显示静态皮肤图)
 export const SKIN_IDLE = { bow: skinBowVid, wings: skinWingsVid, unicorn: skinUnicornVid, hanfu: skinHanfuVid }
 
-// 任务动画类型 → 视频
-export const TASK_ANIM = { study, brush, bath, badminton }
-export function taskAnimVideo(kind) { return TASK_ANIM[kind] || null }
-
 // 能否用"视频 + mix-blend-mode:screen"这套待机/动作特技?
 // 微信/QQ 安卓内置 X5(TBS)内核:<video> 默认被劫持成全屏原生播放器、不内联自动播,
 // 且老内核不支持 mix-blend-mode / CSS mask → 宠物那块要么空白要么黑框。
