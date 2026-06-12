@@ -89,9 +89,14 @@ function equipFromPet(s) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div v-for="(d,i) in DEX" :key="d.key" class="card form-cell" :style="d.key===curForm ? 'border-color:#ffd86b;box-shadow:0 0 0 1px #ffd86b' : (d.cond(p,a) ? '' : 'filter:grayscale(.6) brightness(.7)')"
            :class="{ pickable: d.cond(p,a) && i>0 }" @click="pickForm(i,d)">
-        <div style="height:96px;display:grid;place-items:center">
+        <div style="height:96px;display:grid;place-items:center;position:relative">
           <img v-if="d.cond(p,a)" :src="formImage(d.key)" loading="lazy" decoding="async" style="height:96px;object-fit:contain" />
-          <span v-else style="font-size:40px">❔</span>
+          <!-- 未解锁:神秘剪影(看得到轮廓更想解锁) -->
+          <template v-else>
+            <img :src="formImage(d.key)" loading="lazy" decoding="async"
+              style="height:96px;object-fit:contain;filter:brightness(0) drop-shadow(0 0 6px rgba(124,107,255,.45));opacity:.55" />
+            <span style="position:absolute;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)">❔</span>
+          </template>
         </div>
         <h3 style="font-size:13px;margin:6px 0 2px">{{ d.cond(p,a) ? d.t : '???' }}</h3>
         <p class="dim" style="font-size:11px">{{ d.d }}</p>
