@@ -99,6 +99,7 @@ function redeem(w) {
       <div class="sd-card">
         <div class="sd-pic"><img :src="detail.g.img" :alt="detail.g.name" decoding="async" /></div>
         <div class="sd-name">{{ detail.g.emoji }} {{ detail.g.name }}</div>
+        <div v-if="detail.g.animated" style="font-size:12px;font-weight:700;color:#c3b8ff;margin-top:2px">✨ 这款皮肤会动!穿上后小愿会在房间里活起来</div>
         <div class="sd-desc">{{ detail.g.desc }}</div>
         <div v-if="detail.type==='item' && itemCounts[detail.g.key]" class="dim" style="font-size:12px;margin-top:6px">当前持有 {{ itemCounts[detail.g.key] }} 个</div>
         <button v-if="detail.g.owned" class="sd-buy owned" disabled>✅ 已拥有</button>
