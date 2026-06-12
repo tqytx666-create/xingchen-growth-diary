@@ -6,6 +6,9 @@ import { STAGES, effectiveStage, healthState, HEALTH_MAX, charmTotal, DEX, isLow
 import { fmtDateTime, todayStr, weekStart } from '../../lib/util.js'
 import { currentRoomImg } from '../../services/roomService.js'
 import PetAvatar from '../../components/pet/PetAvatar.vue'
+import LivingPet from '../../components/pet/LivingPet.vue'
+import { livingSet } from '../../lib/living.js'
+import { BLEND_VIDEO_OK } from '../../lib/petAnims.js'
 
 const p = computed(() => pet())
 const a = computed(() => petAttrs())
@@ -14,6 +17,9 @@ const moodTxt = { normal: '心情不错 😊', happy: '超级开心 🥰', low: 
 
 // 健康
 const hp = computed(() => p.value.health == null ? HEALTH_MAX : Math.round(p.value.health))
+// 活宠物镜像:跟孩子首页同款融合活视频(条件一致;只读不互动)
+const livingSetCur = computed(() => livingSet(pet()))
+const livingActive = computed(() => BLEND_VIDEO_OK && !!livingSetCur.value && (pet().room || 'night') === 'night' && !isLow(pet()) && (pet().risk || 0) < 2 && healthState(pet()) !== 'sick')
 const hpState = computed(() => healthState(p.value))
 const hpColor = computed(() => hpState.value === 'sick' ? '#ff5b5b' : hpState.value === 'weak' ? '#ffb347' : '#6bffb0')
 
@@ -101,7 +107,8 @@ const META = { deposit: '🏃 运动存入', interest: '💎 利息', bonus: '�
         <span v-if="hpState==='sick'" style="font-size:11px;color:#ff7a7a;font-weight:700">🤒 生病了</span>
       </div>
       <div style="position:relative;z-index:2;display:grid;place-items:center;padding:6px 0 2px">
-        <PetAvatar :pet="p" :attrs="a" :size="172" :interactive="false" />
+        <LivingPet v-if="livingActive" :set="livingSetCur" :action="''" style="max-width:300px" />
+        <PetAvatar v-else :pet="p" :attrs="a" :size="172" :interactive="false" />
       </div>
       <!-- 健康条 -->
       <div v-if="!isEgg" style="position:relative;z-index:2;display:flex;align-items:center;gap:10px;margin-top:4px">
