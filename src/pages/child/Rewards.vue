@@ -1,6 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { db, child, credit, streak } from '../../lib/store.js'
+import { db, child, credit, streak, bank } from '../../lib/store.js'
+import { coins } from '../../services/coinService.js'
+import CountUp from '../../components/CountUp.vue'
+import CoinIcon from '../../components/CoinIcon.vue'
 import { REWARDS, metricValue } from '../../lib/rewardConfig.js'
 import { createRequest, rewardState, ownedFreezeCards } from '../../services/rewardService.js'
 import { ownedBoxes, openOneByTier } from '../../services/checkinService.js'
@@ -80,7 +83,14 @@ function openBox(tier) {
 
 <template>
   <div style="padding:14px 14px 90px">
-    <h2 style="font-size:18px;font-weight:700;margin:4px 2px 14px;border-left:3px solid #ffd86b;padding-left:10px">🎁 奖励成就</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 2px 14px">
+      <h2 style="font-size:18px;font-weight:700;border-left:3px solid #ffd86b;padding-left:10px;margin:0">🎁 奖励成就</h2>
+      <!-- 开箱所得当场看见涨:时间 + 星币余额(CountUp 滚动) -->
+      <span style="display:flex;gap:7px;font-size:12px;font-weight:700">
+        <span class="card" style="padding:5px 10px;color:#8be9ff">⏱ <CountUp :value="Math.floor(bank()?.current_balance_minutes || 0)" />分</span>
+        <span class="card" style="padding:5px 10px;color:#ffd86b"><CoinIcon /> <CountUp :value="coins()" /></span>
+      </span>
+    </div>
 
     <div class="card" style="padding:13px;margin-bottom:16px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.75)">
       坚持英语签到来解锁奖励。当前信任 <b style="color:#ffd86b">Lv.{{ trust.stars }} {{ trust.name }}</b>。
