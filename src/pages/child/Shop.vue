@@ -153,6 +153,8 @@ function redeem(w) {
 .shop-buy.owned { background: rgba(107,255,176,.15); color: #9bffcf; cursor: default; }
 /* 心愿兑换:卡片等高、名字可两行居中、说明固定高度、按钮贴底,框大小统一 */
 .wish-card { display: flex; flex-direction: column; }
+/* 心愿卡图片区柔光底:深色产品图(如黑色手环)也看得清 */
+.wish-card .shop-pic { background: radial-gradient(75% 70% at 50% 45%, rgba(255,255,255,.16), rgba(255,255,255,.03) 75%); border-radius: 12px; }
 .wish-nm { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.25;
   min-height: 32px; display: flex; align-items: center; justify-content: center; text-align: center; }
 .wish-note { font-size: 10px; line-height: 1.3; color: rgba(255,255,255,.55); height: 40px; overflow: hidden;
