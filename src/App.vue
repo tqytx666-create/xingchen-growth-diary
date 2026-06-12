@@ -68,7 +68,11 @@ function refresh() { location.reload() }
       <div v-else-if="!IS_DEMO && showNav && !syncState.online" class="sync-chip offline">📴 离线(本地保存)</div>
     </transition>
 
-    <div class="toast" :class="{ show: toastState.show }">{{ toastState.msg }}</div>
+    <div class="toast-stack">
+      <transition-group name="toastup">
+        <div v-for="t in toastState.list" :key="t.id" class="toast show">{{ t.msg }}</div>
+      </transition-group>
+    </div>
   </div>
 </template>
 
