@@ -45,3 +45,20 @@ npm run build  →  git push origin main  →  bash deploy.sh  →  curl 轮询�
 ## 7. 美术生产(即梦,待南哥"开始做美术"才启动,省 credits)
 - `dreamina text2image/image2image`(model 4.0,ratio 1:1,2k);rembg 抠透明(浅色元素会被抠 → 用彩色元素);抓帧 Read 验收,雷同/差就重生成(尽量 1-2 版省 credits)。
 - 命名入库 `src/assets/pet/pet_<key>.webp`;petConfig/petImages 注册;demo 调级展示。
+
+## 8. 绿幕色键抠图(白色主体立绘的正解,治"抠图畸形/白雾/白框")
+- **痛点**:白狗 + 纯白背景,flood-fill/rembg 必翻车——吃浅色毛、留白雾、被 AI 自带画框挡住。
+- **正解**:生成时 prompt 要"纯绿色背景 solid chroma key green screen background + 无边框无相框 + 主体居中四周留白";然后色键抠:`g > r+18 && g > b+18 && g > 80` → 透明,残留绿边去溢色(`g > (r+b)/2+12` → 压绿)。
+- 抠完 trim→加 22% 留白→正方形居中→512px WebP;边缘残留检测(最外圈 10px alpha>30 计数应=0)。
+- 翅膀/披风大的形态:prompt 强调"主体画小一点、配饰完整收在画面内绝不超出边缘"。
+
+## 9. 动画融合(治"宠物浮贴在场景上")
+- **痛点**:抠好的宠物贴进房间再 image2video,像贴纸悬空,无接触感。
+- **正解**:合成时 `tw=W*0.60、底部 H*0.95-th`(身体压进窝垫),prompt 写"舒服地坐在柔软的窝垫里身体微微陷进坐垫 + 温暖室内灯光自然照在身上"。
+- **防转身**(image2video 高发翻车):prompt 加"正脸朝向镜头大眼睛看观众 + 朝向角度保持不变绝不转身";still 翻车就升级为"一只手从画面上方伸进来轻轻摸狗头顶"或"特写镜头…全程面部可见"。每段必抓帧验收(n=18/n=30),背对镜头=不合格重做。
+- 生成链接**当场下载**(URL 几小时就过期)。
+
+## 10. 夜间自主优化巡查清单(每轮挑1处,小步上线)
+- 交互:弹窗 scrollLock(计数式 src/lib/scrollLock.js)、:active 按压、toast 叠放队列(连发不顶掉)、输入框 :focus 高亮、视频预热 fetch 秒播。
+- 视觉:深色产品图加柔光底、未解锁项用神秘剪影(brightness(0)+紫晕)、✨会动标识数据源=living.js hasLivingSkin(别用旧清单)。
+- 巡查工具:playwright 375×760 截图逐页看(全页截图的图片空白多为懒加载时序假象,滚动到位再验);demo 路由守卫强制孩子端,家长端用本地 dev 临时放行(绝不 commit,git checkout 还原)。
