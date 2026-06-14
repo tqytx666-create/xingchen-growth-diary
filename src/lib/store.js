@@ -46,6 +46,9 @@ function ensureTasks() {
   // 改名迁移:仅当仍是旧默认名时更新(不覆盖管理员自定义改名)
   const te = db.tasks.find(t => t.id === 't_english')
   if (te && te.name === '英语学习一课') te.name = '孙立志老师课程'
+  // 按时睡觉:更新成 23:00-07:00 标准(对照小米手环)
+  const ts = db.tasks.find(t => t.id === 't_sleep')
+  if (ts) ts.desc = '23:00 前睡 · 早上 7:00 起(对照小米手环睡眠数据)· 自律 +'
 }
 // 宠物字段迁移:老存档补上多物种/健康新字段(只加默认,不动已有进度)
 function ensurePet() {

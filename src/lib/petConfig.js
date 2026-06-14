@@ -126,13 +126,13 @@ export const DECAY = {
   sickDailyDecay: 10,                                 // 生病(≤25)后每天固定扣 10(倒计时,必须吃药才能停)
   catchupCap: 60                                      // 单次最多回补处理的天数(防卡顿)
 }
-// 生活习惯漏打的「健康扣分明细」(差异化:洗澡最重、刷牙中、房间轻)。每天判;漏一项扣对应分。
-export const HABIT_PENALTY = { t_bath: 10, t_teeth_am: 5, t_teeth_pm: 5, t_room: 3 }
+// 生活习惯漏打的「健康扣分明细」(差异化:洗澡最重、睡觉/刷牙中、房间轻)。每天判;漏一项扣对应分。
+export const HABIT_PENALTY = { t_bath: 10, t_sleep: 8, t_teeth_am: 5, t_teeth_pm: 5, t_room: 3 }
 // 给孩子看的明细表(图标+名称+扣分)
 export const HABIT_PENALTY_LABEL = [
-  { ic: '🛁', name: '洗澡', pen: 10 }, { ic: '🌞', name: '早上刷牙', pen: 5 },
-  { ic: '🌙', name: '晚上刷牙', pen: 5 }, { ic: '🧹', name: '房间整洁', pen: 3 },
-  { ic: '🚿', name: '洗头(连续3天没洗)', pen: 20 }
+  { ic: '🛁', name: '洗澡', pen: 10 }, { ic: '🌜', name: '按时睡觉(23:00睡·07:00起)', pen: 8 },
+  { ic: '🌞', name: '早上刷牙', pen: 5 }, { ic: '🌙', name: '晚上刷牙', pen: 5 },
+  { ic: '🧹', name: '房间整洁', pen: 3 }, { ic: '🚿', name: '洗头(连续3天没洗)', pen: 20 }
 ]
 // 洗头:周期性,不用每天打卡;连续 HAIR_CYCLE 天没洗 → 扣一次重的 HAIR_PENALTY
 export const HAIR_TASK = 't_hair', HAIR_PENALTY = 20, HAIR_CYCLE = 3

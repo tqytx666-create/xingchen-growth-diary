@@ -73,7 +73,7 @@ export function buildSeed() {
     // 学校每日打卡:班级小管家(不算英语主线,但完成有银宝箱;category=school 锻炼责任心→自律)
     { id: 't_class_helper', name: '班级小管家', task_type: 'side', category: 'school', attribute_key: 'discipline', base_exp: 6, icon: '🏫', anim: '', blindbox: true, desc: '完成学校班级小管家的每日职责 · 责任心/自律 +', is_active: true, created_at: nowISO() },
     // 自律(毅力·耐心):按时睡觉 + 专注不拖延
-    { id: 't_sleep', name: '按时睡觉', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 5, icon: '🌜', anim: '', blindbox: true, desc: '每天 · 自律 +(早睡早起,坚持就是毅力)', is_active: true, created_at: nowISO() },
+    { id: 't_sleep', name: '按时睡觉', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 5, icon: '🌜', anim: '', blindbox: true, desc: '23:00 前睡 · 早上 7:00 起(对照小米手环睡眠数据)· 自律 +', is_active: true, created_at: nowISO() },
     { id: 't_focus', name: '专注不拖延', task_type: 'side', category: 'discipline', attribute_key: 'discipline', base_exp: 6, icon: '🎯', anim: '', blindbox: true, desc: '该做的事一坐下就专心做完 · 自律 +', is_active: true, created_at: nowISO() }
   ]
 
