@@ -89,6 +89,11 @@ export function settleHealth() {
         p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
       }
     }
+    // 健康<50(虚弱/生病)的日子不累积利息:推进计息起点,生病期间利息作废
+    if ((p.health || 0) < HEALTH_WARN) {
+      const bk = db.time_bank_accounts && db.time_bank_accounts[0]
+      if (bk && (bk.last_interest_date || '') < d) bk.last_interest_date = d
+    }
     processed++
     if (p.health <= 0) { died = true; break }
   }

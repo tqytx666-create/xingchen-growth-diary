@@ -456,6 +456,14 @@ onMounted(() => {
     <!-- 宠物每日专属寄语(小愿在对你说话)-->
     <div class="say-bubble"><span class="say-tail"></span><b>{{ p.name }}</b> 想对你说:{{ petSays }}</div>
 
+    <!-- 超级加倍·燃烧横幅(满血+连续签到触发;倍数越高越燃) -->
+    <div v-if="spiritM > 1" class="spirit-banner" :class="'sp-'+spiritTier(spiritM).lvl">
+      <span class="sp-fl">🔥</span>
+      <span>{{ spiritM>=3 ? '超级三倍 · 燃烧中' : spiritM>=2 ? '超级双倍 · 火力全开' : '元气加成中' }}</span>
+      <b class="sp-x">×{{ spiritM }}</b>
+      <span class="sp-fl">🔥</span>
+    </div>
+
     <!-- 健康值(紧跟宠物):不打卡会下降,病了/虚弱有提醒 -->
     <div v-if="hpState!=='egg'" class="card hp-card" :class="hpState">
       <span class="hp-face">{{ hpEmoji }}</span>
@@ -742,6 +750,19 @@ onMounted(() => {
 .say-tail { position: absolute; top: -7px; left: 32px; width: 12px; height: 12px;
   background: linear-gradient(135deg, rgba(124,107,255,.2), rgba(124,107,255,.2)); border-left: 1px solid rgba(255,255,255,.14); border-top: 1px solid rgba(255,255,255,.14);
   transform: rotate(45deg); }
+/* 超级加倍·燃烧横幅 */
+.spirit-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 14px;
+  border-radius: 14px; margin: 0 0 11px; font-weight: 800; font-size: 14px; letter-spacing: .5px; }
+.spirit-banner .sp-x { font-size: 17px; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+.spirit-banner .sp-fl { font-size: 18px; animation: spFlick .45s ease-in-out infinite alternate; }
+.sp-good { background: linear-gradient(90deg, rgba(107,255,176,.18), rgba(107,255,176,.3)); color: #9bffcf; border: 1px solid rgba(107,255,176,.4); }
+.sp-great { color: #fff; background: linear-gradient(90deg,#e8641e,#ff8c3a,#e8641e); background-size: 220% 100%;
+  box-shadow: 0 0 18px rgba(255,140,60,.55); animation: spSlide 2.4s linear infinite, spPulse 1.3s ease-in-out infinite; }
+.sp-super { color: #fff; background: linear-gradient(90deg,#d61f4e,#ff5b2e,#ffae34,#ff5b2e,#d61f4e); background-size: 260% 100%;
+  box-shadow: 0 0 30px rgba(255,90,40,.85); animation: spSlide 1.5s linear infinite, spPulse .8s ease-in-out infinite; }
+@keyframes spSlide { to { background-position: 260% 0 } }
+@keyframes spPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+@keyframes spFlick { from { transform: translateY(1px) scale(.92); opacity: .85 } to { transform: translateY(-3px) scale(1.18); opacity: 1 } }
 /* 健康值卡 */
 .hp-card { display: flex; align-items: center; gap: 12px; padding: 11px 13px; margin-bottom: 11px; }
 .hp-card.sick { border-color: rgba(255,91,91,.5); background: linear-gradient(160deg, rgba(255,91,91,.14), rgba(255,255,255,.04)); }
