@@ -2,7 +2,7 @@ import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
 import { earnCoins } from './coinService.js'
 import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
-  HEALTH_MAX, HEALTH_SICK, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
+  HEALTH_MAX, HEALTH_SICK, HEALTH_WARN, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
   ATTR_MAX, TIER_ATTRS, ATTR_CN, ATTR_SKIN, tierName } from '../lib/petConfig.js'
 
 // 属性满值晋级(A+B):某项 ≥100 → 星级 +1、溢出保留;首次满值解锁专属皮肤(已有则标记发星币)
@@ -80,9 +80,10 @@ export function settleHealth() {
       a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
       p.health = clamp((p.health || 0) - DECAY.missMainHealth)
       applyHabitMiss(missedDailyHabits(done), a, p)   // 生活习惯漏打照样扣
-    } else {                                     // 完成主线:健康回升,但生活习惯漏打仍要体现
-      p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
-      applyHabitMiss(missedDailyHabits(done), a, p)
+    } else {                                     // 完成英语主线:生活习惯都做齐才给回血奖励;漏了就照扣(让健康真能看到降)
+      const missed = missedDailyHabits(done)
+      if (missed.length) applyHabitMiss(missed, a, p)
+      else p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
     }
     processed++
     if (p.health <= 0) { died = true; break }
@@ -111,8 +112,14 @@ export function reviveAsEgg(reason) {
   event('evolution', null, 'death', {}, `💔 ${p.name} 太久没被照顾,变回了一颗蛋…重新孵化、再陪它长大吧。`)
 }
 
-// 打卡/喂食回血
-function regen(amount) { const p = pet(); p.health = Math.min(HEALTH_MAX, (p.health == null ? HEALTH_MAX : p.health) + amount) }
+// 打卡/喂食回血:健康良好(>虚弱线)时不再无脑回满——否则"漏生活习惯"的下降会被一次打卡刷掉。
+// 只在虚弱/生病(≤50)时回血,把宠物从濒危拉回来(救命机制保留)。健康反映的是整体照顾程度,不是打了一次卡。
+function regen(amount) {
+  const p = pet()
+  const cur = p.health == null ? HEALTH_MAX : p.health
+  if (cur > HEALTH_WARN) return
+  p.health = Math.min(HEALTH_MAX, cur + amount)
+}
 
 function event(sourceType, sourceId, eventType, delta, message) {
   db.pet_events.unshift({
