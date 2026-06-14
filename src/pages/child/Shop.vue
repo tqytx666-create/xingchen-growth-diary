@@ -11,8 +11,9 @@ import CountUp from '../../components/CountUp.vue'
 import CoinIcon from '../../components/CoinIcon.vue'
 import CoinLedger from '../../components/child/CoinLedger.vue'
 import bandImg from '../../assets/wish/band.webp'
+import bookTgcfImg from '../../assets/wish/book_tgcf.webp'
 // 心愿兑换的真实图片(有图用图,没有就回落 emoji)
-const WISH_IMG = { band_watchface_first: bandImg, band_watchface_renew: bandImg }
+const WISH_IMG = { band_watchface_first: bandImg, band_watchface_renew: bandImg, book_big: bookTgcfImg }
 
 const bal = computed(() => coins())
 const catalog = computed(() => shopCatalog())

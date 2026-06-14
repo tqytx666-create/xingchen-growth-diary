@@ -18,7 +18,7 @@ export const WISH = [
   { key: 'card',   emoji: '🃏', name: '小说周边·小卡', price: 175, note: '≤20 元的角色小卡' },
   { key: 'standee',emoji: '🧍', name: '小说周边·立牌/挂坠', price: 275, note: '≤20 元的立牌或挂坠' },
   { key: 'book',   emoji: '📚', name: '原耽小说·一套', price: 450, note: '一套实体书(约 70~80 元)' },
-  { key: 'book_big', emoji: '📖', name: '心仪好书·一本', price: 1800, note: '约 300 元的实体书 · 攒齐了找爸妈兑现' },
+  { key: 'book_big', emoji: '📖', name: '《天官赐福》小说', price: 1800, note: '约 300 元的实体书 · 攒齐了找爸妈兑现' },
   // 小米手环表盘会员:首月 ¥9.9、续费 ¥19.8;按 ~8.8 星币/元 折算
   { key: 'band_watchface_first', emoji: '⌚', name: '手环表盘会员·首月特惠', price: 90,  note: '首月 ¥9.9 · 爸妈通过后帮你开通(限首月一次)' },
   { key: 'band_watchface_renew', emoji: '⌚', name: '手环表盘会员·续费(1个月)', price: 175, note: '续费 ¥19.8/月 · 爸妈通过后帮你续' }
