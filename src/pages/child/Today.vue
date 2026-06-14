@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS, tierName, ATTR_CN, HABIT_PENALTY_LABEL, healthRewardCoef } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS, tierName, ATTR_CN, HABIT_PENALTY_LABEL, rewardMultiplier, spiritTier } from '../../lib/petConfig.js'
 import { settleHealth } from '../../services/petService.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -62,8 +62,8 @@ const hp = computed(() => p.value.health == null ? HEALTH_MAX : Math.round(p.val
 const hpState = computed(() => healthState(p.value))
 const hpColor = computed(() => hpState.value === 'sick' ? '#ff5b5b' : hpState.value === 'weak' ? '#ffb347' : '#6bffb0')
 const hpEmoji = computed(() => ({ sick: '🤒', weak: '😟', healthy: '❤️', egg: '🥚' }[hpState.value] || '❤️'))
-// 健康越低,日常打卡奖励系数越低(英语/签到不受影响)
-const rewardCoef = computed(() => healthRewardCoef(p.value.health))
+// 日常奖励倍率:健康差→<1(生病0);健康满+连续坚持→>1 超额(最高1.5)。英语/签到不受影响。
+const spiritM = computed(() => rewardMultiplier(p.value.health, streakRow()?.current_streak || 0))
 const healthInfo = ref(false)
 // 死亡回蛋纪念弹窗(petService.reviveAsEgg 写入)
 const death = computed(() => db.pending_death || null)
@@ -467,9 +467,9 @@ onMounted(() => {
         </div>
         <div class="bar"><i :style="{ width: hp+'%', background: hpColor }"></i></div>
         <div v-if="hpState==='sick'" class="hp-hint">打卡或喂它吃东西就能慢慢康复;太久不管它会变回一颗蛋哦 💔</div>
-        <!-- 健康下降→日常奖励缩水的提示(英语/签到不受影响) -->
-        <div v-else-if="rewardCoef < 1" class="hp-hint" :style="{ color: rewardCoef===0 ? '#ff9a9a' : '#ffce8a' }">
-          {{ rewardCoef===0 ? '🚫 生病了,日常打卡暂时不发金币/宝箱了(英语和签到照常)' : `⚠️ 健康降了,现在日常打卡奖励只剩 ${Math.round(rewardCoef*100)}%,养好健康才能拿满` }}
+        <!-- 精神状态→日常奖励联动(英语/签到不受影响):差→缩水,满血+连续坚持→超额 -->
+        <div v-else-if="spiritM !== 1" class="hp-hint" :style="{ color: spiritTier(spiritM).c }">
+          {{ spiritM < 1 ? `⚠️ 健康降了,现在日常打卡奖励只剩 ${Math.round(spiritM*100)}%,养好健康才能拿满` : `✨ 精神${spiritTier(spiritM).txt}!日常打卡奖励 ×${spiritM},开宝箱还有概率升级哦!` }}
         </div>
       </div>
     </div>
@@ -483,7 +483,10 @@ onMounted(() => {
           <span>{{ h.ic }} 没{{ h.name }}</span><b style="color:#ff7a7a">健康 −{{ h.pen }}</b>
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:12px;padding:11px;border-radius:12px;background:rgba(255,159,91,.13)">
-          💡 健康越低,日常打卡的<b style="color:#ffd86b">金币和宝箱</b>就越少;生病了(健康≤25)日常奖励会暂停。<br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响 —— 养好健康,奖励才拿得满 ✨
+          💡 健康越低,日常打卡的<b style="color:#ffd86b">金币和宝箱</b>就越少;生病了(健康≤25)日常奖励会暂停。<br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响。
+        </div>
+        <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:11px;border-radius:12px;background:rgba(255,158,199,.13)">
+          🌟 反过来!健康满满 + <b style="color:#ff9ec7">连续坚持签到</b>,小愿会进入「超饱满」状态:日常奖励<b style="color:#ff9ec7">最高 ×1.5</b>,开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)!越自律,奖励越香 🎁
         </div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="healthInfo=false">知道啦</button>
       </div>

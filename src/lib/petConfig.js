@@ -145,6 +145,27 @@ export function healthRewardCoef(h) {
   if (v >= 85) return 1
   return Math.max(0, Math.min(1, (v - HEALTH_SICK) / (85 - HEALTH_SICK)))
 }
+// 连续签到 → 超额奖励加成(越久加越多)
+export const REWARD_STREAK_BONUS = [[14, 0.4], [7, 0.2], [3, 0.1]]
+// 日常奖励「总倍率」:健康差→<1(生病0);健康满 + 连续坚持→>1 超额(最高1.5)。
+// 超出 1 的部分既放大金币,也作为开宝箱「升档暴率」。
+export function rewardMultiplier(h, streak = 0) {
+  const base = healthRewardCoef(h)
+  if (base < 1) return base                 // 健康未满:只衰减,无超额
+  let m = 1
+  if ((h == null ? HEALTH_MAX : h) >= 100) m += 0.1   // 满血 +10%
+  for (const [d, b] of REWARD_STREAK_BONUS) if (streak >= d) { m += b; break }   // 连续签到加成(取最高档)
+  return Math.round(m * 100) / 100
+}
+// 精神状态档(给 UI 显示文案/配色)
+export function spiritTier(m) {
+  if (m === 0) return { txt: '生病', lvl: 'sick', c: '#ff5b5b' }
+  if (m < 1) return { txt: '虚弱', lvl: 'low', c: '#ffb347' }
+  if (m >= 1.4) return { txt: '超饱满', lvl: 'super', c: '#ff9ec7' }
+  if (m >= 1.2) return { txt: '元气满满', lvl: 'great', c: '#ffd86b' }
+  if (m > 1) return { txt: '状态不错', lvl: 'good', c: '#6bffb0' }
+  return { txt: '正常', lvl: 'normal', c: '#6bffb0' }
+}
 export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
 export const REGEN_CHECKIN_SIDE = 8   // 打支线卡回血
 export const REGEN_ITEM = 10          // 喂道具回血

@@ -1,6 +1,6 @@
 import { db, child, audit, mainTask, pet, IS_DEMO } from '../lib/store.js'
 import { todayStr, nowISO, uid } from '../lib/util.js'
-import { healthRewardCoef } from '../lib/petConfig.js'
+import { rewardMultiplier } from '../lib/petConfig.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
 import * as rewardSvc from './rewardService.js'
@@ -77,19 +77,25 @@ export function interact(checkinId) {
     const exMin = c.exercise_minutes || c.game_minutes || 0
     boxTier = exMin >= 60 ? 'diamond' : (task.lesson ? 'gold' : 'silver')
   }
-  // 健康奖励系数:健康越低,日常打卡的金币/宝箱越少;生病(coef=0)日常奖励归零。
-  // 英语主线打卡(task_type==='main')不受影响,始终全额激励。
-  const coef = healthRewardCoef(pet().health)
+  // 日常奖励总倍率:健康差→<1(生病0);健康满+连续坚持→>1 超额(最高1.5),既放大金币也升宝箱档。
+  // 英语主线打卡(task_type==='main')固定全额,不受此影响。
+  const curStreak = (db.streaks && db.streaks[0] && db.streaks[0].current_streak) || 0
+  const m = rewardMultiplier(pet().health, curStreak)
   const isMain = task.task_type === 'main'
-  // 宝箱:生病(coef 0)时日常支线宝箱不发(主线无宝箱);否则照发
-  if (boxTier && !isMain && coef === 0) boxTier = null
+  // 宝箱:生病(m 0)不发日常宝箱;精神超好(m>1)按超出部分概率「升一档」(银→金→钻)
+  if (boxTier && !isMain) {
+    if (m === 0) boxTier = null
+    else if (m > 1 && Math.random() < (m - 1)) {
+      const i = BOX_ORDER.indexOf(boxTier)
+      if (i >= 0 && i < BOX_ORDER.length - 1) boxTier = BOX_ORDER[i + 1]
+    }
+  }
   if (boxTier) {
     if (!db.boxes) db.boxes = []
     db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null, coinsOnly })
   }
-  // 打卡互动发星币:英语主线 +10(不打折);支线 +5 × 健康系数(健康差就少给,生病不给)
-  const baseCoin = isMain ? COIN_PER_MAIN : COIN_PER_SIDE
-  const payCoin = isMain ? baseCoin : Math.round(baseCoin * coef)
+  // 打卡互动发星币:英语主线 +10(固定);支线 +5 × 倍率(健康差少给/生病不给;状态超好超额给)
+  const payCoin = isMain ? COIN_PER_MAIN : Math.round(COIN_PER_SIDE * m)
   const coinsEarned = payCoin > 0 ? coinSvc.earnCoins(payCoin, `打卡:${task.name}`) : 0
   // 属性满值晋级:已拥有专属皮肤时改发星币(60)
   if (delta && delta.promotions) for (const pr of delta.promotions) if (pr.needCoin) coinSvc.earnCoins(60, '属性满值晋级奖励')
