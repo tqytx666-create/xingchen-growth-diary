@@ -145,10 +145,10 @@ export const DAILY_HABITS = Object.keys(HABIT_PENALTY)
 export function rewardMultiplier(h, streak = 0) {
   const v = h == null ? HEALTH_MAX : h
   if (v < HEALTH_WARN) return 0             // 健康 <50:虚弱/生病,日常奖励暂停
-  if (v < 85) return 1                       // 健康但不满血:基础 1 倍
-  if (streak >= 14) return 3                 // 满血 + 连签14天:三倍
-  if (streak >= 7) return 2                  // 满血 + 连签7天:双倍
-  if (streak >= 3) return 1.5                // 满血 + 连签3天:1.5倍
+  if (v < HEALTH_MAX) return 1              // 没满血(<100):基础 1 倍(超额必须满血)
+  if (streak >= 14) return 3                 // 满血100 + 连签14天:三倍
+  if (streak >= 7) return 2                  // 满血100 + 连签7天:双倍
+  if (streak >= 3) return 1.5                // 满血100 + 连签3天:1.5倍
   return 1
 }
 // 精神状态档(给 UI 显示文案/配色)

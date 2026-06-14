@@ -491,10 +491,10 @@ onMounted(() => {
           <span>{{ h.ic }} 没{{ h.name }}</span><b style="color:#ff7a7a">健康 −{{ h.pen }}</b>
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:12px;padding:11px;border-radius:12px;background:rgba(255,159,91,.13)">
-          💡 健康 <b style="color:#ffb347">低于 50</b> → 日常打卡的<b style="color:#ffd86b">金币和宝箱</b>暂停;掉到 <b style="color:#ff7a7a">25 就生病</b>,要去 🛍️ 商城买 💊 药水喂它才能好,<b style="color:#ff7a7a">不治每天 −10 直到变回蛋!</b><br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响。
+          💡 健康 <b style="color:#ffb347">低于 50</b> → 日常打卡的<b style="color:#ffd86b">金币和宝箱</b>暂停;掉到 <b style="color:#ff7a7a">25 就生病</b>,要去 🛍️ 商城买 💊 药水喂它才能好,<b style="color:#ff7a7a">不治每天 −10 直到变回蛋!</b><br>💊 <b style="color:#ffce8a">吃药只是脱险,不会马上满血</b> —— 之后要连续几天好好打卡(完成英语+生活习惯),健康才会一点点养回来。<br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响。
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:11px;border-radius:12px;background:rgba(255,158,199,.13)">
-          🌟 反过来!健康满满 + <b style="color:#ff9ec7">连续坚持签到</b> → 奖励超额:连签 <b>3天 ×1.5</b>、<b>7天 ×2(双倍)</b>、<b style="color:#ff9ec7">14天 ×3(三倍)</b>!开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)。越自律,奖励越香 🎁
+          🌟 反过来!<b style="color:#ff9ec7">健康满 100</b> + <b style="color:#ff9ec7">连续坚持签到</b> → 奖励超额:连签 <b>3天 ×1.5</b>、<b>7天 ×2(双倍)</b>、<b style="color:#ff9ec7">14天 ×3(三倍)</b>!开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)。掉一点血(没满100)倍数就没了,要时刻保持满血哦~越自律,奖励越香 🎁
         </div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="healthInfo=false">知道啦</button>
       </div>

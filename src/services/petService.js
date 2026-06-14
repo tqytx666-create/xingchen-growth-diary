@@ -123,13 +123,10 @@ export function reviveAsEgg(reason) {
 
 // 打卡/喂食回血:健康良好(>虚弱线)时不再无脑回满——否则"漏生活习惯"的下降会被一次打卡刷掉。
 // 只在虚弱/生病(≤50)时回血,把宠物从濒危拉回来(救命机制保留)。健康反映的是整体照顾程度,不是打了一次卡。
-function regen(amount) {
-  const p = pet()
-  const cur = p.health == null ? HEALTH_MAX : p.health
-  // 满血(>50)不回;生病(≤25)光打卡/普通喂食不回血(必须吃药治);只有虚弱(25~50)能靠打卡回血救回
-  if (cur > HEALTH_WARN || cur <= HEALTH_SICK) return
-  p.health = Math.min(HEALTH_MAX, cur + amount)
-}
+// 健康不再靠「打卡当场回血」,改为每天结算(settleHealth)按当天表现慢慢恢复:
+// 完成英语主线 + 生活习惯做齐 → 每天 +8;漏了就扣。吃药只脱险到虚弱区,要连续几天好好打卡才养得回满血。
+// (防止"金币多→生病就吃药→瞬间满血→无惩罚")。此函数保留为空操作,兼容旧调用。
+function regen() { /* no-op:健康靠每日结算恢复 */ }
 
 function event(sourceType, sourceId, eventType, delta, message) {
   db.pet_events.unshift({
@@ -234,8 +231,8 @@ export function applyItem(item) {
   const a = petAttrs(); const p = pet()
   if (item.mood) a.mood_score = clamp(a.mood_score + item.mood)
   p.mood = 'happy'
-  if (item.cure) p.health = Math.min(HEALTH_MAX, (p.health == null ? HEALTH_MAX : p.health) + item.cure)  // 药:专治生病,大回血(可从生病恢复)
-  else regen(REGEN_ITEM)                             // 普通道具:虚弱时回血(满血/生病不回)
+  if (item.cure) p.health = Math.max(p.health == null ? 0 : p.health, item.cure)   // 药:只救到脱险线(虚弱区),停生病倒计时;之后靠连续打卡每天养回满血
+  // 普通道具不回血(健康靠每日结算恢复),只加心情/经验
   if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
   a.updated_at = nowISO()
   event('item', item.key, 'item_use', {}, `用了${item.name},${item.msg}`)

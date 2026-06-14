@@ -11,6 +11,6 @@ export const ITEMS = [
   { key: 'fish', name: '小鱼干', emoji: '🐟', img: fish, mood: 6,  exp: 4,  kind: 'feed',  burst: ['🐟', '💕', '✨'], msg: '小鱼干!小愿最爱吃了 😋' },
   { key: 'ball', name: '玩具球', emoji: '⚽', img: ball, mood: 10, exp: 2,  kind: 'play',  burst: ['⚽', '💫', '🐾'], msg: '小愿追着球跑,玩得好开心!' },
   { key: 'wand', name: '星星魔法棒', emoji: '✨', img: wand, mood: 5,  exp: 10, kind: 'magic', burst: ['⭐', '🌟', '✨', '💫'], msg: '魔法星光洒下,经验大涨 ✨' },
-  { key: 'medicine', name: '神奇药水', emoji: '💊', img: medicine, mood: 6, cure: 50, kind: 'cure', burst: ['💊', '❤️', '✨', '💕'], msg: '咕嘟咕嘟喝下药水,病好多啦,健康大大恢复!' }
+  { key: 'medicine', name: '神奇药水', emoji: '💊', img: medicine, mood: 6, cure: 35, kind: 'cure', burst: ['💊', '❤️', '✨', '💕'], msg: '咕嘟喝下药水,病转好啦!但还很虚弱,要连续几天好好打卡才能完全康复哦' }
 ]
 export function itemDef(key) { return ITEMS.find(i => i.key === key) || null }
