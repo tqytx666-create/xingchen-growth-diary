@@ -119,17 +119,32 @@ export const HEALTH_MAX = 100
 export const HEALTH_SICK = 25   // ≤ 此值:生病(明显病恹恹 + 强提醒)
 export const HEALTH_WARN = 50   // ≤ 此值:虚弱(状态下滑,温和提醒)
 export const DECAY = {
-  missAllHealth: 10, missAllAttr: 3, missAllCharm: 2, // 一整天完全没打卡
-  missMainHealth: 4, missMainWisdom: 3,               // 打了卡但没打英语主线
-  regenMain: 8,                                       // 当天完成主线:健康回升
-  missHabitAttr: 1,                                   // 每漏一项「每日必做习惯」:对应属性 -1
-  missHabitHealth: 1,                                 // 每漏一项:健康 -1
-  missHabitHealthCap: 3,                              // 每天因漏习惯最多扣 3 健康(温和,英语完成也照扣)
+  missAllAttr: 3, missAllCharm: 2,                    // 一整天完全没打卡:属性普减(健康由习惯明细扣)
+  missMainHealth: 4, missMainWisdom: 3,               // 打了卡但没打英语主线:额外扣
+  regenMain: 8,                                       // 当天完成主线 + 生活习惯全做齐:健康回升
+  missHabitAttr: 1,                                   // 每漏一项每日习惯:对应属性 -1(健康按下方明细扣)
   catchupCap: 60                                      // 单次最多回补处理的天数(防卡顿)
 }
-// 每日必做习惯(漏打要体现代价,即使当天完成了英语主线也照扣对应属性 + 少量健康)
-// 周期性任务(洗澡/洗头)不按天判漏,避免冤枉
-export const DAILY_HABITS = ['t_teeth_am', 't_teeth_pm', 't_sleep', 't_room']
+// 生活习惯漏打的「健康扣分明细」(差异化:洗澡最重、刷牙中、房间轻)。每天判;漏一项扣对应分。
+export const HABIT_PENALTY = { t_bath: 10, t_teeth_am: 5, t_teeth_pm: 5, t_room: 3 }
+// 给孩子看的明细表(图标+名称+扣分)
+export const HABIT_PENALTY_LABEL = [
+  { ic: '🛁', name: '洗澡', pen: 10 }, { ic: '🌞', name: '早上刷牙', pen: 5 },
+  { ic: '🌙', name: '晚上刷牙', pen: 5 }, { ic: '🧹', name: '房间整洁', pen: 3 },
+  { ic: '🚿', name: '洗头(连续3天没洗)', pen: 20 }
+]
+// 洗头:周期性,不用每天打卡;连续 HAIR_CYCLE 天没洗 → 扣一次重的 HAIR_PENALTY
+export const HAIR_TASK = 't_hair', HAIR_PENALTY = 20, HAIR_CYCLE = 3
+// 今日待办提示用(每日必做项)
+export const DAILY_HABITS = Object.keys(HABIT_PENALTY)
+// 健康越低 → 日常奖励(打卡金币/宝箱)系数越低;生病(≤SICK)归零;健康良好(≥85)不打折。
+// 英语主线打卡 + 连续签到里程碑奖励不受此影响。
+export function healthRewardCoef(h) {
+  const v = h == null ? HEALTH_MAX : h
+  if (v <= HEALTH_SICK) return 0
+  if (v >= 85) return 1
+  return Math.max(0, Math.min(1, (v - HEALTH_SICK) / (85 - HEALTH_SICK)))
+}
 export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
 export const REGEN_CHECKIN_SIDE = 8   // 打支线卡回血
 export const REGEN_ITEM = 10          // 喂道具回血

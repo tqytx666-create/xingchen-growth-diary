@@ -54,6 +54,7 @@ function ensurePet() {
   if (!p.species_key) p.species_key = 'dog'
   if (p.health == null) p.health = 100
   if (!p.last_decay_date) p.last_decay_date = todayStr()
+  if (p.noHairDays == null) p.noHairDays = 0   // 洗头连续未洗天数(周期扣健康用)
   const a = Array.isArray(db.pet_attributes) ? db.pet_attributes[0] : null
   if (a && !a.tiers) a.tiers = {}   // 属性满值晋级的星级记录
 }

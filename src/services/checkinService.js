@@ -1,5 +1,6 @@
-import { db, child, audit, mainTask, IS_DEMO } from '../lib/store.js'
+import { db, child, audit, mainTask, pet, IS_DEMO } from '../lib/store.js'
 import { todayStr, nowISO, uid } from '../lib/util.js'
+import { healthRewardCoef } from '../lib/petConfig.js'
 import * as streakSvc from './streakService.js'
 import * as petSvc from './petService.js'
 import * as rewardSvc from './rewardService.js'
@@ -76,12 +77,20 @@ export function interact(checkinId) {
     const exMin = c.exercise_minutes || c.game_minutes || 0
     boxTier = exMin >= 60 ? 'diamond' : (task.lesson ? 'gold' : 'silver')
   }
+  // 健康奖励系数:健康越低,日常打卡的金币/宝箱越少;生病(coef=0)日常奖励归零。
+  // 英语主线打卡(task_type==='main')不受影响,始终全额激励。
+  const coef = healthRewardCoef(pet().health)
+  const isMain = task.task_type === 'main'
+  // 宝箱:生病(coef 0)时日常支线宝箱不发(主线无宝箱);否则照发
+  if (boxTier && !isMain && coef === 0) boxTier = null
   if (boxTier) {
     if (!db.boxes) db.boxes = []
     db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null, coinsOnly })
   }
-  // 打卡互动发星币(只能这样赚):英语主线 +10,支线 +5
-  const coinsEarned = coinSvc.earnCoins(task.task_type === 'main' ? COIN_PER_MAIN : COIN_PER_SIDE, `打卡:${task.name}`)
+  // 打卡互动发星币:英语主线 +10(不打折);支线 +5 × 健康系数(健康差就少给,生病不给)
+  const baseCoin = isMain ? COIN_PER_MAIN : COIN_PER_SIDE
+  const payCoin = isMain ? baseCoin : Math.round(baseCoin * coef)
+  const coinsEarned = payCoin > 0 ? coinSvc.earnCoins(payCoin, `打卡:${task.name}`) : 0
   // 属性满值晋级:已拥有专属皮肤时改发星币(60)
   if (delta && delta.promotions) for (const pr of delta.promotions) if (pr.needCoin) coinSvc.earnCoins(60, '属性满值晋级奖励')
   // 支线打卡可能让本周"全勤天数"达标 → 触发自动奖励

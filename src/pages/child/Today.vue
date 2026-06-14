@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { db, pet, petAttrs, credit as creditRow, bank as bankRow, streak as streakRow, setUser } from '../../lib/store.js'
-import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS, tierName, ATTR_CN } from '../../lib/petConfig.js'
+import { STAGES, isLow, MAX_LEVEL, expForLevel, tierFromLevel, TIER_START, HATCH_EXP, effectiveStage, DEX, charmTotal, CHARM_PER_SKIN, CHARM_PER_DEX, healthState, HEALTH_MAX, DAILY_HABITS, tierName, ATTR_CN, HABIT_PENALTY_LABEL, healthRewardCoef } from '../../lib/petConfig.js'
 import { settleHealth } from '../../services/petService.js'
 import { levelInfo } from '../../services/creditService.js'
 import * as checkinSvc from '../../services/checkinService.js'
@@ -62,6 +62,9 @@ const hp = computed(() => p.value.health == null ? HEALTH_MAX : Math.round(p.val
 const hpState = computed(() => healthState(p.value))
 const hpColor = computed(() => hpState.value === 'sick' ? '#ff5b5b' : hpState.value === 'weak' ? '#ffb347' : '#6bffb0')
 const hpEmoji = computed(() => ({ sick: '🤒', weak: '😟', healthy: '❤️', egg: '🥚' }[hpState.value] || '❤️'))
+// 健康越低,日常打卡奖励系数越低(英语/签到不受影响)
+const rewardCoef = computed(() => healthRewardCoef(p.value.health))
+const healthInfo = ref(false)
 // 死亡回蛋纪念弹窗(petService.reviveAsEgg 写入)
 const death = computed(() => db.pending_death || null)
 function closeDeath() { db.pending_death = null }
@@ -458,12 +461,31 @@ onMounted(() => {
       <span class="hp-face">{{ hpEmoji }}</span>
       <div style="flex:1;min-width:0">
         <div class="hp-top">
-          <span>健康 <b :style="{color:hpColor}">{{ hp }}</b><span class="dim" style="font-size:11px">/100</span></span>
+          <span @click="healthInfo=true" style="cursor:pointer">健康 <b :style="{color:hpColor}">{{ hp }}</b><span class="dim" style="font-size:11px">/100</span> <span style="opacity:.5;font-size:11px">ⓘ</span></span>
           <span v-if="hpState==='sick'" class="hp-tag sick">生病了!快照顾它</span>
           <span v-else-if="hpState==='weak'" class="hp-tag warn">状态下滑,记得打卡</span>
         </div>
         <div class="bar"><i :style="{ width: hp+'%', background: hpColor }"></i></div>
         <div v-if="hpState==='sick'" class="hp-hint">打卡或喂它吃东西就能慢慢康复;太久不管它会变回一颗蛋哦 💔</div>
+        <!-- 健康下降→日常奖励缩水的提示(英语/签到不受影响) -->
+        <div v-else-if="rewardCoef < 1" class="hp-hint" :style="{ color: rewardCoef===0 ? '#ff9a9a' : '#ffce8a' }">
+          {{ rewardCoef===0 ? '🚫 生病了,日常打卡暂时不发金币/宝箱了(英语和签到照常)' : `⚠️ 健康降了,现在日常打卡奖励只剩 ${Math.round(rewardCoef*100)}%,养好健康才能拿满` }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 健康规则明细弹窗(让星晨看清漏哪项扣多少 + 奖励联动) -->
+    <div v-if="healthInfo" class="modal" @click.self="healthInfo=false">
+      <div class="modal-card" style="max-width:340px;text-align:left">
+        <div style="font-size:17px;font-weight:700;text-align:center;margin-bottom:4px">❤️ 健康规则</div>
+        <div class="dim" style="font-size:12px;text-align:center;margin-bottom:12px">不做这些生活习惯,小愿的健康会下降</div>
+        <div v-for="h in HABIT_PENALTY_LABEL" :key="h.name" style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 2px;border-bottom:1px solid rgba(255,255,255,.07)">
+          <span>{{ h.ic }} 没{{ h.name }}</span><b style="color:#ff7a7a">健康 −{{ h.pen }}</b>
+        </div>
+        <div style="font-size:12px;line-height:1.7;margin-top:12px;padding:11px;border-radius:12px;background:rgba(255,159,91,.13)">
+          💡 健康越低,日常打卡的<b style="color:#ffd86b">金币和宝箱</b>就越少;生病了(健康≤25)日常奖励会暂停。<br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响 —— 养好健康,奖励才拿得满 ✨
+        </div>
+        <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="healthInfo=false">知道啦</button>
       </div>
     </div>
 

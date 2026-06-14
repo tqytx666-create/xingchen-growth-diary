@@ -2,7 +2,7 @@ import { db, pet, petAttrs } from '../lib/store.js'
 import { clamp, nowISO, uid, todayStr, addDays } from '../lib/util.js'
 import { earnCoins } from './coinService.js'
 import { STAGES, MAX_LEVEL, expForLevel, tierFromLevel, HATCH_EXP,
-  HEALTH_MAX, HEALTH_SICK, HEALTH_WARN, DECAY, DAILY_HABITS, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
+  HEALTH_MAX, HEALTH_SICK, HEALTH_WARN, DECAY, HABIT_PENALTY, HAIR_TASK, HAIR_PENALTY, HAIR_CYCLE, healthState, REGEN_CHECKIN_MAIN, REGEN_CHECKIN_SIDE, REGEN_ITEM,
   ATTR_MAX, TIER_ATTRS, ATTR_CN, ATTR_SKIN, tierName } from '../lib/petConfig.js'
 
 // 属性满值晋级(A+B):某项 ≥100 → 星级 +1、溢出保留;首次满值解锁专属皮肤(已有则标记发星币)
@@ -38,22 +38,25 @@ function dayActivity(dateStr) {
   }
   return { any, main, done }
 }
-// 当天漏打的「每日必做习惯」任务(只算仍启用的)
-function missedDailyHabits(done) {
-  const res = []
-  for (const id of DAILY_HABITS) {
+// 生活习惯漏打的「差异化健康扣分」:每日习惯漏一项扣对应明细(洗澡10/刷牙各5/房间3);
+// 洗头是周期性,连续 HAIR_CYCLE 天没洗扣一次重的(20)。返回当天因漏习惯扣的健康总数。
+function applyHabitMiss(done, a, p) {
+  let cut = 0
+  for (const id of Object.keys(HABIT_PENALTY)) {
     const t = (db.tasks || []).find(x => x.id === id && x.is_active !== false)
-    if (t && !done.has(id)) res.push(t)
+    if (t && !done.has(id)) {
+      cut += HABIT_PENALTY[id]
+      const k = t.attribute_key || 'cleanliness'; a[k] = clamp((a[k] || 0) - DECAY.missHabitAttr)
+    }
   }
-  return res
-}
-// 漏打每日习惯的代价:对应属性各 -missHabitAttr,健康按漏打项数小扣(封顶)。返回扣的健康值
-function applyHabitMiss(missed, a, p) {
-  if (!missed.length) return 0
-  for (const t of missed) { const k = t.attribute_key || 'cleanliness'; a[k] = clamp((a[k] || 0) - DECAY.missHabitAttr) }
-  const hCut = Math.min(DECAY.missHabitHealthCap, missed.length * DECAY.missHabitHealth)
-  p.health = clamp((p.health || 0) - hCut)
-  return hCut
+  // 洗头:洗了归零;没洗累计,每满 3 天扣一次 20
+  if (done.has(HAIR_TASK)) p.noHairDays = 0
+  else {
+    p.noHairDays = (p.noHairDays || 0) + 1
+    if (p.noHairDays % HAIR_CYCLE === 0) { cut += HAIR_PENALTY; a.cleanliness = clamp((a.cleanliness || 0) - 2) }
+  }
+  if (cut) p.health = clamp((p.health || 0) - cut)
+  return cut
 }
 
 // 每日健康结算:把"上次结算日"到"昨天"的每个完整过去日按打卡情况衰减/回血。
@@ -73,17 +76,14 @@ export function settleHealth() {
     d = addDays(d, 1)
     if (d >= today) break                       // 今天还没过完,不罚今天
     const { any, main, done } = dayActivity(d)
-    if (!any) {                                  // 完全没打卡:属性普减 + 健康大降
+    const habitCut = applyHabitMiss(done, a, p)  // 生活习惯差异化扣健康(所有情况都查)
+    if (!any) {                                  // 完全没打卡:属性普减(健康已由习惯明细全漏扣到)
       for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
-      p.health = clamp((p.health || 0) - DECAY.missAllHealth)
-    } else if (!main) {                          // 打了卡但没打英语主线
+    } else if (!main) {                          // 打了卡但没打英语主线:额外扣智慧+健康
       a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
       p.health = clamp((p.health || 0) - DECAY.missMainHealth)
-      applyHabitMiss(missedDailyHabits(done), a, p)   // 生活习惯漏打照样扣
-    } else {                                     // 完成英语主线:生活习惯都做齐才给回血奖励;漏了就照扣(让健康真能看到降)
-      const missed = missedDailyHabits(done)
-      if (missed.length) applyHabitMiss(missed, a, p)
-      else p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+    } else if (habitCut === 0) {                 // 完成英语主线 + 生活习惯全做齐:回血奖励
+      p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
     }
     processed++
     if (p.health <= 0) { died = true; break }
