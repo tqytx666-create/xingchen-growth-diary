@@ -82,8 +82,8 @@ export function interact(checkinId) {
   const curStreak = (db.streaks && db.streaks[0] && db.streaks[0].current_streak) || 0
   const m = rewardMultiplier(pet().health, curStreak)
   const isMain = task.task_type === 'main'
-  // 宝箱:生病(m 0)不发日常宝箱;精神超好(m>1)按超出部分概率「升一档」(银→金→钻)
-  if (boxTier && !isMain) {
+  // 宝箱:生病(m 0)不发;精神超好(m>1)按超出部分概率「升一档」(银→金→钻)
+  if (boxTier) {
     if (m === 0) boxTier = null
     else if (m > 1 && Math.random() < (m - 1)) {
       const i = BOX_ORDER.indexOf(boxTier)
@@ -94,8 +94,8 @@ export function interact(checkinId) {
     if (!db.boxes) db.boxes = []
     db.boxes.unshift({ id: uid('bx_'), tier: boxTier, source_task: task.name, earned_at: nowISO(), opened_at: null, minutes: null, coinsOnly })
   }
-  // 打卡互动发星币:英语主线 +10(固定);支线 +5 × 倍率(健康差少给/生病不给;状态超好超额给)
-  const payCoin = isMain ? COIN_PER_MAIN : Math.round(COIN_PER_SIDE * m)
+  // 打卡互动发星币:英语主线 +10 / 支线 +5,都 × 倍率(健康差少给/生病不给;满血连签超额给)。只有「连续签到里程碑」奖励另行保护。
+  const payCoin = Math.round((isMain ? COIN_PER_MAIN : COIN_PER_SIDE) * m)
   const coinsEarned = payCoin > 0 ? coinSvc.earnCoins(payCoin, `打卡:${task.name}`) : 0
   // 属性满值晋级:已拥有专属皮肤时改发星币(60)
   if (delta && delta.promotions) for (const pr of delta.promotions) if (pr.needCoin) coinSvc.earnCoins(60, '属性满值晋级奖励')

@@ -1,6 +1,6 @@
 import { db, bank, child, pet } from '../lib/store.js'
 import { round2, todayStr, daysBetween, nowISO, uid } from '../lib/util.js'
-import { HEALTH_WARN } from '../lib/petConfig.js'
+import { rewardMultiplier } from '../lib/petConfig.js'
 
 function txn(type, fields) {
   db.time_bank_transactions.unshift({
@@ -63,12 +63,13 @@ export function penalty({ minutes, description, createdBy }) {
 export function pendingInterest() {
   const b = bank()
   if (!b || !b.interest_enabled) return 0
-  // 利息纳入健康影响:虚弱/生病(健康<50)期间不计息(不公平于"生病还白拿利息");利息永远 ×1,不参与倍数加成。
-  const pp = pet(); const h = pp ? (pp.health == null ? 100 : pp.health) : 100
-  if (h < HEALTH_WARN) return 0
   const days = Math.min(30, daysBetween(b.last_interest_date || todayStr(), todayStr()))
   if (days <= 0) return 0
-  return Math.max(0, Math.round((b.current_balance_minutes || 0) * (b.daily_interest_rate || 0.01) * days))
+  const base = Math.max(0, Math.round((b.current_balance_minutes || 0) * (b.daily_interest_rate || 0.01) * days))
+  // 利息也纳入健康奖励倍率:健康<50→0(不计息);满血+连签→超额(×1.2~3,跟其它日常奖励一致)
+  const pp = pet(); const h = pp ? (pp.health == null ? 100 : pp.health) : 100
+  const streak = (db.streaks && db.streaks[0] && db.streaks[0].current_streak) || 0
+  return Math.round(base * rewardMultiplier(h, streak))
 }
 // 孩子在宠物页手动收取利息:入账 + 重置计息日 + 返回收取的分钟数
 export function collectInterest() {

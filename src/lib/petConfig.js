@@ -145,17 +145,18 @@ export const DAILY_HABITS = Object.keys(HABIT_PENALTY)
 export function rewardMultiplier(h, streak = 0) {
   const v = h == null ? HEALTH_MAX : h
   if (v < HEALTH_WARN) return 0             // 健康 <50:虚弱/生病,日常奖励暂停
-  if (v < HEALTH_MAX) return 1              // 没满血(<100):基础 1 倍(超额必须满血)
-  if (streak >= 14) return 3                 // 满血100 + 连签14天:三倍
-  if (streak >= 7) return 2                  // 满血100 + 连签7天:双倍
-  if (streak >= 3) return 1.5                // 满血100 + 连签3天:1.5倍
-  return 1
+  if (v < HEALTH_MAX) return 1              // 没满血(<100):基础 1 倍(超额必须满血100)
+  if (streak < 2) return 1                  // 满血但连签<2天:还没超额
+  if (streak === 2) return 1.2              // 连签2天:1.2倍起步
+  if (streak <= 7) return Math.round((1.5 + (streak - 3) * 0.125) * 100) / 100   // 3→1.5 …7→2.0(每天涨)
+  if (streak <= 14) return Math.round((2 + (streak - 7) / 7) * 100) / 100          // 7→2.0 …14→3.0(每天涨)
+  return 3                                   // ≥14天:三倍封顶
 }
-// 精神状态档(给 UI 显示文案/配色)
+// 精神状态档(给 UI 显示文案/配色):≥3神采/≥2超饱满火焰/>1元气绿光
 export function spiritTier(m) {
   if (m >= 3) return { txt: '神采奕奕', lvl: 'super', c: '#ff9ec7' }
   if (m >= 2) return { txt: '超饱满', lvl: 'great', c: '#ffd86b' }
-  if (m >= 1.5) return { txt: '元气满满', lvl: 'good', c: '#6bffb0' }
+  if (m > 1) return { txt: '元气满满', lvl: 'good', c: '#6bffb0' }
   return { txt: '正常', lvl: 'normal', c: '#6bffb0' }
 }
 export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
