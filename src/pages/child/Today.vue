@@ -466,7 +466,7 @@ onMounted(() => {
           <span v-else-if="hpState==='weak'" class="hp-tag warn">状态下滑,记得打卡</span>
         </div>
         <div class="bar"><i :style="{ width: hp+'%', background: hpColor }"></i></div>
-        <div v-if="hpState==='sick'" class="hp-hint">打卡或喂它吃东西就能慢慢康复;太久不管它会变回一颗蛋哦 💔</div>
+        <div v-if="hpState==='sick'" class="hp-hint" style="color:#ff9a9a">🤒 生病了!光打卡没用啦,快去 🛍️ 商城买 💊 神奇药水喂它治病;不治的话健康每天 −10,归零就变回一颗蛋了 💔</div>
         <!-- 精神状态→日常奖励联动(英语/签到不受影响):差→缩水,满血+连续坚持→超额 -->
         <div v-else-if="spiritM !== 1" class="hp-hint" :style="{ color: spiritTier(spiritM).c }">
           {{ spiritM < 1 ? `⚠️ 健康降了,现在日常打卡奖励只剩 ${Math.round(spiritM*100)}%,养好健康才能拿满` : `✨ 精神${spiritTier(spiritM).txt}!日常打卡奖励 ×${spiritM},开宝箱还有概率升级哦!` }}
@@ -483,10 +483,10 @@ onMounted(() => {
           <span>{{ h.ic }} 没{{ h.name }}</span><b style="color:#ff7a7a">健康 −{{ h.pen }}</b>
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:12px;padding:11px;border-radius:12px;background:rgba(255,159,91,.13)">
-          💡 健康越低,日常打卡的<b style="color:#ffd86b">金币和宝箱</b>就越少;生病了(健康≤25)日常奖励会暂停。<br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响。
+          💡 健康 <b style="color:#ffb347">低于 50</b> → 日常打卡的<b style="color:#ffd86b">金币和宝箱</b>暂停;掉到 <b style="color:#ff7a7a">25 就生病</b>,要去 🛍️ 商城买 💊 药水喂它才能好,<b style="color:#ff7a7a">不治每天 −10 直到变回蛋!</b><br>但<b style="color:#9bffcf">英语打卡</b>和<b style="color:#9bffcf">连续签到</b>的奖励一直都在,不受影响。
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:11px;border-radius:12px;background:rgba(255,158,199,.13)">
-          🌟 反过来!健康满满 + <b style="color:#ff9ec7">连续坚持签到</b>,小愿会进入「超饱满」状态:日常奖励<b style="color:#ff9ec7">最高 ×1.5</b>,开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)!越自律,奖励越香 🎁
+          🌟 反过来!健康满满 + <b style="color:#ff9ec7">连续坚持签到</b> → 奖励超额:连签 <b>3天 ×1.5</b>、<b>7天 ×2(双倍)</b>、<b style="color:#ff9ec7">14天 ×3(三倍)</b>!开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)。越自律,奖励越香 🎁
         </div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="healthInfo=false">知道啦</button>
       </div>

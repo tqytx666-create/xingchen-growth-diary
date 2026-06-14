@@ -6,7 +6,7 @@ export const SKIN_PRICE = {
 }
 export const ROOM_PRICE = { forest: 200, ocean: 350, space: 550, sakura: 400, castle: 650, candy: 480 }   // night 免费默认拥有
 export const FURN_PRICE = { bowl: 80, plant: 160, toybox: 280, shelf: 200, lamp: 140, plush: 240 }
-export const ITEM_PRICE = { bone: 15, fish: 20, ball: 25, wand: 45 }
+export const ITEM_PRICE = { bone: 15, fish: 20, ball: 25, wand: 45, medicine: 30 }
 
 // 每日打卡获得的星币
 export const COIN_PER_MAIN = 10   // 英语主线

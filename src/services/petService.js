@@ -75,15 +75,19 @@ export function settleHealth() {
   while (d < today && processed < DECAY.catchupCap) {
     d = addDays(d, 1)
     if (d >= today) break                       // 今天还没过完,不罚今天
-    const { any, main, done } = dayActivity(d)
-    const habitCut = applyHabitMiss(done, a, p)  // 生活习惯差异化扣健康(所有情况都查)
-    if (!any) {                                  // 完全没打卡:属性普减(健康已由习惯明细全漏扣到)
-      for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
-    } else if (!main) {                          // 打了卡但没打英语主线:额外扣智慧+健康
-      a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
-      p.health = clamp((p.health || 0) - DECAY.missMainHealth)
-    } else if (habitCut === 0) {                 // 完成英语主线 + 生活习惯全做齐:回血奖励
-      p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+    if ((p.health || 0) <= HEALTH_SICK) {        // 已生病:每天固定扣(倒计时),只有吃药才能停;不再算常规衰减
+      p.health = clamp((p.health || 0) - DECAY.sickDailyDecay)
+    } else {
+      const { any, main, done } = dayActivity(d)
+      const habitCut = applyHabitMiss(done, a, p)  // 生活习惯差异化扣健康(所有情况都查)
+      if (!any) {                                // 完全没打卡:属性普减(健康已由习惯明细全漏扣到)
+        for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
+      } else if (!main) {                        // 打了卡但没打英语主线:额外扣智慧+健康
+        a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
+        p.health = clamp((p.health || 0) - DECAY.missMainHealth)
+      } else if (habitCut === 0) {               // 完成英语主线 + 生活习惯全做齐:回血奖励
+        p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+      }
     }
     processed++
     if (p.health <= 0) { died = true; break }
@@ -117,7 +121,8 @@ export function reviveAsEgg(reason) {
 function regen(amount) {
   const p = pet()
   const cur = p.health == null ? HEALTH_MAX : p.health
-  if (cur > HEALTH_WARN) return
+  // 满血(>50)不回;生病(≤25)光打卡/普通喂食不回血(必须吃药治);只有虚弱(25~50)能靠打卡回血救回
+  if (cur > HEALTH_WARN || cur <= HEALTH_SICK) return
   p.health = Math.min(HEALTH_MAX, cur + amount)
 }
 
@@ -224,7 +229,8 @@ export function applyItem(item) {
   const a = petAttrs(); const p = pet()
   if (item.mood) a.mood_score = clamp(a.mood_score + item.mood)
   p.mood = 'happy'
-  regen(REGEN_ITEM)                                  // 喂食回血
+  if (item.cure) p.health = Math.min(HEALTH_MAX, (p.health == null ? HEALTH_MAX : p.health) + item.cure)  // 药:专治生病,大回血(可从生病恢复)
+  else regen(REGEN_ITEM)                             // 普通道具:虚弱时回血(满血/生病不回)
   if (p.risk > 0) p.risk = Math.max(0, p.risk - 1)
   a.updated_at = nowISO()
   event('item', item.key, 'item_use', {}, `用了${item.name},${item.msg}`)

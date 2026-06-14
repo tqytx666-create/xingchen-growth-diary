@@ -123,6 +123,7 @@ export const DECAY = {
   missMainHealth: 4, missMainWisdom: 3,               // 打了卡但没打英语主线:额外扣
   regenMain: 8,                                       // 当天完成主线 + 生活习惯全做齐:健康回升
   missHabitAttr: 1,                                   // 每漏一项每日习惯:对应属性 -1(健康按下方明细扣)
+  sickDailyDecay: 10,                                 // 生病(≤25)后每天固定扣 10(倒计时,必须吃药才能停)
   catchupCap: 60                                      // 单次最多回补处理的天数(防卡顿)
 }
 // 生活习惯漏打的「健康扣分明细」(差异化:洗澡最重、刷牙中、房间轻)。每天判;漏一项扣对应分。
@@ -139,31 +140,22 @@ export const HAIR_TASK = 't_hair', HAIR_PENALTY = 20, HAIR_CYCLE = 3
 export const DAILY_HABITS = Object.keys(HABIT_PENALTY)
 // 健康越低 → 日常奖励(打卡金币/宝箱)系数越低;生病(≤SICK)归零;健康良好(≥85)不打折。
 // 英语主线打卡 + 连续签到里程碑奖励不受此影响。
-export function healthRewardCoef(h) {
-  const v = h == null ? HEALTH_MAX : h
-  if (v <= HEALTH_SICK) return 0
-  if (v >= 85) return 1
-  return Math.max(0, Math.min(1, (v - HEALTH_SICK) / (85 - HEALTH_SICK)))
-}
-// 连续签到 → 超额奖励加成(越久加越多)
-export const REWARD_STREAK_BONUS = [[14, 0.4], [7, 0.2], [3, 0.1]]
-// 日常奖励「总倍率」:健康差→<1(生病0);健康满 + 连续坚持→>1 超额(最高1.5)。
-// 超出 1 的部分既放大金币,也作为开宝箱「升档暴率」。
+// 日常奖励「总倍率」:健康 <50 暂停(0);健康但不满血=1;满血(≥85)+连续签到→超额(连签3→1.5 / 7→2 / 14→3)。
+// 英语主线打卡 + 连续签到里程碑不受此影响。超出 1 的部分也作为开宝箱「升档暴率」。
 export function rewardMultiplier(h, streak = 0) {
-  const base = healthRewardCoef(h)
-  if (base < 1) return base                 // 健康未满:只衰减,无超额
-  let m = 1
-  if ((h == null ? HEALTH_MAX : h) >= 100) m += 0.1   // 满血 +10%
-  for (const [d, b] of REWARD_STREAK_BONUS) if (streak >= d) { m += b; break }   // 连续签到加成(取最高档)
-  return Math.round(m * 100) / 100
+  const v = h == null ? HEALTH_MAX : h
+  if (v < HEALTH_WARN) return 0             // 健康 <50:虚弱/生病,日常奖励暂停
+  if (v < 85) return 1                       // 健康但不满血:基础 1 倍
+  if (streak >= 14) return 3                 // 满血 + 连签14天:三倍
+  if (streak >= 7) return 2                  // 满血 + 连签7天:双倍
+  if (streak >= 3) return 1.5                // 满血 + 连签3天:1.5倍
+  return 1
 }
 // 精神状态档(给 UI 显示文案/配色)
 export function spiritTier(m) {
-  if (m === 0) return { txt: '生病', lvl: 'sick', c: '#ff5b5b' }
-  if (m < 1) return { txt: '虚弱', lvl: 'low', c: '#ffb347' }
-  if (m >= 1.4) return { txt: '超饱满', lvl: 'super', c: '#ff9ec7' }
-  if (m >= 1.2) return { txt: '元气满满', lvl: 'great', c: '#ffd86b' }
-  if (m > 1) return { txt: '状态不错', lvl: 'good', c: '#6bffb0' }
+  if (m >= 3) return { txt: '神采奕奕', lvl: 'super', c: '#ff9ec7' }
+  if (m >= 2) return { txt: '超饱满', lvl: 'great', c: '#ffd86b' }
+  if (m >= 1.5) return { txt: '元气满满', lvl: 'good', c: '#6bffb0' }
   return { txt: '正常', lvl: 'normal', c: '#6bffb0' }
 }
 export const REGEN_CHECKIN_MAIN = 15  // 打主线卡回血
