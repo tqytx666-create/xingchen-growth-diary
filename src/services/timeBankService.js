@@ -68,8 +68,8 @@ export function pendingInterest() {
   const base = Math.max(0, Math.round((b.current_balance_minutes || 0) * (b.daily_interest_rate || 0.01) * days))
   // 利息也纳入健康奖励倍率:健康<50→0(不计息);满血+连签→超额(×1.2~3,跟其它日常奖励一致)
   const pp = pet(); const h = pp ? (pp.health == null ? 100 : pp.health) : 100
-  const streak = (db.streaks && db.streaks[0] && db.streaks[0].current_streak) || 0
-  return Math.round(base * rewardMultiplier(h, streak))
+  const fullStreak = (pp && pp.fullStreak) || 0
+  return Math.round(base * rewardMultiplier(h, fullStreak))
 }
 // 孩子在宠物页手动收取利息:入账 + 重置计息日 + 返回收取的分钟数
 export function collectInterest() {

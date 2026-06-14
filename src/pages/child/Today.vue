@@ -63,7 +63,7 @@ const hpState = computed(() => healthState(p.value))
 const hpColor = computed(() => hpState.value === 'sick' ? '#ff5b5b' : hpState.value === 'weak' ? '#ffb347' : '#6bffb0')
 const hpEmoji = computed(() => ({ sick: '🤒', weak: '😟', healthy: '❤️', egg: '🥚' }[hpState.value] || '❤️'))
 // 日常奖励倍率:健康差→<1(生病0);健康满+连续坚持→>1 超额(最高1.5)。英语/签到不受影响。
-const spiritM = computed(() => rewardMultiplier(p.value.health, streakRow()?.current_streak || 0))
+const spiritM = computed(() => rewardMultiplier(p.value.health, p.value.fullStreak || 0))
 const healthInfo = ref(false)
 // 死亡回蛋纪念弹窗(petService.reviveAsEgg 写入)
 const death = computed(() => db.pending_death || null)
@@ -494,7 +494,7 @@ onMounted(() => {
           💡 健康 <b style="color:#ffb347">低于 50</b> → 所有打卡的<b style="color:#ffd86b">金币和宝箱</b>(含英语)都暂停;掉到 <b style="color:#ff7a7a">25 就生病</b>,要去 🛍️ 商城买 💊 药水喂它才能好,<b style="color:#ff7a7a">不治每天 −10 直到变回蛋!</b><br>💊 <b style="color:#ffce8a">吃药只是脱险,不会马上满血</b> —— 之后要连续几天好好打卡,健康才会一点点养回来。<br>只有<b style="color:#9bffcf">连续签到的里程碑大奖</b>(7/14/21/30天)一直都在,不受健康影响。
         </div>
         <div style="font-size:12px;line-height:1.7;margin-top:8px;padding:11px;border-radius:12px;background:rgba(255,158,199,.13)">
-          🌟 反过来!<b style="color:#ff9ec7">健康满 100</b> + <b style="color:#ff9ec7">连续签到</b> → 奖励超额,而且<b>每天都在涨</b>:连签 2天×1.2 → 3天×1.5 → 7天×2 → <b style="color:#ff9ec7">14天×3</b>!金币、宝箱、利息全部一起翻倍,开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)。掉一点血(没满100)倍数立刻没,要时刻保持满血~越自律,奖励越香 🎁
+          🌟 反过来!<b style="color:#ff9ec7">健康满 100</b> + <b style="color:#ff9ec7">连续每天打满</b>(英语+全部生活习惯都做齐才算 1 天) → 奖励超额,而且<b>每天都在涨</b>:连续 2天×1.2 → 3天×1.5 → 7天×2 → <b style="color:#ff9ec7">14天×3</b>!金币、宝箱、利息全部一起翻倍,开宝箱还有概率<b style="color:#ffd86b">升级一档</b>(银→金→钻)。漏任何一项 / 掉血 → 倍数立刻清零重来~越自律,奖励越香 🎁
         </div>
         <button class="btn-accent" style="width:100%;margin-top:14px;padding:11px" @click="healthInfo=false">知道啦</button>
       </div>

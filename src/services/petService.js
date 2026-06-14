@@ -77,16 +77,22 @@ export function settleHealth() {
     if (d >= today) break                       // 今天还没过完,不罚今天
     if ((p.health || 0) <= HEALTH_SICK) {        // 已生病:每天固定扣(倒计时),只有吃药才能停;不再算常规衰减
       p.health = clamp((p.health || 0) - DECAY.sickDailyDecay)
+      p.fullStreak = 0                           // 生病=没达标,连续清零
     } else {
       const { any, main, done } = dayActivity(d)
       const habitCut = applyHabitMiss(done, a, p)  // 生活习惯差异化扣健康(所有情况都查)
       if (!any) {                                // 完全没打卡:属性普减(健康已由习惯明细全漏扣到)
         for (const k of ATTR_KEYS) a[k] = clamp((a[k] || 0) - (k === 'charm' ? DECAY.missAllCharm : DECAY.missAllAttr))
+        p.fullStreak = 0
       } else if (!main) {                        // 打了卡但没打英语主线:额外扣智慧+健康
         a.wisdom = clamp((a.wisdom || 0) - DECAY.missMainWisdom)
         p.health = clamp((p.health || 0) - DECAY.missMainHealth)
-      } else if (habitCut === 0) {               // 完成英语主线 + 生活习惯全做齐:回血奖励
+        p.fullStreak = 0
+      } else if (habitCut === 0) {               // 完成英语主线 + 生活习惯全做齐:达标!回血 + 连续 +1
         p.health = Math.min(HEALTH_MAX, (p.health || 0) + DECAY.regenMain)
+        p.fullStreak = (p.fullStreak || 0) + 1
+      } else {                                   // 完成英语但漏了生活习惯:不算达标,连续清零
+        p.fullStreak = 0
       }
     }
     // 健康<50(虚弱/生病)的日子不累积利息:推进计息起点,生病期间利息作废

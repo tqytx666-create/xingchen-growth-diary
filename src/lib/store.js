@@ -55,6 +55,7 @@ function ensurePet() {
   if (p.health == null) p.health = 100
   if (!p.last_decay_date) p.last_decay_date = todayStr()
   if (p.noHairDays == null) p.noHairDays = 0   // 洗头连续未洗天数(周期扣健康用)
+  if (p.fullStreak == null) p.fullStreak = 0   // 完整达标连续天数(英语+全部生活习惯都做齐才+1,漏任一项清零)→ 驱动超额倍数
   const a = Array.isArray(db.pet_attributes) ? db.pet_attributes[0] : null
   if (a && !a.tiers) a.tiers = {}   // 属性满值晋级的星级记录
 }

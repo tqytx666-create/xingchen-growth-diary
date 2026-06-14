@@ -79,8 +79,8 @@ export function interact(checkinId) {
   }
   // 日常奖励总倍率:健康差→<1(生病0);健康满+连续坚持→>1 超额(最高1.5),既放大金币也升宝箱档。
   // 英语主线打卡(task_type==='main')固定全额,不受此影响。
-  const curStreak = (db.streaks && db.streaks[0] && db.streaks[0].current_streak) || 0
-  const m = rewardMultiplier(pet().health, curStreak)
+  const fullStreak = (pet() && pet().fullStreak) || 0   // 完整达标连续天数(英语+习惯全齐),驱动倍数
+  const m = rewardMultiplier(pet().health, fullStreak)
   const isMain = task.task_type === 'main'
   // 宝箱:生病(m 0)不发;精神超好(m>1)按超出部分概率「升一档」(银→金→钻)
   if (boxTier) {
